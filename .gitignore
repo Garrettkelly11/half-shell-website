@@ -1,0 +1,29 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Dev / backup files
+*.bak.*
+CONTINUE.md
+sync-state.json
+
+# Python dev tools (not part of the deployed site)
+*.py
+__pycache__/
+
+# Editor
+.vscode/
+.idea/
+
+# Netlify
+.netlify/
+netlify.toml
+
+# Logs
+*.log

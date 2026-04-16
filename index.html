@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Half Shell Raw Bar's nightly oyster menu — fresh selections sourced from both coasts, with flavor profiles and pricing." />
+  <title>Half Shell — On the Half Shell Tonight</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="image" href="assets/hero-slide-1.jpg" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"></noscript>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Playfair Display', Georgia, serif;
+      background: #f3f8f6;
+      color: #0e2d3a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      position: relative;
+      background: url('assets/hero-slide-1.jpg') center / cover no-repeat;
+      color: #f5f0e8;
+      padding: 2rem 2.5rem 1.75rem;
+      border-bottom: 3px solid #e89438;
+      text-align: center;
+    }
+    .hero-login-link {
+      position: absolute;
+      top: 0.85rem;
+      right: 1rem;
+      z-index: 10;
+      background: rgba(14, 45, 58, 0.55);
+      border: 1px solid rgba(232, 148, 56, 0.35);
+      border-radius: 4px;
+      padding: 0.45rem 0.55rem;
+      color: #f5f0e8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .hero-login-link:hover { background: rgba(14, 45, 58, 0.88); }
+    .hero-login-link svg { display: block; }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 28, 38, 0.68);
+    }
+    header > * { position: relative; z-index: 1; }
+    .header-logo {
+      height: 80px;
+      width: auto;
+      margin-bottom: 1rem;
+      filter: drop-shadow(0 2px 10px rgba(0,0,0,0.5));
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      line-height: 1.2;
+    }
+    header p {
+      font-size: 0.9rem;
+      color: #c8dfe5;
+      margin-top: 0.4rem;
+      font-style: italic;
+    }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      padding: 2.5rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── Section header ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 2px solid #e89438;
+    }
+    .section-header h2 {
+      font-size: 1.3rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+    }
+    .serving-count {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #3d7080;
+    }
+
+    /* ── Card grid ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .oyster-card {
+      background: #fff;
+      border: 1px solid #bcd4ce;
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .oyster-card:hover {
+      box-shadow: 0 4px 20px rgba(14,45,58,0.12);
+      transform: translateY(-2px);
+    }
+
+    .card-photo {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      display: block;
+    }
+    .card-photo-placeholder {
+      width: 100%;
+      height: 120px;
+      background: linear-gradient(135deg, #112f3d 0%, #1a4a5a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #2a7f94;
+      font-size: 2.5rem;
+    }
+
+    .card-head {
+      background: #0e2d3a;
+      padding: 1rem 1.25rem 0.9rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .card-head-text { flex: 1; }
+    .card-price {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #e89438;
+      white-space: nowrap;
+      padding-top: 0.2rem;
+    }
+    .card-name {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: #f5f0e8;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.3rem;
+    }
+    .card-origin {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.75rem;
+      color: #8ab4be;
+      line-height: 1.4;
+    }
+
+    /* Salinity strip */
+    .card-salinity {
+      background: #112f3d;
+      padding: 0.55rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .sal-label {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #e89438;
+      flex-shrink: 0;
+      cursor: default;
+    }
+    .sal-tooltip {
+      position: fixed;
+      width: 200px;
+      background: #0e2d3a;
+      color: #d6eaee;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 400;
+      line-height: 1.5;
+      padding: 0.6rem 0.75rem;
+      border-radius: 4px;
+      border: 1px solid #e89438;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+      pointer-events: none;
+      white-space: pre-line;
+      z-index: 999;
+      display: none;
+    }
+    .sal-dots { display: flex; gap: 4px; flex-shrink: 0; }
+    .sal-dots span {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+    }
+    .sal-dots span.filled { background: #e89438; }
+    .sal-text {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.72rem;
+      color: #a8c8d0;
+    }
+
+    /* Card body */
+    .card-body {
+      padding: 1.1rem 1.25rem 1.25rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+    .card-tasting {
+      font-family: 'Montserrat', sans-serif;
+      font-style: italic;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #1a3a45;
+      flex: 1;
+    }
+    .card-tasting::before { content: '\201C'; color: #e89438; }
+    .card-tasting::after  { content: '\201D'; color: #e89438; }
+
+    .card-link {
+      display: inline-block;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #2a7f94;
+      text-decoration: none;
+      border-bottom: 1px solid #bcd4ce;
+      padding-bottom: 1px;
+      transition: color 0.15s, border-color 0.15s;
+      align-self: flex-start;
+    }
+    .card-link:hover { color: #e89438; border-color: #e89438; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #6a8f9a;
+    }
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+    .empty-state h3 {
+      font-size: 1.4rem;
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+      color: #0e2d3a;
+    }
+    .empty-state p { font-style: italic; font-size: 0.9rem; }
+
+    /* ── Footer ── */
+    footer {
+      background: #0e2d3a;
+      border-top: 1px solid #1a4a5a;
+      padding: 1.25rem 2rem;
+      text-align: center;
+    }
+    footer a {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #7fb3c0;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    footer a:hover { color: #e89438; }
+    .sep { color: #1a4a5a; margin: 0 0.75rem; }
+
+    /* ── Page nav bar ── */
+    .page-nav {
+      background: #112f3d;
+      border-bottom: 1px solid #1a4a5a;
+      padding: 0 2rem;
+      display: flex;
+      gap: 0;
+    }
+    .page-nav a {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #7fb3c0;
+      text-decoration: none;
+      padding: 0.65rem 1rem;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .page-nav a:hover { color: #f5f0e8; }
+    .page-nav a.active { color: #e89438; border-bottom-color: #e89438; }
+
+    /* Login link in nav */
+    .nav-login-link {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      padding: 0.55rem 0.75rem;
+      color: #6a8f9a;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-login-link:hover { color: #f5f0e8; }
+
+    /* ── Sort control ── */
+    .sort-wrap { position: relative; margin-left: auto; flex-shrink: 0; }
+    .sort-btn {
+      background: none;
+      border: 1px solid #bcd4ce;
+      border-radius: 4px;
+      padding: 0.28rem 0.55rem;
+      color: #3d7080;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .sort-btn:hover { background: #e8f2ef; border-color: #9ec4bc; color: #0e2d3a; }
+    .sort-btn.active { border-color: #e89438; color: #e89438; }
+    .sort-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 5px);
+      right: 0;
+      background: #fff;
+      border: 1px solid #bcd4ce;
+      border-radius: 4px;
+      min-width: 182px;
+      z-index: 50;
+      box-shadow: 0 4px 18px rgba(14,45,58,0.13);
+      overflow: hidden;
+    }
+    .sort-dropdown.open { display: block; }
+    .sort-option {
+      display: block;
+      width: 100%;
+      text-align: left;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.76rem;
+      font-weight: 400;
+      color: #1a3a45;
+      background: none;
+      border: none;
+      border-bottom: 1px solid #e8f2ef;
+      padding: 0.6rem 0.9rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+    .sort-option:last-child { border-bottom: none; }
+    .sort-option:hover { background: #f3f8f6; color: #e89438; }
+    .sort-option.active { color: #e89438; font-weight: 700; }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      header { padding: 1.5rem 1.25rem 1.25rem; }
+      header h1 { font-size: 1.7rem; }
+      .header-logo { height: 60px; }
+      main { padding: 1.5rem 1rem; }
+      .card-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="assets/logo.png" alt="Half Shell Raw Bar" class="header-logo" width="80" height="80" />
+  <h1>On the Half Shell Tonight</h1>
+  <p>Fresh selections, sourced from both coasts</p>
+  <a class="hero-login-link" href="User.html" aria-label="Login">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  </a>
+</header>
+
+<nav class="page-nav">
+  <a href="index.html" class="active">Tonight's Menu</a>
+  <a href="Oyster%20Overview.html">Oyster Library</a>
+</nav>
+
+<main>
+  <div class="section-header">
+    <h2>Tonight's Oysters</h2>
+    <span class="serving-count" id="count-label"></span>
+    <div class="sort-wrap">
+      <button class="sort-btn" id="sort-btn" aria-label="Sort oysters">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="6" y1="4" x2="6" y2="17"/>
+          <polyline points="3,14 6,18 9,14"/>
+          <line x1="12" y1="6" x2="21" y2="6"/>
+          <line x1="12" y1="11" x2="19" y2="11"/>
+          <line x1="12" y1="16" x2="16" y2="16"/>
+          <line x1="12" y1="21" x2="14" y2="21"/>
+        </svg>
+        Sort
+      </button>
+      <div class="sort-dropdown" id="sort-dropdown">
+        <button class="sort-option active" data-sort="az">Alphabetical (A–Z)</button>
+        <button class="sort-option" data-sort="za">Alphabetical (Z–A)</button>
+        <button class="sort-option" data-sort="salinity">Salinity</button>
+        <button class="sort-option" data-sort="size">Size</button>
+      </div>
+    </div>
+  </div>
+  <div id="card-grid" class="card-grid"></div>
+  <div id="empty-state" class="empty-state" style="display:none">
+    <div class="empty-icon">🦪</div>
+    <h3>Nothing on the menu yet</h3>
+    <p>Check back soon — the selection changes daily.</p>
+  </div>
+</main>
+
+<footer>
+  <a href="index.html">Tonight's Menu</a>
+  <span class="sep">|</span>
+  <a href="Oyster%20Overview.html">Oyster Library</a>
+  <span class="sep">|</span>
+  <a href="employee.html">Employee Portal</a>
+</footer>
+
+<script>
+const OYSTERS = [
+  {id:"beach-plum",      name:"Beach Plum",        salinity:"medium",      origin:"Buzzards Bay, Massachusetts",                                salinityText:"Medium — 24–28 ppt",              tastingNotes:"Bold immediate brine, dense and creamy body, buttery texture, lingering stone/mineral finish",                                    photoUrl:null, price:4},
+  {id:"beau-soleil",     name:"Beau Soleil",        salinity:"low",         origin:"Miramichi Bay, New Brunswick, Canada",                        salinityText:"Low to moderate — 10–22 ppt",      tastingNotes:"Delicate and mild; light brine, sweet clean finish, notes of warm bread and hazelnut; champagne-like yeasty aroma",                 photoUrl:null, price:4},
+  {id:"blackberry",      name:"Blackberry",         salinity:"medium",      origin:"Little Wicomico River, Virginia",                             salinityText:"Medium — 18–22 ppt",              tastingNotes:"Sweet and buttery with a clean briny finish; well-balanced mild brininess; creamy, full meats",                                      photoUrl:null, price:3},
+  {id:"blue-point-ct",   name:"Blue Point, CT",     salinity:"medium",      origin:"Long Island Sound, Connecticut",                              salinityText:"Medium to high",                  tastingNotes:"Clean, classic Atlantic brine; bracing, mineral, slightly metallic quality; firm and springy texture",                                photoUrl:null, price:3},
+  {id:"carolina-envy",   name:"Carolina Envy",      salinity:"high",        origin:"Stump Sound, North Carolina",                                salinityText:"High — Stump Sound tidal exchange",tastingNotes:"A rare green gill oyster — bold brine up front, earthy and nutty mid-palate, finishing with a rich truffle-like sweetness; teal gills from native Haslea algae",                                                                                                        photoUrl:null, price:null},
+  {id:"carolina-gold",   name:"Carolina Gold",      salinity:"very-high",   origin:"Newport River, North Carolina",                              salinityText:"Very high — 31–33 ppt",           tastingNotes:"Salty and briny upfront with a sweet finish; very clean ocean taste; meaty with good texture",                                        photoUrl:null, price:3},
+  {id:"divine-pines",    name:"Divine Pines",       salinity:"high",        origin:"Topsail Sound, North Carolina",                               salinityText:"High — constant strong tidal exchange through the inlet",    tastingNotes:"Rich, buttery, intensely briny; deep savory quality; phenolic undertones from pine forests; sweetness from the Haslea diatom",          photoUrl:null, price:4},
+  {id:"fat-bastard",     name:"Fat Bastard",        salinity:"medium",      origin:"Willapa Bay, Washington",                                    salinityText:"Medium — ~25 ppt",                tastingNotes:"Bright, savory flavor; full brine with a sweet finish; plump and substantial; notes of melon",                                         photoUrl:null, price:4},
+  {id:"french-kiss",     name:"French Kiss",        salinity:"medium",      origin:"Miramichi Bay, New Brunswick, Canada",                        salinityText:"Low to moderate — 10–22 ppt",      tastingNotes:"Salty and sweet with a subtle hazelnut finish; profound salinity and briny liquor; full body with tender flesh",                       photoUrl:null, price:4},
+  {id:"hearts-desire",   name:"Heart's Desire",     salinity:"medium",      origin:"Plymouth Bay, Massachusetts",                                salinityText:"Moderate — 2.5–3 / 5 intensity",  tastingNotes:"Creamy texture; light, delicate brine (shio broth-like quality); clean, refreshing finish",                                           photoUrl:null, price:null},
+  {id:"irish-point",     name:"Irish Point",        salinity:"medium-high", origin:"Rustico Harbour, Prince Edward Island, Canada",              salinityText:"Medium to high — full, mild to strong salinity",  tastingNotes:"Sweet brine entry; full salty ocean character mid-palate; smooth, clean mineral finish; buttery and creamy",                           photoUrl:null, price:4},
+  {id:"james-river",     name:"James River",        salinity:"low",         origin:"James River, Virginia",                                      salinityText:"Low — 10–17 ppt",                 tastingNotes:"Mild and sweet with very low brininess; full, plump meats; clean, mild finish with faint Blue Ridge minerality",                        photoUrl:null, price:null},
+  {id:"jimmy-fund-gold", name:"Jimmy Fund Gold",    salinity:"very-high",   origin:"Maquoit Bay, Maine",                                         salinityText:"Very high — rated 5/5 intensity", tastingNotes:"Bold, maximum brine upfront; crisp, clean finish; subtle sweetness and delicate minerality; full oceanic flavor",                      photoUrl:null, price:null},
+  {id:"le-petite-barachois", name:"Le Petite Barachois", salinity:"medium", origin:"Barachois Pond, Prince Edward Island, Canada",              salinityText:"Medium — clean, cold PEI waters", tastingNotes:"Superb blend of sweet and salty; clean and balanced; ideal introductory oyster",                                                     photoUrl:null, price:4},
+  {id:"love-shuck",      name:"Love Shuck",         salinity:"high",        origin:"Damariscotta River, Maine",                                  salinityText:"High — 28–32 ppt",                tastingNotes:"Bright mineral brine on opening; crisp entry; dense, meaty texture; light sweetness; distinctive granite-channel minerality",           photoUrl:null, price:4},
+  {id:"mama-mia",        name:"Mama Mia",           salinity:"medium",      origin:"Prince Edward Island, Canada",                               salinityText:"upfront brine, milder finish",    tastingNotes:"Salty taste of the sea upfront, finishing more mild; medium brine with a slightly fruity finish",                                  photoUrl:null, price:4},
+  {id:"masonboro-pearl", name:"Masonboro Pearl",    salinity:"medium-high", origin:"Masonboro Sound, North Carolina",                            salinityText:"Medium to high — near Atlantic inlets", tastingNotes:"Salty, buttery, and rich; full-flavored with good meat fill",                                                                   photoUrl:null, price:4},
+  {id:"nc-ikigai",       name:"NC Ikigai",          salinity:"medium-high", origin:"Newport River, North Carolina",                              salinityText:"Moderate to high — Newport River", tastingNotes:"Sweet and salty with notes of melon and cucumber; balanced ocean character with a clean finish",                                      photoUrl:null, price:3},
+  {id:"olde-salt",       name:"Olde Salt",          salinity:"very-high",   origin:"Chincoteague Bay, Virginia",                                 salinityText:"Very high — 28–33 ppt",           tastingNotes:"Bold, bracing seaside brininess; true taste of fresh seawater; smooth, clean follow-through without aftertaste",                       photoUrl:null, price:3},
+  {id:"pink-moon",       name:"Pink Moon",          salinity:"medium-high", origin:"New London Bay, Prince Edward Island, Canada",               salinityText:"Medium to high — ~32 ppt",        tastingNotes:"Rich and briny; opens with bright brininess, transitions to smooth, buttery body, finishes with a distinct mineral note",              photoUrl:null, price:4},
+  {id:"queens-cup",      name:"Queen's Cup",        salinity:"medium-high", origin:"Rustico Bay, Prince Edward Island, Canada",                  salinityText:"Moderate to high — ~29.5 ppt",    tastingNotes:"Salty-sweet opening; plump, silky meat; earthy mineral finish; clean and balanced",                                                    photoUrl:null, price:3},
+  {id:"rappahannock",    name:"Rappahannock",       salinity:"low",         origin:"Rappahannock River, Virginia",                               salinityText:"Low — 13–17 ppt",                 tastingNotes:"Sweet, buttery, and full-bodied; understated low saltiness; refreshing, clean, crisp finish with Blue Ridge minerality",               photoUrl:null, price:3},
+  {id:"savage-blonde",   name:"Savage Blonde",      salinity:"high",        origin:"Savage Harbour, Prince Edward Island, Canada",               salinityText:"High — rated 4/5 intensity",      tastingNotes:"Pronounced brine with crisp meats and a sweet, stony finish; sharp salinity, crunchy texture, sweet aftertaste",                       photoUrl:null, price:4},
+  {id:"shigoku",         name:"Shigoku",            salinity:"medium",      origin:"Willapa Bay, Washington",                                    salinityText:"Medium — ~25 ppt",                tastingNotes:"Crisp, clean, deeply briny upfront; moderate salinity balanced by subtle sweetness; notes of melon or cucumber; creamy texture",        photoUrl:null, price:4.5},
+  {id:"southern-salt",   name:"Southern Salt",      salinity:"high",        origin:"New River Inlet, North Carolina",                            salinityText:"High — open Atlantic inlet",      tastingNotes:"Packed with brine and ocean-fresh flavor; bold, direct salt character; suitable both raw and lightly steamed",                         photoUrl:null, price:3},
+  {id:"sweet-petite",    name:"Sweet Petite",       salinity:"medium-high", origin:"Katama Bay, Massachusetts",                                  salinityText:"oceanic character",              tastingNotes:"Sweet and salty; mild and well-rounded; approachable and balanced; pairs well with fruity or aromatic whites",                        photoUrl:null, price:4},
+  {id:"ta",              name:"T&A",                salinity:"medium",      origin:"Lockwood Folly River, North Carolina",                       salinityText:"Moderate — Lockwood Folly River", tastingNotes:"Mild to moderately briny with a clean, sweet finish",                                                                                 photoUrl:null, price:null},
+  {id:"taylor-virginica",name:"Taylor Virginica",   salinity:"medium-high", origin:"Totten Inlet, Washington",                                   salinityText:"Medium to high — Totten Inlet",  tastingNotes:"Firm, full meats with heavy brine leading to a buttery taste; hint of sweetness; crisp, clean; complex minerality",                     photoUrl:null, price:4},
+  {id:"moonrise", name:"Moonrise", salinity:"medium", origin:"Cape Cod, Massachusetts", salinityText:"", tastingNotes:"Plump bite with intense brine. Notes of umami. Sweet mineral finish.", photoUrl:null, price:4},
+  {id:"mookiemoto", name:"Mookiemoto", salinity:"medium", origin:"Damariscotta River, Maine", salinityText:"", tastingNotes:"A briny kiss gives way to creamy sweetness & cucumber-melon finish - emulates West Coast oysters", photoUrl:null, price:4},
+  {id:"white-stone", name:"White Stone", salinity:"medium", origin:"Chesapeake Bay, Virginia", salinityText:"", tastingNotes:"Sweet mushroom, vegetal notes at the forefront that deliver a salty miso finish.", photoUrl:null, price:3},
+  {id:"bear-tide", name:"Bear Tide", salinity:"medium", origin:"Plymouth Bay, Massachusetts", salinityText:"", tastingNotes:"Rich mineral brine with seaweed notes and a sweet finish, from a small family producer.", photoUrl:null, price:4},
+  {id:"boomamoto", name:"Boomamoto", salinity:"medium", origin:"Cape Cod, Massachusetts", salinityText:"", tastingNotes:"Briny punch up front with a sweet finish akin to the prized Kumamoto oyster", photoUrl:null, price:4},
+  {id:"breakwater", name:"Breakwater", salinity:"medium", origin:"Narragansett Bay, Rhode Island", salinityText:"", tastingNotes:"Clean Atlantic brine with a crisp, refreshing cucumber-water finish followed by a mellow earthiness.", photoUrl:null, price:4},
+  {id:"great-white", name:"Great White", salinity:"medium", origin:"Barnstable Harbor, Massachusetts", salinityText:"", tastingNotes:"Extra-plump, deep-cupped, with strong brine; salted honeydew slices.", photoUrl:null, price:4},
+  {id:"malpeque", name:"Malpeque", salinity:"medium", origin:"Malpeque Bay, Prince Edward Island, Canada", salinityText:"", tastingNotes:"An iconic oyster. Bright, clean brine with cucumber-lime freshness - our Seaglass Martini in oyster form.", photoUrl:null, price:4},
+  {id:"moondancer", name:"Moondancer", salinity:"medium", origin:"Damariscotta River, Maine", salinityText:"", tastingNotes:"Firm, bright, clean, and subtly vegetal; like a fresh, lightly buttered steamed clam.", photoUrl:null, price:4},
+  {id:"spindrift", name:"Spindrift", salinity:"medium", origin:"Buzzards Bay, Massachusetts", salinityText:"", tastingNotes:"Named for the mist sprayed from crashing ocean waves; bright brine with a hint of salted sweet cream.", photoUrl:null, price:4},
+  {id:"tuxedo", name:"Tuxedo", salinity:"medium", origin:"Cascumpec Bay, Prince Edward Island, Canada", salinityText:"", tastingNotes:"A crisp, chilled green apple dipped in sea salt, delivered in a striking striped shell.", photoUrl:null, price:4},
+  {id:"wianno", name:"Wianno", salinity:"medium", origin:"Nantucket Sound, Massachusetts", salinityText:"", tastingNotes:"Deep-cupped, firm, and meaty; a mineral-heavy ocean cocktail with a sweet butter-roasted hazelnut finish.", photoUrl:null, price:4},
+  {id:"wellfleet", name:"Wellfleet", salinity:"medium", origin:"Wellfleet Harbor, Massachusetts", salinityText:"", tastingNotes:"New England raw-bar royalty. Sharp brine up front, plump meats, and a rounded seaweed finish.", photoUrl:null, price:4},
+  {id:"cable-creek", name:"Cable Creek", salinity:"medium", origin:"Cape Cod, Massachusetts", salinityText:"", tastingNotes:"A meaty, savoury snack often described as \"mossy\" yet rich; buttered nori", photoUrl:null, price:4},
+  {id:"little-bears", name:"Little Bears", salinity:"medium", origin:"Plymouth Bay, Massachusetts", salinityText:"", tastingNotes:"Rich mineral brine with seaweed notes and a sweet finish, from a small family producer", photoUrl:null, price:4},
+  {id:"hammerheads", name:"Hammerheads", salinity:"medium", origin:"Nantucket Sound, Massachusetts", salinityText:"", tastingNotes:"Firm, meaty bite with nutty depth and a long, sweet finish; rye toast with cultured butter.", photoUrl:null, price:3},
+  {id:"kumamoto", name:"Kumamoto", salinity:"medium", origin:"Totten Inlet, Washington", salinityText:"", tastingNotes:"Mild brine with a velvety texture. Sweet honeydew melon and cucumber notes with a clean finish.", photoUrl:null, price:5},
+  {id:"royal-miyagi", name:"Royal Miyagi", salinity:"medium", origin:"Totten Inlet, Washington", salinityText:"", tastingNotes:"Light brininess with a tangy cucumber finish; sliced kiwi", photoUrl:null, price:4.5},
+  {id:"olympic-view", name:"Olympic View", salinity:"medium", origin:"Willapa Bay, Washington", salinityText:"", tastingNotes:"Medium brine with bright, crisp freshness. Fragrant cucumber and watermelon-rind notes.", photoUrl:null, price:3},
+  {id:"barstool", name:"Barstool", salinity:"medium", origin:"Prince Edward Island, Canada", salinityText:"", tastingNotes:"Bright sea salt up front. Firm, plump bite with creamy sweetness and a clean mineral finish.", photoUrl:null, price:4},
+  {id:"sex-on-the-bay", name:"Sex on the Bay", salinity:"medium", origin:"Bay of Bedek, New Brunswick, Canada", salinityText:"", tastingNotes:"Moderate brine with plump, creamy meats. Umami depth & a buttery mineral finish; toasted brioche bun.", photoUrl:null, price:4},
+  {id:"watch-hill", name:"Watch Hill", salinity:"medium", origin:"Winnapaug Pond, Rhode Island", salinityText:"", tastingNotes:"Deep-cupped, creamy, and buttery on the finish - like sea salt on sweet cream.", photoUrl:null, price:3},
+  {id:"divine-pine", name:"Divine Pine", salinity:"medium", origin:"Topsail Sound, NC", salinityText:"TBD", tastingNotes:"Seasonal with emerald-green gills from natural Algae. High salinity, firm texture, and complex vegetal notes.", photoUrl:null, price:4},
+  {id:"beausoleil", name:"Beausoleil", salinity:"medium", origin:"Miramichi Bay, New Brunswick", salinityText:"TBD", tastingNotes:"Balanced salt and sweet. Firm, springy bite. Hazelnut / warm-bread finish - almost like Champagne.", photoUrl:null, price:4},
+  {id:"love-shuck", name:"Love Shuck", salinity:"medium", origin:"Damariscotta, ME", salinityText:"TBD", tastingNotes:"Fast tidal exchange in the famous Damariscotta River builds structure, depth, & signature Maine sweetness.", photoUrl:null, price:4},
+  {id:"carolina-gold", name:"Carolina Gold", salinity:"medium", origin:"Beaufort, NC", salinityText:"TBD", tastingNotes:"High-salinity Carolina brine up front. Plump, deep-cupped bite. Sweet twist on the finish.", photoUrl:null, price:3},
+  {id:"olde-salt", name:"Olde Salt", salinity:"medium", origin:"Chincoteague Bay, VA", salinityText:"TBD", tastingNotes:"The truest taste of the ocean - bold, intense sea-side brininess and a clean, smooth follow through.", photoUrl:null, price:3},
+  {id:"masonboro-pearl", name:"Masonboro Pearl", salinity:"medium", origin:"Wilmington, NC", salinityText:"TBD", tastingNotes:"Deep-cupped with a salty, buttery, rich flavor; named for the farmer’s daughter, Pearl.", photoUrl:null, price:4},
+  {id:"rappahannock", name:"Rappahannock", salinity:"medium", origin:"Chesapeake Bay, VA", salinityText:"TBD", tastingNotes:"Deep-cupped, mild-mannered oysters - sweet, buttery, low-salinity, and great for beginners", photoUrl:null, price:3},
+  {id:"blackberry", name:"Blackberry", salinity:"medium", origin:"Chesapeake Bay, VA", salinityText:"TBD", tastingNotes:"Medium-sized, deep-cupped oysters with moderate salinity offering a balance of sweetness & brininess.", photoUrl:null, price:3},
+  {id:"moonrise", name:"Moonrise", salinity:"medium", origin:"Cape Cod, MA", salinityText:"TBD", tastingNotes:"Plump bite with intense brine. Notes of umami. Sweet mineral finish.", photoUrl:null, price:4},
+  {id:"mookiemoto", name:"Mookiemoto", salinity:"medium", origin:"Damariscotta, ME", salinityText:"TBD", tastingNotes:"A briny kiss gives way to creamy sweetness & cucumber- melon finish - emulates West Coast oysters", photoUrl:null, price:4},
+  {id:"fat-bellies", name:"Fat Bellies", salinity:"medium", origin:"Beaufort, NC (Crystal Coast)", salinityText:"TBD", tastingNotes:"Plump and briny with a sweet finish—subtle cucumber/melon notes. Tumbled for a clean, firm bite.", photoUrl:null, price:4},
+  {id:"southern-salts", name:"Southern Salts", salinity:"medium", origin:"Chincoteague Bay, VA", salinityText:"TBD", tastingNotes:"High salinity, known to have a “dirty martini” flavor profile from the tidal waters of Virginia’s eastern shore", photoUrl:null, price:3},
+  {id:"french-kiss", name:"French Kiss", salinity:"medium", origin:"Miramichi Bay, New Brunswick", salinityText:"TBD", tastingNotes:"Cultivated in suspension, they have a clean, firm, and plump meat with a pronounced briny, salty taste, followed by a sweet, hazelnut finish.", photoUrl:null, price:4},
+  {id:"momma-mia", name:"Momma Mia", salinity:"medium", origin:"Prince Edward Island, CA", salinityText:"TBD", tastingNotes:"Medium brine up front, then a crisp, slightly fruity green apple sweetness  - clean and refreshing.", photoUrl:null, price:4},
+  {id:"pink-moon", name:"Pink Moon", salinity:"medium", origin:"Prince Edward Island, CA", salinityText:"TBD", tastingNotes:"Clean brine and bright minerality up front. Creamy texture in the middle. Delicate sweet finish.", photoUrl:null, price:4},
+  {id:"sweet-petite", name:"Sweet Petite", salinity:"medium", origin:"Martha's Vineyard, MA", salinityText:"TBD", tastingNotes:"Honeycrisp apple with sea salt. Plump bite, balanced brine, sweet finish - a perfect first oyster.", photoUrl:null, price:4},
+  {id:"shigoku", name:"Shigoku", salinity:"medium", origin:"Samish Bay, WA", salinityText:"TBD", tastingNotes:"Crisp cucumber brine. Ultra-clean and balanced with a mineral finish. Our owner’s favorite West Coast oyster.", photoUrl:null, price:4.5},
+  {id:"fat-bastard", name:"Fat Bastard", salinity:"medium", origin:"Samish Bay, WA", salinityText:"TBD", tastingNotes:"Plump, deep-cupped bite with a bigger briny punch. Crisp cucumber notes, clean mineral finish.", photoUrl:null, price:4.5},
+  {id:"nc-ikigai", name:"NC Ikigai", salinity:"medium", origin:"Beaufort, NC (Crystal Coast)", salinityText:"TBD", tastingNotes:"Soft brine. Plump, silky meat. Sweet melon finish. Clean & spare - ikigai, Japanese for “reason for being”", photoUrl:null, price:3},
+  {id:"white-stone", name:"White Stone", salinity:"medium", origin:"North Point, VA", salinityText:"TBD", tastingNotes:"Sweet mushroom, vegetal notes at the forefront that deliver a salty miso finish.", photoUrl:null, price:3},
+  {id:"beach-plum", name:"Beach Plum", salinity:"medium", origin:"Westport, MA", salinityText:"TBD", tastingNotes:"Moderate brine, soft, sweet meat. Yellow plum sweetness, stone finish.", photoUrl:null, price:4},
+  {id:"bear-tide", name:"Bear Tide", salinity:"medium", origin:"Plymouth, MA", salinityText:"TBD", tastingNotes:"Rich mineral brine with seaweed notes and a sweet finish, from a small family producer.", photoUrl:null, price:4},
+  {id:"boomamoto", name:"Boomamoto", salinity:"medium", origin:"Cape Cod, MA", salinityText:"TBD", tastingNotes:"“Boom” for the briny punch up front, “Moto” for the sweet finish akin to the prized Kumamoto oyster", photoUrl:null, price:4},
+  {id:"breakwater", name:"Breakwater", salinity:"medium", origin:"Portsmouth, RI", salinityText:"TBD", tastingNotes:"Clean Atlantic brine with a crisp, refreshing cucumber-water finish followed by a mellow earthiness.", photoUrl:null, price:4},
+  {id:"great-white", name:"Great White", salinity:"medium", origin:"Barnstable Harbor, MA", salinityText:"TBD", tastingNotes:"Extra-plump, deep-cupped, with strong brine; salted honeydew slices.", photoUrl:null, price:4},
+  {id:"malpeque", name:"Malpeque", salinity:"medium", origin:"Prince Edward Island, CA", salinityText:"TBD", tastingNotes:"An iconic oyster. Bright, clean brine with cucumber-lime freshness - our Seaglass Martini in oyster form.", photoUrl:null, price:4},
+  {id:"moondancer", name:"Moondancer", salinity:"medium", origin:"Damariscotta, ME", salinityText:"TBD", tastingNotes:"Firm, bright, clean, and subtly vegetal; like a fresh, lightly buttered steamed clam.", photoUrl:null, price:4},
+  {id:"red-raider", name:"Red Raider", salinity:"medium", origin:"Crowes Pasture Beach, MA", salinityText:"TBD", tastingNotes:"Firm and crunchy due to the strong adductor muscles developed by 12-foot tidal swings; Granny Smith finish.", photoUrl:null, price:4},
+  {id:"savage-blonde", name:"Savage Blonde", salinity:"medium", origin:"Savage Harbour (PEI), CA", salinityText:"TBD", tastingNotes:"Firm, plump, bright, and crisp; chilled seawater-poached pear.", photoUrl:null, price:4},
+  {id:"spindrift", name:"Spindrift", salinity:"medium", origin:"Westport, MA", salinityText:"TBD", tastingNotes:"Named for the mist sprayed from crashing ocean waves; bright brine with a hint of salted sweet cream.", photoUrl:null, price:4},
+  {id:"tuxedo", name:"Tuxedo", salinity:"medium", origin:"Cascumpec Bay, Canada", salinityText:"TBD", tastingNotes:"A crisp, chilled green apple dipped in sea salt, delivered in a striking striped shell.", photoUrl:null, price:4},
+  {id:"wianno", name:"Wianno", salinity:"medium", origin:"West Bay (Cape Cod), MA", salinityText:"TBD", tastingNotes:"Deep-cupped, firm, and meaty; a mineral-heavy ocean cocktail with a sweet butter-roasted hazelnut finish.", photoUrl:null, price:4},
+  {id:"wellfleet", name:"Wellfleet", salinity:"medium", origin:"Wellfleet, MA", salinityText:"TBD", tastingNotes:"New England raw-bar royalty. Sharp brine up front, plump meats, and a rounded seaweed finish.", photoUrl:null, price:4},
+  {id:"carolina-jade", name:"Carolina Jade", salinity:"medium", origin:"Topsail Sound, NC", salinityText:"TBD", tastingNotes:"Named for their green gills caused by Topsail's algae blooms. Deep-cupped with notes of truffle.", photoUrl:null, price:3},
+  {id:"cable-creek", name:"Cable Creek", salinity:"medium", origin:"Cape Cod, MA", salinityText:"TBD", tastingNotes:"A meaty, savoury snack often described as \"mossy\" yet rich; buttered nori", photoUrl:null, price:4},
+  {id:"irish-points", name:"Irish Points", salinity:"medium", origin:"Rustico Bay (PEI), CA", salinityText:"TBD", tastingNotes:"Grown in cold PEI waters; fresh butter lettuce with a subtle citrus finish", photoUrl:null, price:4},
+  {id:"lovers-river", name:"Lovers River", salinity:"medium", origin:"Rustico Bay (PEI), CA", salinityText:"TBD", tastingNotes:"Grown in the nutrient rich waters of Cymbria, these deep-cupped oysters have a sweet, salty flavor profile", photoUrl:null, price:4},
+  {id:"le-petite-barachois", name:"Le Petite Barachois", salinity:"medium", origin:"Cymbria (PEI), CA", salinityText:"TBD", tastingNotes:"A perfect harmony of high-end, clean salinity followed by a sweet, vegetal, or subtle fruity finish", photoUrl:null, price:4},
+  {id:"little-bears", name:"Little Bears", salinity:"medium", origin:"Plymouth, MA", salinityText:"TBD", tastingNotes:"Rich mineral brine with seaweed notes and a sweet finish, from a small family producer", photoUrl:null, price:4},
+  {id:"hammerheads", name:"Hammerheads", salinity:"medium", origin:"West Bay, MA", salinityText:"TBD", tastingNotes:"Firm, meaty bite with nutty depth and a long, sweet finish; rye toast with cultured butter.", photoUrl:null, price:3},
+  {id:"kumamoto", name:"Kumamoto", salinity:"medium", origin:"Totten Inlet, WA", salinityText:"TBD", tastingNotes:"Mild brine with a velvety texture. Sweet honeydew melon and cucumber notes with a clean finish.", photoUrl:null, price:5},
+  {id:"royal-miyagi", name:"Royal Miyagi", salinity:"medium", origin:"Totten Inlet, WA", salinityText:"TBD", tastingNotes:"Light brininess with a tangy cucumber finish; sliced kiwi", photoUrl:null, price:4.5},
+  {id:"olympic-view", name:"Olympic View", salinity:"medium", origin:"Bruceport, WA", salinityText:"TBD", tastingNotes:"Medium brine with bright, crisp freshness. Fragrant cucumber and watermelon-rind notes.", photoUrl:null, price:3},
+  {id:"ts-virginica", name:"TS Virginica", salinity:"medium", origin:"Totten Inlet, WA", salinityText:"TBD", tastingNotes:"East coast oysters grown on the west coast. Firm texture, buttery taste, with a hint of sweetness.", photoUrl:null, price:4},
+  {id:"queens-cup", name:"Queens Cup", salinity:"medium", origin:"Prince Edward Island, CA", salinityText:"TBD", tastingNotes:"Silky and plump with a salty sweet taste and an earthy mineral finish.", photoUrl:null, price:3},
+  {id:"ct-blue-points", name:"CT Blue Points", salinity:"medium", origin:"Long Island Sound, CT", salinityText:"TBD", tastingNotes:"New York raw-bar royalty since the 1800s - moderate-high brine, plump bite, clean mineral snap on the finish.", photoUrl:null, price:3},
+  {id:"katama-ma", name:"Katama MA", salinity:"medium", origin:"Katama Bay (Martha's Vineyard), MA", salinityText:"TBD", tastingNotes:"A true salt bomb - bold Atlantic brine up front with a deep-cupped, plump bite and a sweet-candy finish.", photoUrl:null, price:3},
+  {id:"barstool", name:"Barstool", salinity:"medium", origin:"Prince Edward Island, CA", salinityText:"TBD", tastingNotes:"Bright sea salt up front. Firm, plump bite with creamy sweetness and a clean mineral finish.", photoUrl:null, price:4},
+  {id:"sex-on-the-bay", name:"Sex on the Bay", salinity:"medium", origin:"Bay of Bedek (NB), CA", salinityText:"TBD", tastingNotes:"Moderate brine with plump, creamy meats. Umami depth & a buttery mineral finish; toasted brioche bun.", photoUrl:null, price:4},
+  {id:"watch-hill", name:"Watch Hill", salinity:"medium", origin:"Winnapaug Pond, RI", salinityText:"TBD", tastingNotes:"Deep-cupped, creamy, and buttery on the finish - like sea salt on sweet cream.", photoUrl:null, price:3},
+  {id:"blue-point", name:"Blue Point", salinity:"medium", origin:"South Bay, Long Island, NY", salinityText:"TBD", tastingNotes:"New York raw-bar royalty since the 1800s - moderate-high brine, plump bite, clean mineral snap on the finish.", photoUrl:null, price:3}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+];
+
+// Photo lookup — maps oyster id to actual asset filename (handles mixed extensions).
+const PHOTO_MAP = {
+  'barstool': 'assets/oysters/barstool.jpg',
+  'beach-plum': 'assets/oysters/beach-plum.webp',
+  'bear-tide': 'assets/oysters/bear-tide.jpg',
+  'beau-soleil': 'assets/oysters/Beau-soleil.jpg',
+  'blackberry': 'assets/oysters/blackberry.webp',
+  'blue-point-ct': 'assets/oysters/blue-point-ct.jpg',
+  'boomamoto': 'assets/oysters/boomamoto.jpeg',
+  'breakwater': 'assets/oysters/breakwater.png',
+  'carolina-envy': 'assets/oysters/carolina-envy.png',
+  'carolina-gold': 'assets/oysters/carolina-gold.png',
+  'divine-pines': 'assets/oysters/divine-pines.png',
+  'fat-bastard': 'assets/oysters/fat-bastard.jpg',
+  'french-kiss': 'assets/oysters/french-kiss.jpg',
+  'great-white': 'assets/oysters/great-white.webp',
+  'hammerheads': 'assets/oysters/hammerheads.webp',
+  'hearts-desire': 'assets/oysters/hearts-desire.JPG',
+  'irish-point': 'assets/oysters/irish-point.webp',
+  'james-river': 'assets/oysters/james-river.jpg',
+  'jimmy-fund-gold': 'assets/oysters/jimmy-fund-gold.jpg',
+  'kumamoto': 'assets/oysters/kumamoto.jpg',
+  'le-petite-barachois': 'assets/oysters/le-petite-barachois.jpg',
+  'love-shuck': 'assets/oysters/love-shuck.png',
+  'malpeque': 'assets/oysters/Malpeque.jpg',
+  'mama-mia': 'assets/oysters/mama-mia.jpg',
+  'masonboro-pearl': 'assets/oysters/masonboro-pearl.jpg',
+  'mookiemoto': 'assets/oysters/mookiemoto.webp',
+  'moondancer': 'assets/oysters/moondancer.jpg',
+  'moonrise': 'assets/oysters/moonrise.jpg',
+  'nc-ikigai': 'assets/oysters/nc-ikigai.png',
+  'olde-salt': 'assets/oysters/olde-salt.jpg',
+  'olympic-view': 'assets/oysters/olympic-view.png',
+  'pink-moon': 'assets/oysters/pink-moon.jpg',
+  'queens-cup': 'assets/oysters/queens-cup.png',
+  'rappahannock': 'assets/oysters/rappahannock.jpg',
+  'royal-miyagi': 'assets/oysters/royal-miyagi.jpeg',
+  'savage-blonde': 'assets/oysters/savage-blonde.jpg',
+  'sex-on-the-bay': 'assets/oysters/sex-on-the-bay.png',
+  'shigoku': 'assets/oysters/shigoku.jpg',
+  'southern-salt': 'assets/oysters/southern-salt.webp',
+  'spindrift': 'assets/oysters/spindrift.png',
+  'sweet-petite': 'assets/oysters/sweet-petite.avif',
+  'ta': 'assets/oysters/ta.png',
+  'taylor-virginica': 'assets/oysters/taylor-virginica.jpg',
+  'tuxedo': 'assets/oysters/tuxedo.jpg',
+  'watch-hill': 'assets/oysters/watch-hill.jpg',
+  'wellfleet': 'assets/oysters/wellfleet.webp',
+  'white-stone': 'assets/oysters/white-stone.webp',
+  'wianno': 'assets/oysters/wianno.jpg'
+};
+OYSTERS.forEach(o => { if (!o.photoUrl) o.photoUrl = PHOTO_MAP[o.id] || null; });
+
+const DOTS_MAP  = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
+
+// ── Sort state ────────────────────────────────────────────────────────────────
+let currentSort   = 'az';
+let lastServingIds = new Set();
+
+const SAL_ORDER  = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
+const SIZE_ORDER = { 'small':1, 'small-medium':2, 'medium':3, 'large':4 };
+const SIZE_MAP   = {
+  'barstool':'small',      'beach-plum':'medium',    'bear-tide':'large',
+  'beau-soleil':'small',   'blackberry':'small-medium','blue-point-ct':'medium',
+  'blue-point':'medium',   'boomamoto':'small',       'breakwater':'large',
+  'cable-creek':'medium',  'carolina-envy':'small-medium','carolina-gold':'medium',
+  'carolina-jade':'small-medium','divine-pines':'medium','divine-pine':'medium',
+  'fat-bastard':'large',   'french-kiss':'medium',    'great-white':'large',
+  'hammerheads':'large',   'hearts-desire':'medium',  'irish-point':'small-medium',
+  'irish-points':'small-medium','james-river':'large','jimmy-fund-gold':'medium',
+  'katama':'large',        'katama-ma':'large',       'kumamoto':'small',
+  'le-petite-barachois':'small','little-bears':'small-medium','love-shuck':'medium',
+  'lovers-river':'medium', 'malpeque':'medium',       'mama-mia':'medium',
+  'momma-mia':'medium',    'masonboro-pearl':'medium','mookiemoto':'medium',
+  'moondancer':'medium',   'moonrise':'medium',       'nc-ikigai':'medium',
+  'olde-salt':'medium',    'olympic-view':'medium',   'pink-moon':'medium',
+  'queens-cup':'medium',   'rappahannock':'large',    'red-raider':'medium',
+  'royal-miyagi':'medium', 'savage-blonde':'medium',  'sex-on-the-bay':'medium',
+  'shigoku':'small-medium','southern-salt':'medium',  'southern-salts':'medium',
+  'spindrift':'medium',    'sweet-petite':'small',    'ta':'medium',
+  'taylor-virginica':'medium','ts-virginica':'medium','tuxedo':'small',
+  'watch-hill':'medium',   'wellfleet':'medium',      'white-stone':'medium',
+  'wianno':'medium',       'beausoleil':'small',      'barstool':'small',
+  'ct-blue-points':'medium','fat-bellies':'medium'
+};
+
+function buildDots(level) {
+  const filled = DOTS_MAP[level] || 2;
+  return Array.from({length:5}, (_,i) =>
+    `<span class="${i < filled ? 'filled' : ''}"></span>`
+  ).join('');
+}
+
+function render(servingIds) {
+  lastServingIds = servingIds;
+  const grid       = document.getElementById('card-grid');
+  const empty      = document.getElementById('empty-state');
+  const countLabel = document.getElementById('count-label');
+  const seen = new Set();
+  const serving    = OYSTERS.filter(o => servingIds.has(o.id) && !seen.has(o.id) && seen.add(o.id));
+
+  // Apply current sort
+  if (currentSort === 'az')       serving.sort((a,b) => a.name.localeCompare(b.name));
+  else if (currentSort === 'za')  serving.sort((a,b) => b.name.localeCompare(a.name));
+  else if (currentSort === 'salinity') serving.sort((a,b) => (SAL_ORDER[a.salinity]||2) - (SAL_ORDER[b.salinity]||2));
+  else if (currentSort === 'size')     serving.sort((a,b) => (SIZE_ORDER[SIZE_MAP[a.id]]||3) - (SIZE_ORDER[SIZE_MAP[b.id]]||3));
+
+  if (serving.length === 0) {
+    grid.style.display  = 'none';
+    empty.style.display = 'block';
+    countLabel.textContent = '';
+    return;
+  }
+
+  grid.style.display  = '';
+  empty.style.display = 'none';
+  countLabel.textContent = `${serving.length} variet${serving.length === 1 ? 'y' : 'ies'}`;
+
+  grid.innerHTML = serving.map(o => `
+    <div class="oyster-card">
+      ${o.photoUrl
+        ? `<img class="card-photo" src="${o.photoUrl}" alt="${o.name} oysters on the half shell" loading="lazy" width="300" height="180" onerror="this.outerHTML='<div class=\\'card-photo-placeholder\\'>🦪</div>'">`
+        : `<div class="card-photo-placeholder">🦪</div>`}
+      <div class="card-head">
+        <div class="card-head-text">
+          <div class="card-name">${o.name}</div>
+          <div class="card-origin">${o.origin}</div>
+        </div>
+        ${o.price != null ? `<div class="card-price">$${o.price % 1 === 0 ? o.price : o.price.toFixed(2)}</div>` : ''}
+      </div>
+      <div class="card-salinity">
+        <span class="sal-label" data-tip="Salinity is the measure of salt in the water your oyster was grown&#10;&#10;More dots = Saltier oyster">Salinity</span>
+        <div class="sal-dots">${buildDots(o.salinity)}</div>
+        <span class="sal-text">${(function(t){
+          if(!t||t==='TBD')return'';
+          t=t.replace(/^(very high|high|moderate to high|medium[- ]to[- ]high|low to moderate|moderate|medium|low)\s*[—–\-]\s*/i,'').replace(/\s*ppt/gi,'').trim();
+          if(/^~?[\d.,]+\s*[–\-]?\s*~?[\d.,]*$/.test(t))return'';
+          if(/rated\s*[\d.]+\s*\/\s*\d+|[\d.]+\s*[–\/]\s*[\d.]+\s*(\/\s*\d+)?\s*intensity/i.test(t))return'';
+          return t;
+        })(o.salinityText)}</span>
+      </div>
+      <div class="card-body">
+        <p class="card-tasting">${o.tastingNotes}</p>
+        <a class="card-link" href="oyster.html?id=${o.id}">Full profile &rarr;</a>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Firebase real-time menu sync ────────────────────────────────────────────
+// Scripts are loaded dynamically so they never block window.load or page render.
+(function () {
+  function loadScript(src, cb) {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = cb;
+    s.onerror = function () {}; // Firebase CDN unreachable — page loads fine without it
+    document.head.appendChild(s);
+  }
+
+  loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js', function () {
+    loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js', function () {
+      const firebaseConfig = {
+        apiKey:            "AIzaSyDNuyGuzAmow0YehKlztihYn3l57--82L8",
+        authDomain:        "half-shell-oyster-menu.firebaseapp.com",
+        databaseURL:       "https://half-shell-oyster-menu-default-rtdb.firebaseio.com",
+        projectId:         "half-shell-oyster-menu",
+        storageBucket:     "half-shell-oyster-menu.firebasestorage.app",
+        messagingSenderId: "784452175310",
+        appId:             "1:784452175310:web:2d56ed01d06bb39886179f"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const db  = firebase.database();
+      const ref = db.ref('menu/serving');
+
+      function startListener() {
+        ref.on('value', snapshot => {
+          const ids = snapshot.val() || [];
+          render(new Set(ids));
+        });
+      }
+
+      startListener();
+
+      // Disconnect realtime listener when page is hidden (allows bfcache),
+      // reconnect and re-fetch when page becomes visible again.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          ref.off();
+        } else {
+          startListener();
+        }
+      });
+    });
+  });
+})();
+
+// Salinity tooltip
+(function() {
+  const tip = document.createElement('div');
+  tip.className = 'sal-tooltip';
+  document.body.appendChild(tip);
+
+  function show(label) {
+    tip.textContent = label.dataset.tip;
+    tip.style.display = 'block';
+  }
+  function position(label) {
+    const r = label.getBoundingClientRect();
+    let top = r.top - tip.offsetHeight - 8;
+    if (top < 8) top = r.bottom + 8;
+    let left = r.left;
+    if (left + 200 > window.innerWidth - 8) left = window.innerWidth - 208;
+    tip.style.top = top + 'px';
+    tip.style.left = left + 'px';
+  }
+  function hide() { tip.style.display = 'none'; }
+
+  // Mouse
+  document.addEventListener('mouseover', e => {
+    const label = e.target.closest('.sal-label');
+    if (label) { show(label); position(label); }
+  });
+  document.addEventListener('mouseout', e => {
+    if (e.target.closest('.sal-label')) hide();
+  });
+
+  // Touch toggle
+  document.addEventListener('touchstart', e => {
+    const label = e.target.closest('.sal-label');
+    if (label) {
+      e.preventDefault();
+      if (tip.style.display === 'block') { hide(); return; }
+      show(label); position(label);
+    } else {
+      hide();
+    }
+  }, { passive: false });
+})();
+
+// Sort dropdown
+(function() {
+  const sortBtn  = document.getElementById('sort-btn');
+  const sortDrop = document.getElementById('sort-dropdown');
+  if (!sortBtn) return;
+
+  sortBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const isOpen = sortDrop.classList.toggle('open');
+    sortBtn.classList.toggle('active', isOpen);
+  });
+
+  document.addEventListener('click', () => {
+    sortDrop.classList.remove('open');
+    sortBtn.classList.remove('active');
+  });
+
+  sortDrop.addEventListener('click', e => {
+    const opt = e.target.closest('.sort-option');
+    if (!opt) return;
+    currentSort = opt.dataset.sort;
+    sortDrop.querySelectorAll('.sort-option').forEach(o => o.classList.toggle('active', o === opt));
+    sortDrop.classList.remove('open');
+    sortBtn.classList.remove('active');
+    render(lastServingIds);
+  });
+})();
+</script>
+</body>
+</html>

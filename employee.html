@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Half Shell Raw Bar employee portal — manage the nightly oyster menu." />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Half Shell — Employee Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"></noscript>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Playfair Display', Georgia, serif;
+      background: #f3f8f6;
+      color: #0e2d3a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Password gate ── */
+    .gate {
+      position: fixed;
+      inset: 0;
+      background: #0e2d3a;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gate-box {
+      background: #f3f8f6;
+      border-radius: 6px;
+      padding: 2.5rem 2rem;
+      width: 340px;
+      max-width: 92vw;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+    .gate-eyebrow {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #e89438;
+      margin-bottom: 0.5rem;
+    }
+    .gate-box h2 {
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: #0e2d3a;
+      margin-bottom: 1.5rem;
+    }
+    .gate-box label {
+      display: block;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #6a8f9a;
+      margin-bottom: 0.4rem;
+      text-align: left;
+    }
+    .gate-box input[type="password"] {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid #9ec4bc;
+      border-radius: 4px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.95rem;
+      color: #0e2d3a;
+      background: #fff;
+      outline: none;
+      margin-bottom: 0.75rem;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .gate-box input[type="password"]:focus {
+      border-color: #e89438;
+      box-shadow: 0 0 0 2px rgba(232,148,56,0.18);
+    }
+    .gate-error {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.78rem;
+      color: #c0392b;
+      margin-bottom: 0.6rem;
+      min-height: 1.1em;
+    }
+    .gate-btn {
+      width: 100%;
+      padding: 0.6rem 1rem;
+      background: #0e2d3a;
+      color: #f5f0e8;
+      border: none;
+      border-radius: 4px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .gate-btn:hover { background: #1a4a5a; }
+    .gate-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #6a8f9a;
+      text-decoration: none;
+      margin-top: 1rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      transition: color 0.15s;
+    }
+    .gate-back:hover { color: #e89438; }
+
+    /* ── Page nav bar ── */
+    .page-nav {
+      background: #112f3d;
+      border-bottom: 1px solid #1a4a5a;
+      padding: 0 2rem;
+      display: flex;
+      gap: 0;
+    }
+    .page-nav a {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #6a8f9a;
+      text-decoration: none;
+      padding: 0.65rem 1rem;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .page-nav a:hover { color: #f5f0e8; }
+    .page-nav a.active { color: #e89438; border-bottom-color: #e89438; }
+
+    /* Login link in nav */
+    .nav-login-link {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      padding: 0.55rem 0.75rem;
+      color: #6a8f9a;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-login-link:hover { color: #f5f0e8; }
+
+    /* ── Header ── */
+    header {
+      background: #0e2d3a;
+      color: #f5f0e8;
+      padding: 1.5rem 2.5rem;
+      border-bottom: 3px solid #e89438;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+    .header-logo {
+      height: 48px;
+      width: auto;
+      flex-shrink: 0;
+      filter: drop-shadow(0 1px 4px rgba(0,0,0,0.4));
+    }
+    .header-text { flex: 1; }
+    .header-eyebrow {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #e89438;
+      margin-bottom: 0.4rem;
+    }
+    header h1 { font-size: 1.7rem; font-weight: 400; letter-spacing: 0.02em; }
+    header p { font-size: 0.85rem; color: #8ab4be; margin-top: 0.3rem; font-style: italic; }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      padding: 2rem 2rem 3rem;
+      max-width: 960px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── Section heading ── */
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #e89438;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+    }
+    .section-title .badge {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #6a8f9a;
+    }
+    .section-title .badge.amber { color: #e89438; }
+
+    /* ── Currently Serving panel ── */
+    .serving-panel {
+      background: #fff;
+      border: 1px solid #bcd4ce;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 2.5rem;
+    }
+    .serving-panel-head {
+      background: #0e2d3a;
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .serving-panel-head span {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #8ab4be;
+    }
+    .serving-panel-head .counter {
+      color: #e89438;
+    }
+    .serving-checklist {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+    .serving-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.6rem 1.1rem;
+      border-bottom: 1px solid #e8f2ef;
+      border-right: 1px solid #e8f2ef;
+      cursor: pointer;
+      transition: background 0.12s;
+      user-select: none;
+    }
+    .serving-item:hover { background: #f0faf7; }
+    .serving-item.checked { background: #eaf5f2; }
+    .serving-item.at-limit:not(.checked) { opacity: 0.45; pointer-events: none; }
+    .serving-item input[type="checkbox"] {
+      accent-color: #2a7f94;
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .serving-item-name {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.9rem;
+      color: #0e2d3a;
+    }
+    .serving-item-region {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.65rem;
+      color: #6a8f9a;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-left: auto;
+    }
+    .serving-panel-foot {
+      padding: 0.85rem 1.25rem;
+      border-top: 1px solid #bcd4ce;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f3f8f6;
+    }
+    .save-status {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.75rem;
+      color: #6a8f9a;
+      font-style: italic;
+      min-height: 1.2em;
+    }
+    .save-status.saved { color: #2a7f94; }
+    .save-status.error { color: #c0392b; }
+    .save-btn {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.45rem 1.2rem;
+      background: #0e2d3a;
+      color: #f5f0e8;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .save-btn:hover { background: #1a4a5a; }
+
+    /* ── Full oyster table ── */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83rem;
+    }
+    thead tr { background: #0e2d3a; color: #f5f0e8; }
+    thead th {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid #bcd4ce; }
+    tbody tr:nth-child(even) { background: #e8f2ef; }
+    tbody tr:hover { background: #c2ddd7; }
+    tbody tr.on-menu td:first-child { border-left: 3px solid #2a7f94; }
+    tbody td { padding: 0.5rem 0.75rem; vertical-align: top; line-height: 1.4; }
+    .td-name { font-family: 'Roboto Mono', monospace; font-weight: 400; white-space: nowrap; }
+    .td-serving {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #2a7f94;
+      white-space: nowrap;
+    }
+    .sal-dots-sm { display: flex; gap: 3px; align-items: center; }
+    .sal-dots-sm span {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #bcd4ce;
+      flex-shrink: 0;
+    }
+    .sal-dots-sm span.f { background: #e89438; }
+
+    /* ── Footer ── */
+    footer {
+      background: #0e2d3a;
+      border-top: 1px solid #1a4a5a;
+      padding: 1rem 2rem;
+      text-align: center;
+    }
+    footer span {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.68rem;
+      color: #3a6070;
+    }
+
+    /* ── Menu-only toggle ── */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.85rem;
+    }
+    .toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.4rem 0.9rem 0.4rem 0.55rem;
+      border-radius: 20px;
+      border: 1.5px solid #bcd4ce;
+      background: #f3f8f6;
+      color: #6a8f9a;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      user-select: none;
+    }
+    .toggle-btn:hover { border-color: #2a7f94; color: #2a7f94; }
+    .toggle-btn.active {
+      background: #0e2d3a;
+      border-color: #0e2d3a;
+      color: #f5f0e8;
+    }
+    .toggle-btn .pip {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #6a8f9a;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .toggle-btn.active .pip { background: #e89438; }
+    .filter-label {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.72rem;
+      color: #6a8f9a;
+      font-style: italic;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      header { padding: 1.25rem 1rem 1rem; }
+      main { padding: 1.25rem 1rem 2rem; }
+      .serving-checklist { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 400px) {
+      .serving-checklist { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Password gate ── -->
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <div class="gate-eyebrow">Half Shell Raw Bar</div>
+    <h2>Employee Portal</h2>
+    <label for="gate-pwd">Password</label>
+    <input type="password" id="gate-pwd" placeholder="Enter password" autocomplete="current-password" />
+    <div class="gate-error" id="gate-error"></div>
+    <button class="gate-btn" id="gate-submit">Sign In</button>
+    <button class="gate-back" id="gate-back" onclick="history.back()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9,2 4,7 9,12"/>
+      </svg>
+      Back
+    </button>
+  </div>
+</div>
+
+<!-- ── Page content (hidden until authenticated) ── -->
+<div id="page-content" style="display:none; flex-direction:column; min-height:100vh;">
+
+  <header>
+    <img src="assets/logo.png" alt="Half Shell Raw Bar" class="header-logo" width="52" height="52" />
+    <div class="header-text">
+      <div class="header-eyebrow">Half Shell Raw Bar</div>
+      <h1>Employee Portal</h1>
+      <p>Manage tonight's menu &mdash; changes apply to all users instantly</p>
+    </div>
+  </header>
+
+  <nav class="page-nav">
+    <a href="index.html">Tonight's Menu</a>
+    <a href="Oyster%20Overview.html">Oyster Library</a>
+    <a class="nav-login-link" href="User.html" aria-label="Login">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    </a>
+  </nav>
+
+  <main>
+
+    <!-- Currently Serving -->
+    <div class="section-title">
+      Tonight's Menu
+      <span class="badge amber" id="serving-badge">0 / 6</span>
+    </div>
+    <div class="serving-panel">
+      <div class="serving-panel-head">
+        <span>Select up to 6 oysters</span>
+        <span class="counter" id="head-counter">0 selected</span>
+      </div>
+      <div class="serving-checklist" id="serving-checklist"></div>
+      <div class="serving-panel-foot">
+        <span class="save-status" id="save-status"></span>
+        <button class="save-btn" id="save-btn">Save Menu</button>
+      </div>
+    </div>
+
+    <!-- Full reference table -->
+    <div class="filter-bar">
+      <button class="toggle-btn active" id="menu-only-btn" aria-pressed="true">
+        <span class="pip"></span>
+        On Menu Only
+      </button>
+      <span class="filter-label" id="filter-label">Showing tonight's selection</span>
+    </div>
+    <div class="section-title">
+      All Oysters
+      <span class="badge" id="variety-badge">27 varieties</span>
+    </div>
+    <div class="table-wrap">
+      <table id="oyster-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>On Menu</th>
+            <th>Price</th>
+            <th>Origin</th>
+            <th>Salinity</th>
+            <th>Size</th>
+            <th>Tasting Notes</th>
+            <th>Farming Method</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <footer>
+    <span>Half Shell Raw Bar &mdash; Employee Portal &mdash; Session expires on tab close</span>
+  </footer>
+
+</div>
+
+<script src="./data/oysters.js?v=2"></script>
+<script>
+// ── Auth ──────────────────────────────────────────────────────────────────
+const AUTH_KEY  = 'halfshell-employee-auth';
+const PASSWORD  = '86Golds';
+const gate      = document.getElementById('gate');
+const pageContent = document.getElementById('page-content');
+const gatePwd   = document.getElementById('gate-pwd');
+const gateError = document.getElementById('gate-error');
+
+function unlock() {
+  gate.style.display = 'none';
+  pageContent.style.display = 'flex';
+  // initPage() is called by the Firebase fetch below once data is ready
+}
+
+if (sessionStorage.getItem(AUTH_KEY) === 'true') {
+  unlock();
+}
+
+document.getElementById('gate-submit').addEventListener('click', () => {
+  if (gatePwd.value === PASSWORD) {
+    sessionStorage.setItem(AUTH_KEY, 'true');
+    gateError.textContent = '';
+    unlock();
+  } else {
+    gateError.textContent = 'Incorrect password. Please try again.';
+    gatePwd.value = '';
+    gatePwd.focus();
+  }
+});
+
+gatePwd.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('gate-submit').click();
+});
+
+
+const DOTS_MAP    = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
+const MAX_SERVING = 6;
+
+// ── Firebase setup ──────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey:            "AIzaSyDNuyGuzAmow0YehKlztihYn3l57--82L8",
+  authDomain:        "half-shell-oyster-menu.firebaseapp.com",
+  databaseURL:       "https://half-shell-oyster-menu-default-rtdb.firebaseio.com",
+  projectId:         "half-shell-oyster-menu",
+  storageBucket:     "half-shell-oyster-menu.firebasestorage.app",
+  messagingSenderId: "784452175310",
+  appId:             "1:784452175310:web:2d56ed01d06bb39886179f"
+};
+firebase.initializeApp(firebaseConfig);
+const menuRef = firebase.database().ref('menu/serving');
+
+let serving        = new Set();
+let pendingServing = new Set();
+
+function buildDotsSm(level) {
+  const filled = DOTS_MAP[level] || 2;
+  return `<div class="sal-dots-sm">${Array.from({length:5},(_,i) => `<span class="${i<filled?'f':''}"></span>`).join('')}</div>`;
+}
+
+function syncCounter() {
+  const n = pendingServing.size;
+  document.getElementById('serving-badge').textContent = `${n} / ${MAX_SERVING}`;
+  document.getElementById('head-counter').textContent  = `${n} selected`;
+  // Dim unchosen items if at limit
+  document.querySelectorAll('.serving-item').forEach(el => {
+    const id = el.dataset.id;
+    el.classList.toggle('checked', pendingServing.has(id));
+    el.classList.toggle('at-limit', n >= MAX_SERVING && !pendingServing.has(id));
+    el.querySelector('input').checked = pendingServing.has(id);
+  });
+  // Sync table rows
+  document.querySelectorAll('#table-body tr').forEach(row => {
+    const id = row.dataset.id;
+    const td = row.querySelector('.td-serving');
+    if (td) td.textContent = pendingServing.has(id) ? '● On Menu' : '';
+    row.classList.toggle('on-menu', pendingServing.has(id));
+  });
+}
+
+function initPage() {
+  // Build checklist
+  const checklist = document.getElementById('serving-checklist');
+  const regionLabel = { ct:'CT', ma:'MA', me:'ME', nc:'NC', va:'VA', wa:'WA', nb:'NB', pei:'PEI' };
+  checklist.innerHTML = OYSTERS.map(o => `
+    <div class="serving-item${pendingServing.has(o.id) ? ' checked' : ''}" data-id="${o.id}">
+      <input type="checkbox" ${pendingServing.has(o.id) ? 'checked' : ''} />
+      <span class="serving-item-name">${o.name}</span>
+      <span class="serving-item-region">${regionLabel[o.region] || o.region}</span>
+    </div>
+  `).join('');
+
+  checklist.querySelectorAll('.serving-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      if (pendingServing.has(id)) {
+        pendingServing.delete(id);
+      } else {
+        if (pendingServing.size >= MAX_SERVING) return;
+        pendingServing.add(id);
+      }
+      document.getElementById('save-status').textContent = '';
+      document.getElementById('save-status').className = 'save-status';
+      syncCounter();
+    });
+  });
+
+  // Build table
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = OYSTERS.map(o => `
+    <tr data-id="${o.id}" class="${pendingServing.has(o.id) ? 'on-menu' : ''}">
+      <td class="td-name">${o.name}</td>
+      <td class="td-serving">${pendingServing.has(o.id) ? '● On Menu' : ''}</td>
+      <td style="font-family:'Lato',sans-serif;font-size:0.85rem;font-weight:700;color:#e89438;white-space:nowrap">${o.price != null ? '$' + (o.price % 1 === 0 ? o.price : o.price.toFixed(2)) : '—'}</td>
+      <td>${o.origin}</td>
+      <td>${buildDotsSm(o.salinity)}<span style="font-family:'Lato',sans-serif;font-size:0.72rem;color:#3a6070">${o.salinityText}</span></td>
+      <td style="font-family:'Lato',sans-serif;font-size:0.8rem">${o.size}</td>
+      <td style="font-style:italic">${o.tastingNotes}</td>
+      <td style="font-family:'Lato',sans-serif;font-size:0.78rem">${o.farmingMethod}</td>
+    </tr>
+  `).join('');
+
+  syncCounter();
+
+  // Save button — writes to Firebase, syncs all devices instantly
+  document.getElementById('save-btn').addEventListener('click', () => {
+    serving = new Set(pendingServing);
+    const status = document.getElementById('save-status');
+    menuRef.set([...serving])
+      .then(() => {
+        status.textContent = `Saved — ${serving.size} oyster${serving.size !== 1 ? 's' : ''} on the menu`;
+        status.className = 'save-status saved';
+        setTimeout(() => {
+          if (status.className.includes('saved')) {
+            status.textContent = '';
+            status.className = 'save-status';
+          }
+        }, 4000);
+      })
+      .catch(err => {
+        status.textContent = 'Save failed — check connection';
+        status.className = 'save-status';
+        console.error('Firebase write error:', err);
+      });
+  });
+}
+
+// Load current menu from Firebase, then init page
+menuRef.once('value').then(snapshot => {
+  const raw = snapshot.val() || [];
+  // Normalise: Firebase may return an object with numeric keys if the array had gaps
+  const allIds = Array.isArray(raw) ? raw : Object.values(raw);
+
+  // Enforce the MAX_SERVING cap on load — if Firebase somehow stored more
+  // than the allowed limit (e.g. data saved before the limit was introduced),
+  // trim to the first MAX_SERVING entries so the live menu stays in sync.
+  const trimmed = allIds.slice(0, MAX_SERVING);
+  serving        = new Set(trimmed);
+  pendingServing = new Set(trimmed);
+
+  // If the stored data exceeded the limit, flag that a save is needed so staff
+  // knows the menu will be corrected the next time they hit "Save Menu".
+  if (allIds.length > MAX_SERVING) {
+    const status = document.getElementById('save-status');
+    status.textContent = `Menu had ${allIds.length} oysters — trimmed to ${MAX_SERVING}. Please save to apply.`;
+    status.className = 'save-status error';
+  }
+
+  initPage();
+}).catch(() => {
+  // Firebase unavailable — still show the page with empty selection
+  initPage();
+});
+
+// ── Menu-only filter toggle ──────────────────────────────────────────────────
+(function() {
+  let menuOnly = true; // ON by default
+
+  function applyFilter() {
+    const rows = document.querySelectorAll('#table-body tr');
+    let visible = 0;
+    rows.forEach(row => {
+      const onMenu = row.classList.contains('on-menu');
+      const show = !menuOnly || onMenu;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    const btn = document.getElementById('menu-only-btn');
+    const label = document.getElementById('filter-label');
+    const badge = document.getElementById('variety-badge');
+    btn.classList.toggle('active', menuOnly);
+    btn.setAttribute('aria-pressed', menuOnly);
+    if (menuOnly) {
+      label.textContent = visible === 0
+        ? 'No oysters on the menu yet'
+        : `Showing tonight's selection`;
+      badge.textContent = `${visible} on menu`;
+    } else {
+      label.textContent = 'Showing all varieties';
+      badge.textContent = `${rows.length} varieties`;
+    }
+  }
+
+  // Re-apply filter whenever syncCounter updates the table (after a checkbox click)
+  const origSyncCounter = window.syncCounter || null;
+
+  // Hook into DOM mutations on the table body to keep filter live
+  const observer = new MutationObserver(() => applyFilter());
+
+  function startObserver() {
+    const tbody = document.getElementById('table-body');
+    if (tbody) observer.observe(tbody, { attributes: true, subtree: true, attributeFilter: ['class'] });
+  }
+
+  document.addEventListener('DOMContentLoaded', startObserver);
+  // Also try immediately in case DOM is already ready
+  startObserver();
+
+  document.getElementById('menu-only-btn').addEventListener('click', () => {
+    menuOnly = !menuOnly;
+    applyFilter();
+  });
+
+  // Run initial filter after the table is built (initPage fires after Firebase load)
+  const origInitPage = window.initPage;
+  // We patch via a slight delay to ensure table rows exist when page first loads
+  const filterInterval = setInterval(() => {
+    if (document.querySelectorAll('#table-body tr').length > 0) {
+      applyFilter();
+      clearInterval(filterInterval);
+    }
+  }, 100);
+})();
+
+</script>
+</body>
+</html>

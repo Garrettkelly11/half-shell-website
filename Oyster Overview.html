@@ -1,0 +1,2280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="The Half Shell Library — origin, flavor profile, and special notes for every oyster variety served at Half Shell Raw Bar." />
+  <title>The Half Shell Library</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet"></noscript>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+    body {
+      font-family: 'Playfair Display', Georgia, "Times New Roman", serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #0e2d3a;
+      background: #f3f8f6;
+      overflow-x: hidden;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+    header {
+      grid-column: 1 / -1;
+      background: #0e2d3a;
+      color: #f5f0e8;
+      padding: 1.25rem 2.5rem;
+      border-bottom: 3px solid #e89438;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      position: relative;
+    }
+    .header-logo {
+      height: 52px;
+      width: auto;
+      flex-shrink: 0;
+      filter: drop-shadow(0 1px 4px rgba(0,0,0,0.4));
+    }
+    header h1 { font-size: 1.8rem; letter-spacing: 0.04em; font-weight: normal; }
+    header p  { font-size: 0.9rem; color: #8ab4be; margin-top: 0.25rem; font-style: italic; }
+
+    /* ── Sidebar ── */
+    nav {
+      background: #e8f2ef;
+      border-right: 1px solid #bcd4ce;
+      padding: 1.25rem 1rem;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* Search */
+    .search-wrap { margin-bottom: 1rem; }
+    .search-wrap input {
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid #9ec4bc;
+      border-radius: 4px;
+      background: #fff;
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.82rem;
+      color: #0e2d3a;
+      outline: none;
+    }
+    .search-wrap input:focus { border-color: #e89438; box-shadow: 0 0 0 2px rgba(232,148,56,0.15); }
+    .search-wrap input::placeholder { color: #7aaab5; }
+
+    /* Filter groups */
+    .filter-section { margin-bottom: 0.9rem; }
+    .filter-label {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #e89438;
+      margin-bottom: 0.4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .filter-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .chip {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border: 1px solid #9ec4bc;
+      border-radius: 20px;
+      background: #f3f8f6;
+      color: #3a6070;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .chip:hover { border-color: #e89438; color: #e89438; }
+    .chip.active { background: #e89438; border-color: #e89438; color: #fff; }
+
+    /* Clear filters */
+    .clear-filters {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.7rem;
+      color: #e89438;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-bottom: 0.75rem;
+      display: none;
+    }
+    .clear-filters.visible { display: block; }
+
+    /* Result count */
+    .result-count {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.7rem;
+      color: #6a8f9a;
+      margin-bottom: 0.5rem;
+    }
+
+    .nav-divider { height: 1px; background: #bcd4ce; margin: 0.75rem 0; }
+
+    /* Oyster jump links */
+    .nav-label {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #e89438;
+      margin-bottom: 0.5rem;
+    }
+    .nav-links { list-style: none; }
+    .nav-links li { margin-bottom: 0.15rem; transition: opacity 0.2s; }
+    .nav-links li.hidden-link { opacity: 0.25; pointer-events: none; }
+    .nav-links li a {
+      text-decoration: none;
+      color: #1a3a45;
+      font-size: 0.82rem;
+      display: block;
+      padding: 0.15rem 0.35rem;
+      border-radius: 3px;
+      transition: background 0.15s;
+    }
+    .nav-links li a:hover { background: #d0e8e3; color: #0e2d3a; }
+
+    /* ── Main content ── */
+    main { padding: 2rem 2.5rem; max-width: 860px; }
+
+    /* No-results message */
+    .no-results {
+      display: none;
+      padding: 2rem;
+      text-align: center;
+      color: #6a8f9a;
+      font-style: italic;
+      font-size: 0.95rem;
+    }
+    .no-results.visible { display: block; }
+
+    /* ── Oyster entries ── */
+    .oyster {
+      margin-bottom: 3rem;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid #bcd4ce;
+      transition: opacity 0.2s;
+    }
+    .oyster.hidden { display: none; }
+    .oyster:last-of-type { border-bottom: none; }
+
+    .oyster h2 {
+      font-size: 1.4rem;
+      font-weight: normal;
+      letter-spacing: 0.02em;
+      color: #0e2d3a;
+      margin-bottom: 0.9rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 2px solid #e89438;
+      display: inline-block;
+    }
+
+    /* Bulleted field list */
+    .oyster ul { list-style: none; margin: 0; padding: 0; }
+    .oyster ul li {
+      font-size: 0.92rem;
+      color: #1a3a45;
+      padding: 0.2rem 0 0.2rem 1rem;
+      border-left: 2px solid #bcd4ce;
+      margin-bottom: 0.25rem;
+      position: relative;
+    }
+    .oyster ul li::before {
+      content: "·";
+      position: absolute;
+      left: -0.05rem;
+      color: #e89438;
+      font-size: 1.2rem;
+      line-height: 1.3;
+    }
+    .field-label {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #e89438;
+      margin-right: 0.4rem;
+    }
+    .oyster ul li em { font-style: italic; }
+    .oyster ul li strong { font-weight: bold; }
+
+    /* Notable callout */
+    .notable {
+      margin-top: 0.9rem;
+      padding: 0.75rem 1rem;
+      background: #e8f2ef;
+      border-left: 3px solid #e89438;
+      font-size: 0.88rem;
+      color: #1a3a45;
+    }
+    .notable-label {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #e89438;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    /* ── Currently Serving filter ── */
+    .serving-section { margin-bottom: 0.9rem; }
+    .serving-toggle-btn {
+      width: 100%;
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #0e2d3a;
+      background: #fff;
+      border: 1px solid #9ec4bc;
+      border-radius: 4px;
+      padding: 0.35rem 0.6rem;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .serving-toggle-btn:hover { background: #e8f2ef; }
+    .serving-toggle-btn.active { background: #2a7f94; border-color: #2a7f94; color: #fff; }
+
+    /* Article on-menu badge */
+    .oyster.on-menu h2::after {
+      content: "● on menu";
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #2a7f94;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+
+    /* Search highlight */
+    mark {
+      background: rgba(232,148,56,0.2);
+      color: inherit;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    /* ── Oyster hero panel ── */
+    .oyster-hero {
+      margin: 0.75rem 0 1rem;
+      padding: 0.85rem 1.1rem;
+      background: #0e2d3a;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .salinity-row {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+    .salinity-label-tag {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #e89438;
+      flex-shrink: 0;
+    }
+    .salinity-dots {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .salinity-dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+    }
+    .salinity-dots span.filled { background: #e89438; }
+    .salinity-value-text {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.78rem;
+      color: #a8c8d0;
+    }
+    .tasting-hero {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-style: italic;
+      font-size: 0.98rem;
+      line-height: 1.55;
+      color: #f5f0e8;
+    }
+    .tasting-hero::before { content: '\201C'; color: #e89438; }
+    .tasting-hero::after  { content: '\201D'; color: #e89438; }
+
+    /* ── Table scroll wrapper ── */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* ── Quick Reference Table ── */
+    #quick-reference { margin-top: 1rem; }
+    #quick-reference h2 {
+      font-size: 1.2rem;
+      font-weight: normal;
+      letter-spacing: 0.03em;
+      margin-bottom: 1rem;
+      color: #0e2d3a;
+      border-bottom: 2px solid #e89438;
+      display: inline-block;
+      padding-bottom: 0.3rem;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead tr { background: #0e2d3a; color: #f5f0e8; }
+    thead th {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+    }
+    tbody tr { border-bottom: 1px solid #bcd4ce; }
+    tbody tr:nth-child(even) { background: #e8f2ef; }
+    tbody tr:hover { background: #c2ddd7; }
+    tbody td { padding: 0.5rem 0.75rem; vertical-align: top; }
+    tbody td a { color: #0e2d3a; text-decoration: none; }
+    tbody td a:hover { text-decoration: underline; color: #e89438; }
+    tbody td em { font-style: italic; }
+
+    /* ── Page nav bar ── */
+    .page-nav-bar {
+      grid-column: 1 / -1;
+      background: #112f3d;
+      border-bottom: 1px solid #1a4a5a;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+    }
+    .page-nav-bar > a {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #6a8f9a;
+      text-decoration: none;
+      padding: 0.65rem 1rem;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s;
+      display: flex;
+      align-items: center;
+    }
+    .page-nav-bar > a:hover { color: #f5f0e8; }
+    .page-nav-bar > a.pnb-active { color: #e89438; border-bottom-color: #e89438; }
+    .pnb-login-link {
+      position: absolute;
+      top: 0.85rem;
+      right: 1rem;
+      z-index: 10;
+      background: rgba(14, 45, 58, 0.55);
+      border: 1px solid rgba(232, 148, 56, 0.35);
+      border-radius: 4px;
+      padding: 0.45rem 0.55rem;
+      color: #f5f0e8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .pnb-login-link:hover { background: rgba(14, 45, 58, 0.88); }
+
+    /* ── Hamburger button (hidden on desktop) ── */
+    .menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.55rem 0.75rem;
+      color: #6a8f9a;
+      flex-shrink: 0;
+      align-items: center;
+      transition: color 0.15s;
+    }
+    .menu-btn:hover { color: #f5f0e8; }
+    .menu-btn svg { display: block; }
+
+    /* ── Nav overlay backdrop (mobile) ── */
+    .nav-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 49;
+    }
+    .nav-overlay.open { display: block; }
+
+    /* ── Back to top button ── */
+    .back-to-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 90;
+      background: #0e2d3a;
+      color: #f5f0e8;
+      border: 1px solid #e89438;
+      border-radius: 4px;
+      padding: 0.5rem 0.85rem;
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .back-to-top.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .back-to-top:hover {
+      background: #1a4a5a;
+      border-color: #e89438;
+    }
+    .back-to-top svg { flex-shrink: 0; }
+
+    /* ── Mobile breakpoint ── */
+    @media (max-width: 768px) {
+      /* Header row */
+      header {
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .header-logo { height: 36px; }
+      .header-text { flex: 1; min-width: 0; }
+      header h1 { font-size: 1.1rem; }
+      header p  { font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .menu-btn { display: flex; }
+
+      /* Collapse grid to single column */
+      .page-wrapper {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+      }
+
+      /* Sidebar becomes a fixed left drawer */
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100dvh;
+        width: 280px;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        border-right: 2px solid #e89438;
+        padding-top: 1.5rem;
+      }
+      nav.open { transform: translateX(0); }
+
+      /* Clamp header and nav to viewport width */
+      header, .page-nav-bar { max-width: 100vw; overflow: hidden; }
+      header { flex-wrap: nowrap; }
+      .header-text { min-width: 0; overflow: hidden; }
+      header h1 { font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      header p  { font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+      /* Main takes full width */
+      main { padding: 1.25rem 1rem; }
+
+      /* Bigger touch targets for chips */
+      .chip {
+        font-size: 0.8rem;
+        padding: 0.35rem 0.65rem;
+      }
+
+      /* Bigger nav links */
+      .nav-links li a {
+        font-size: 0.9rem;
+        padding: 0.35rem 0.5rem;
+      }
+
+      /* Oyster headings */
+      .oyster h2 { font-size: 1.2rem; }
+
+      /* Prevent field rows from overflowing viewport */
+      .oyster ul li {
+        word-break: break-word;
+        overflow-wrap: break-word;
+      }
+
+      /* Hero card tasting text */
+      .tasting-hero { font-size: 0.88rem; }
+
+      /* Salinity row wraps gracefully */
+      .salinity-value-text { font-size: 0.72rem; }
+
+      /* Main content area */
+      main { max-width: 100vw; overflow-x: hidden; }
+
+      /* Serving toggle button */
+      .serving-toggle-btn { font-size: 0.8rem; padding: 0.5rem 0.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <header>
+    <img src="assets/logo.png" alt="Half Shell Raw Bar" class="header-logo" width="52" height="52" />
+    <div class="header-text">
+      <h1>The Half Shell Library</h1>
+      <p>Origin, Flavor Profile, and Special Notes</p>
+    </div>
+    <a class="pnb-login-link" href="User.html" aria-label="Login">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    </a>
+  </header>
+
+  <!-- Page nav bar -->
+  <div class="page-nav-bar">
+    <button class="menu-btn" id="menu-btn" aria-label="Open menu">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6"  x2="19" y2="6"/>
+        <line x1="3" y1="11" x2="19" y2="11"/>
+        <line x1="3" y1="16" x2="19" y2="16"/>
+      </svg>
+    </button>
+    <a href="index.html">Tonight's Menu</a>
+    <a href="Oyster%20Overview.html" class="pnb-active">Oyster Library</a>
+  </div>
+
+  <!-- Mobile nav overlay -->
+  <div class="nav-overlay" id="nav-overlay"></div>
+
+  <!-- ── Sidebar ── -->
+  <nav id="sidebar">
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <input type="search" id="oyster-search" placeholder="Search oysters…" autocomplete="off" />
+    </div>
+
+    <!-- Sort -->
+    <div class="filter-section">
+      <div class="filter-label">
+        <span style="display:flex;align-items:center;gap:0.4rem;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#e89438;flex-shrink:0;">
+            <line x1="6" y1="4" x2="6" y2="17"/>
+            <polyline points="3,14 6,18 9,14"/>
+            <line x1="12" y1="6" x2="21" y2="6"/>
+            <line x1="12" y1="11" x2="19" y2="11"/>
+            <line x1="12" y1="16" x2="16" y2="16"/>
+            <line x1="12" y1="21" x2="14" y2="21"/>
+          </svg>
+          Sort By
+        </span>
+      </div>
+      <div class="filter-chips" id="sort-chips">
+        <span class="chip sort-chip active" data-sort="az">A → Z</span>
+        <span class="chip sort-chip" data-sort="za">Z → A</span>
+        <span class="chip sort-chip" data-sort="salinity">Salinity</span>
+        <span class="chip sort-chip" data-sort="size">Size</span>
+      </div>
+    </div>
+
+    <!-- Salinity filter -->
+    <div class="filter-section">
+      <div class="filter-label">Salinity</div>
+      <div class="filter-chips" data-group="salinity">
+        <span class="chip" data-value="low">Low</span>
+        <span class="chip" data-value="medium">Medium</span>
+        <span class="chip" data-value="medium-high">Med-High</span>
+        <span class="chip" data-value="high">High</span>
+        <span class="chip" data-value="very-high">Very High</span>
+      </div>
+    </div>
+
+    <!-- Size filter -->
+    <div class="filter-section">
+      <div class="filter-label">Size</div>
+      <div class="filter-chips" data-group="size">
+        <span class="chip" data-value="small">Small</span>
+        <span class="chip" data-value="small-medium">Sm–Med</span>
+        <span class="chip" data-value="medium">Medium</span>
+        <span class="chip" data-value="large">Large</span>
+      </div>
+    </div>
+
+    <!-- Region filter -->
+    <div class="filter-section">
+      <div class="filter-label">State / Province</div>
+      <div class="filter-chips" data-group="region">
+        <span class="chip" data-value="ct">CT</span>
+        <span class="chip" data-value="ma">MA</span>
+        <span class="chip" data-value="me">ME</span>
+        <span class="chip" data-value="nc">NC</span>
+        <span class="chip" data-value="va">VA</span>
+        <span class="chip" data-value="wa">WA</span>
+        <span class="chip" data-value="nb">NB</span>
+        <span class="chip" data-value="pei">PEI</span>
+        <span class="chip" data-value="ri">RI</span>
+        <span class="chip" data-value="bc">BC</span>
+      </div>
+    </div>
+
+    <!-- Currently Serving filter -->
+    <div class="serving-section">
+      <button class="serving-toggle-btn" id="serving-toggle">Currently Serving</button>
+    </div>
+
+    <span class="clear-filters" id="clear-filters">Clear all filters</span>
+    <div class="result-count" id="result-count"></div>
+
+    <div class="nav-divider"></div>
+
+    <!-- Jump links -->
+    <div class="nav-label">Varieties</div>
+    <ul class="nav-links" id="nav-links">
+      <li data-target="barstool"><a href="#barstool">Barstool</a></li>
+      <li data-target="beach-plum"><a href="#beach-plum">Beach Plum</a></li>
+      <li data-target="bear-tide"><a href="#bear-tide">Bear Tide</a></li>
+      <li data-target="beau-soleil"><a href="#beau-soleil">Beau Soleil</a></li>
+      <li data-target="blackberry"><a href="#blackberry">Blackberry</a></li>
+      <li data-target="blue-point-ct"><a href="#blue-point-ct">Blue Point, CT</a></li>
+      <li data-target="boomamoto"><a href="#boomamoto">Boomamoto</a></li>
+      <li data-target="breakwater"><a href="#breakwater">Breakwater</a></li>
+      <li data-target="cable-creek"><a href="#cable-creek">Cable Creek</a></li>
+      <li data-target="carolina-envy"><a href="#carolina-envy">Carolina Envy</a></li>
+      <li data-target="carolina-gold"><a href="#carolina-gold">Carolina Gold</a></li>
+      <li data-target="carolina-jade"><a href="#carolina-jade">Carolina Jade</a></li>
+      <li data-target="divine-pines"><a href="#divine-pines">Divine Pines</a></li>
+      <li data-target="fat-bastard"><a href="#fat-bastard">Fat Bastard</a></li>
+      <li data-target="french-kiss"><a href="#french-kiss">French Kiss</a></li>
+      <li data-target="great-white"><a href="#great-white">Great White</a></li>
+      <li data-target="hammerheads"><a href="#hammerheads">Hammerheads</a></li>
+      <li data-target="hearts-desire"><a href="#hearts-desire">Heart's Desire</a></li>
+      <li data-target="irish-point"><a href="#irish-point">Irish Point</a></li>
+      <li data-target="james-river"><a href="#james-river">James River</a></li>
+      <li data-target="jimmy-fund-gold"><a href="#jimmy-fund-gold">Jimmy Fund Gold</a></li>
+      <li data-target="katama"><a href="#katama">Katama</a></li>
+      <li data-target="kumamoto"><a href="#kumamoto">Kumamoto</a></li>
+      <li data-target="le-petite-barachois"><a href="#le-petite-barachois">Le Petite Barachois</a></li>
+      <li data-target="little-bears"><a href="#little-bears">Little Bears</a></li>
+      <li data-target="love-shuck"><a href="#love-shuck">Love Shuck</a></li>
+      <li data-target="lovers-river"><a href="#lovers-river">Lovers River</a></li>
+      <li data-target="malpeque"><a href="#malpeque">Malpeque</a></li>
+      <li data-target="mama-mia"><a href="#mama-mia">Mama Mia</a></li>
+      <li data-target="masonboro-pearl"><a href="#masonboro-pearl">Masonboro Pearl</a></li>
+      <li data-target="mookiemoto"><a href="#mookiemoto">Mookiemoto</a></li>
+      <li data-target="moondancer"><a href="#moondancer">Moondancer</a></li>
+      <li data-target="moonrise"><a href="#moonrise">Moonrise</a></li>
+      <li data-target="nc-ikigai"><a href="#nc-ikigai">NC Ikigai</a></li>
+      <li data-target="olde-salt"><a href="#olde-salt">Olde Salt</a></li>
+      <li data-target="olympic-view"><a href="#olympic-view">Olympic View</a></li>
+      <li data-target="pink-moon"><a href="#pink-moon">Pink Moon</a></li>
+      <li data-target="queens-cup"><a href="#queens-cup">Queen's Cup</a></li>
+      <li data-target="red-raider"><a href="#red-raider">Red Raider</a></li>
+      <li data-target="rappahannock"><a href="#rappahannock">Rappahannock</a></li>
+      <li data-target="royal-miyagi"><a href="#royal-miyagi">Royal Miyagi</a></li>
+      <li data-target="savage-blonde"><a href="#savage-blonde">Savage Blonde</a></li>
+      <li data-target="sex-on-the-bay"><a href="#sex-on-the-bay">Sex on the Bay</a></li>
+      <li data-target="shigoku"><a href="#shigoku">Shigoku</a></li>
+      <li data-target="southern-salt"><a href="#southern-salt">Southern Salt</a></li>
+      <li data-target="spindrift"><a href="#spindrift">Spindrift</a></li>
+      <li data-target="sweet-petite"><a href="#sweet-petite">Sweet Petite</a></li>
+      <li data-target="ta"><a href="#ta">T&amp;A</a></li>
+      <li data-target="taylor-virginica"><a href="#taylor-virginica">Taylor Virginica</a></li>
+      <li data-target="tuxedo"><a href="#tuxedo">Tuxedo</a></li>
+      <li data-target="watch-hill"><a href="#watch-hill">Watch Hill</a></li>
+      <li data-target="wellfleet"><a href="#wellfleet">Wellfleet</a></li>
+      <li data-target="white-stone"><a href="#white-stone">White Stone</a></li>
+      <li data-target="wianno"><a href="#wianno">Wianno</a></li>
+    </ul>
+
+    <div class="nav-divider"></div>
+    <ul class="nav-links">
+      <li><a href="#quick-reference">Quick Reference</a></li>
+    </ul>
+
+  </nav>
+
+  <!-- ── Main content ── -->
+  <main>
+
+    <div class="no-results" id="no-results">No oysters match your search or filters.</div>
+
+    <!-- ─────────────────────────────────────────────────── -->
+    <!-- OYSTER ARTICLES                                      -->
+    <!-- data-salinity: low | medium | medium-high | high | very-high -->
+    <!-- data-size:     small | small-medium | medium | large          -->
+    <!-- data-region:   new-england | chesapeake | southeast | pacific | canada -->
+    <!-- ─────────────────────────────────────────────────── -->
+
+    <article class="oyster" id="barstool"
+      data-salinity="medium-high" data-size="small" data-region="pei"
+      data-search="barstool rustico bay prince edward island pei atlantic aqua farms cocktail sweet salty">
+      <h2>Barstool</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Rustico Bay, Prince Edward Island, Canada</li>
+        <li><span class="field-label">Farmer</span> Atlantic Aqua Farms</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Suspension tray culture in Rustico Bay's cold north-shore waters</li>
+        <li><span class="field-label">Grow-Out</span> ~2–3 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium to high — full PEI north coast salinity</li>
+        <li><span class="field-label">Size</span> Small — 2.5–3" (cocktail grade)</li>
+        <li><span class="field-label">Shell</span> Deep-cupped, petite, uniform shape; clean presentation</li>
+        <li><span class="field-label">Tasting Notes</span> Crisp, salty, and sweet; clean brine with a refreshing finish; well-balanced and approachable</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        A cocktail-sized PEI oyster from the same celebrated Rustico Bay corridor. When they grow larger they are marketed as Sweet Island Kisses, and at maximum size, Naked Islanders — three stages of the same bloodline.
+      </div>
+    </article>
+
+    <article class="oyster" id="beach-plum"
+      data-salinity="medium" data-size="medium" data-region="ma"
+      data-search="beach plum westport massachusetts buzzards bay eastern oyster">
+      <h2>Beach Plum</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Westport, Massachusetts (East Branch of the Westport River / Buzzards Bay)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Suspended deep-water tower cages ("Flip Farm" method) ~10 feet below surface</li>
+        <li><span class="field-label">Grow-Out</span> 18–24 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; peak May–February</li>
+        <li><span class="field-label">Salinity</span> Medium — 24–28 ppt</li>
+        <li><span class="field-label">Size</span> Medium — 3–3.5"</li>
+        <li><span class="field-label">Shell</span> Deep-cupped, thick, sturdy; clean appearance from high-energy deep water</li>
+        <li><span class="field-label">Tasting Notes</span> Bold immediate brine (bright, like Diamond Kosher salt), dense and creamy body, buttery texture, lingering stone/mineral finish</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Named for the beach plum plants that blanket Westport's sand dunes and flower in June. The suspension cage system keeps oysters off the bottom, feeding on fresh phytoplankton.
+      </div>
+    </article>
+
+    <article class="oyster" id="beau-soleil"
+      data-salinity="low" data-size="small" data-region="nb"
+      data-search="beau soleil miramichi bay new brunswick canada eastern oyster beginner">
+      <h2>Beau Soleil</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Miramichi Bay, Negauc, New Brunswick, Canada</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Suspension tray; wave and tidal action tumbles shells against each other naturally</li>
+        <li><span class="field-label">Grow-Out</span> ~2–3 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Low to moderate — 10–22 ppt</li>
+        <li><span class="field-label">Size</span> Small — up to 2.5"</li>
+        <li><span class="field-label">Shell</span> Petite, deep-cupped, uniformly shaped; shipped in wooden boxes</li>
+        <li><span class="field-label">Tasting Notes</span> Delicate and mild; light brine, sweet clean finish, notes of warm bread and hazelnut, mild umami; champagne-like yeasty aroma</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        One of North America's most recognized boutique oysters. The cold, northern Miramichi Bay pushes <em>C. virginica</em> to the edge of its viable range, slowing growth and refining flavor. Sister oyster to French Kiss — same farm, younger age. Great beginner oyster.
+      </div>
+    </article>
+
+    <article class="oyster" id="bear-tide"
+      data-salinity="medium-high" data-size="large" data-region="ma"
+      data-search="bear tide plymouth bay massachusetts family farm bottom culture seaweed mineral sweet brine">
+      <h2>Bear Tide</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Plymouth Bay, Massachusetts</li>
+        <li><span class="field-label">Farmer</span> Bear Tide Oysters (family business)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Seed in high-tidal-flow trays; moved to bottom culture to finish on the ocean floor; ~50% more space per oyster than most East Coast farms</li>
+        <li><span class="field-label">Grow-Out</span> 2–3 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium to high — Plymouth Bay, open Atlantic influence</li>
+        <li><span class="field-label">Size</span> Medium to large — robust, meaty specimens</li>
+        <li><span class="field-label">Shell</span> Deep-cupped, thick, sturdy; large unique shells from turbulent water and open tray grow-out</li>
+        <li><span class="field-label">Tasting Notes</span> Rich mineral brine with seaweed notes and a sweet finish; hearty and well-formed with flavors that range from salty to sweet</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Eight-acre family farm founded on passion and precision. Varied tidal locations and grow methods let Bear Tide produce oysters with distinctly different characters across their acreage. Their generous spacing philosophy produces especially plump, full-meated oysters.
+      </div>
+    </article>
+
+    <article class="oyster" id="blackberry"
+      data-salinity="medium" data-size="small-medium" data-region="va"
+      data-search="blackberry little wicomico oyster company heathsville virginia chesapeake bay">
+      <h2>Blackberry</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Chesapeake Bay, Heathsville, Virginia (grown inshore of Blackberry Hang Oyster Reef; Little Wicomico River watershed)</li>
+        <li><span class="field-label">Farmer</span> Little Wicomico Oyster Company (family-owned, est. 1930)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Bottom cages</li>
+        <li><span class="field-label">Grow-Out</span> 12–18 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium — 18–22 ppt</li>
+        <li><span class="field-label">Size</span> Medium — 2.5–3"</li>
+        <li><span class="field-label">Shell</span> Deep-cupped, smooth, polished appearance; plump, full meats; subtle greenish hue with hints of dark blackberry-like coloring</li>
+        <li><span class="field-label">Tasting Notes</span> Sweet and buttery with a clean briny finish; well-balanced mild brininess and natural sweetness; creamy, full meats</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Named after Blackberry Hang Oyster Reef, a historic Chesapeake Bay reef adjacent to the grow site. Little Wicomico Oyster Company has farmed these waters continuously since 1930 — one of Virginia's oldest oyster operations. The medium salinity of the Little Wicomico River produces the characteristically sweet, mild Chesapeake profile this oyster is known for.
+      </div>
+    </article>
+
+    <article class="oyster" id="blue-point-ct"
+      data-salinity="medium-high" data-size="medium" data-region="ct"
+      data-search="blue point connecticut long island sound norwalk westport eastern oyster classic">
+      <h2>Blue Point, CT</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Long Island Sound, Connecticut (primarily Norwalk and Westport)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Semi-wild; bottom seeded, dredge-harvested</li>
+        <li><span class="field-label">Grow-Out</span> 18–36 months (semi-wild); up to 3–4 years for bottom-grown</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; best September–April</li>
+        <li><span class="field-label">Salinity</span> Medium to high</li>
+        <li><span class="field-label">Size</span> Medium to large — 2.5–3.5" (sometimes 3–4")</li>
+        <li><span class="field-label">Shell</span> Pearl gray with bluish/purplish hue; rough texture, round to oval, moderate cup; can be irregular</li>
+        <li><span class="field-label">Tasting Notes</span> Clean, classic Atlantic brine; bracing, mineral, slightly metallic quality; firm and springy texture; light mineral finish; crowd-pleasing</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        "Blue Point" is one of the most misused names in seafood — technically an appellation for Long Island Sound but historically applied broadly from NY to DE. True CT Blue Points are semi-wild, dredge-harvested after 3–4 years.
+      </div>
+    </article>
+
+    <article class="oyster" id="boomamoto"
+      data-salinity="medium-high" data-size="small" data-region="ma"
+      data-search="boomamoto barnstable harbor cape cod massachusetts cape cod oyster company deep cup round golf ball kumamoto">
+      <h2>Boomamoto</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Barnstable Harbor, Cape Cod, Massachusetts</li>
+        <li><span class="field-label">Farmer</span> Cape Cod Oyster Company</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Cage culture; discovered accidentally when staff found golf-ball-sized oysters growing as deep as they were long</li>
+        <li><span class="field-label">Grow-Out</span> 2–3 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium to high — Barnstable Harbor</li>
+        <li><span class="field-label">Size</span> Small — 2.5" deep × 2.5" long; notably deep cup for its size</li>
+        <li><span class="field-label">Shell</span> Exceptionally deep-cupped, round, "golf ball" profile; full meat content relative to size</li>
+        <li><span class="field-label">Tasting Notes</span> Strong brine up front with a sweet finish; impeccably clean, bright, and lively; subtle but full-bodied flavor</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Cape Cod Oyster Company's "homage to a West Coast oyster with an East Coast taste" — the deep cup and round shape mimic Kumamoto proportions while delivering classic Barnstable Harbor brine. The unusual shape emerged from a happy accident, not selective breeding.
+      </div>
+    </article>
+
+    <article class="oyster" id="breakwater"
+      data-salinity="high" data-size="large" data-region="ri"
+      data-search="breakwater portsmouth rhode island long neck cove sakonnet river jordan farm tidal riprap sweet briny">
+      <h2>Breakwater</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Narragansett Bay, Rhode Island (Long Neck Cove, Sakonnet River, Portsmouth)</li>
+        <li><span class="field-label">Farmer</span> Jordan family farm (est. 2021)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Mesh bag and tray culture; shallow-water farm with continuous tidal flushing through a riprap stone breakwater</li>
+        <li><span class="field-label">Grow-Out</span> ~2 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> High — Rhode Island coastal salinity; rated 3/5 brine intensity</li>
+        <li><span class="field-label">Size</span> Medium-large — 3.5" average</li>
+        <li><span class="field-label">Shell</span> Well-formed, clean; strong shells from energetic tidal flushing</li>
+        <li><span class="field-label">Tasting Notes</span> A perfect combination of briny and sweet followed by a mellow earthiness; toothy texture with subtle vegetal sweetness</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Named for the riprap stone breakwater that shelters the farm's Long Neck Cove location. The grower trained under oyster veterinarian Kerian Fennelly. Pairs well with a summer lager.
+      </div>
+    </article>
+
+    <article class="oyster" id="cable-creek"
+      data-salinity="medium" data-size="medium" data-region="ma"
+      data-search="cable creek cape cod massachusetts salt marsh tidal creek buttery salty rich">
+      <h2>Cable Creek</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Cape Cod, Massachusetts</li>
+        <li><span class="field-label">Farmer</span> Undocumented (small local operation)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Cage or tray culture in tidal creek environment</li>
+        <li><span class="field-label">Grow-Out</span> 18–24 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium — tidal creek buffered by salt marsh grasses</li>
+        <li><span class="field-label">Size</span> Medium — 2.5–3"</li>
+        <li><span class="field-label">Shell</span> Clean, moderately deep-cupped; salt marsh environment</li>
+        <li><span class="field-label">Tasting Notes</span> Salty, rich, and buttery; buttery finish attributed to plentiful surrounding salt marsh grasses; clean and approachable</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        A Cape Cod creek oyster whose flavor is shaped by the salt marsh ecosystem feeding the grow site. Farm details are not widely documented; origin confirmed as Cape Cod, MA.
+      </div>
+    </article>
+
+    <article class="oyster" id="carolina-envy"
+      data-salinity="high" data-size="small-medium" data-region="nc"
+      data-search="carolina envy stump sound north carolina falling tide oyster green gill haslea ostrearia teal truffle seasonal winter">
+      <h2>Carolina Envy</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Stump Sound, North Carolina</li>
+        <li><span class="field-label">Farmer</span> Falling Tide Oyster Co. (Keith &amp; Linzy Walls, Holly Ridge / Sneads Ferry, NC)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Floating cage culture</li>
+        <li><span class="field-label">Grow-Out</span> ~18–24 months (inferred; not officially documented)</li>
+        <li><span class="field-label">Seasonal Availability</span> Winter and early spring — green gill coloration appears in fall, deepens through winter, fades as waters warm in spring</li>
+        <li><span class="field-label">Salinity</span> High — Stump Sound tidal inlets</li>
+        <li><span class="field-label">Size</span> Not documented</li>
+        <li><span class="field-label">Shell</span> Deep cup; gills and mantle tinted teal to blue-green from native <em>Haslea ostrearia</em> microalgae — visible through the shell and striking when shucked</li>
+        <li><span class="field-label">Tasting Notes</span> Bold brine up front, earthy and nutty mid-palate, finishing with a rich truffle-like sweetness; green gill character adds distinct mushroom depth</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Carolina Envy is a green gill oyster — one of North Carolina's most distinctive seasonal products. The teal coloration comes from <em>Haslea ostrearia</em>, a microalgae native to select NC estuaries. The same algae (and flavor profile) famously defines France's Fines de Claires. Falling Tide also produces Carolina Daydreams, Top Seacrets, and Lea Island Reserves.
+      </div>
+    </article>
+
+    <article class="oyster" id="carolina-gold"
+      data-salinity="very-high" data-size="medium" data-region="nc"
+      data-search="carolina gold beaufort north carolina three little spats very salty atlantic">
+      <h2>Carolina Gold</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> North River, Newport River, Adams Creek, and Wards Creek — Beaufort, North Carolina</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Floating bags; single oysters only (no clusters); 17-acre farm</li>
+        <li><span class="field-label">Grow-Out</span> ~18 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round (same-day harvest to market)</li>
+        <li><span class="field-label">Salinity</span> Very high — 31–33 ppt; among the saltiest farmed oysters in the US</li>
+        <li><span class="field-label">Size</span> Medium — 2–3"</li>
+        <li><span class="field-label">Shell</span> Deep, well-formed cup; clean from floating bag technique</li>
+        <li><span class="field-label">Tasting Notes</span> Salty and briny upfront with a sweet finish; very clean ocean taste; meaty with good texture</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Twice-daily tidal exchange from the Atlantic maintains consistently very high salinity. Farm founded 2018, subsidiary of Three Little Spats Oyster Company.
+      </div>
+    </article>
+
+    <article class="oyster" id="carolina-jade"
+      data-salinity="medium" data-size="small-medium" data-region="nc"
+      data-search="carolina jade core sound north carolina sandbar oyster company clammerhead green gill haslea seasonal american jade">
+      <h2>Carolina Jade</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Core Sound, North Carolina</li>
+        <li><span class="field-label">Farmer</span> Sandbar Oyster Company (David "Clammerhead" Cessna &amp; Dr. Niels Lindquist, UNC Institute of Marine Sciences)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Off-bottom/suspended culture; patent-pending technique for raising green gill oysters with consistently strong shells and deep cups</li>
+        <li><span class="field-label">Grow-Out</span> ~3 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Late fall through early spring (October–March); jade-green coloration develops as water cools</li>
+        <li><span class="field-label">Salinity</span> Lower than other NC green gill varieties; specific ppt not documented</li>
+        <li><span class="field-label">Size</span> Not documented</li>
+        <li><span class="field-label">Shell</span> Normal appearance most of the year; gills develop distinctive jade-green hue in late fall from <em>Haslea ostrearia</em> microalgae</li>
+        <li><span class="field-label">Tasting Notes</span> Sweeter and crisper than other green gill varieties; bright, crisp, and salty with a clean finish; green gill character adds subtle mineral depth</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Carolina Jade is a green gill oyster — the same <em>Haslea ostrearia</em> microalgae that colors France's Fines de Claires tints the gills jade-green each winter. Sandbar Oyster Company pioneered consistent green gill cultivation with improved shell quality. Also marketed as "American Jade." Availability is tightly seasonal like Carolina Envy and Divine Pines.
+      </div>
+    </article>
+
+    <article class="oyster" id="divine-pines"
+      data-salinity="high" data-size="small-medium" data-region="nc"
+      data-search="divine pines topsail sound north carolina greengill haslea diatom n sea oyster">
+      <h2>Divine Pines</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Topsail Sound, North Carolina (adjacent to Lea-Hutaff Island and Holly Shelter Game Lands)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Aquaculture cages; farmed by N. Sea Oyster Co.</li>
+        <li><span class="field-label">Grow-Out</span> ~18 months (standard NC aquaculture)</li>
+        <li><span class="field-label">Seasonal Availability</span> Seasonal — late fall through early spring (November–March); greengill peak January–February</li>
+        <li><span class="field-label">Salinity</span> High — constant strong tidal exchange through the inlet</li>
+        <li><span class="field-label">Size</span> Small to medium (cocktail)</li>
+        <li><span class="field-label">Shell</span> Standard eastern oyster; distinctive <strong>green gills</strong> visible when shucked</li>
+        <li><span class="field-label">Tasting Notes</span> Rich, buttery, intensely briny; deep savory quality; phenolic undertones from proximity to pine forests; additional sweetness from the <em>Haslea</em> diatom</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        One of only a handful of places in the world producing natural greengill oysters. The green color comes from the rare diatom <em>Haslea ostrearia</em> — the same effect as France's <em>fines de claires vertes</em> — which also imparts antioxidant, antibacterial, and antiviral properties. Protected by vast Holly Shelter pine forest and untouched Lea-Hutaff Island. North Carolina's first and most prominent greengill producer.
+      </div>
+    </article>
+
+    <article class="oyster" id="fat-bastard"
+      data-salinity="medium" data-size="large" data-region="wa"
+      data-search="fat bastard willapa bay washington pacific oyster taylor shellfish shigoku large">
+      <h2>Fat Bastard</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Willapa Bay, Washington State</li>
+        <li><span class="field-label">Farmer</span> Taylor Shellfish Farms</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea gigas</em> (Pacific oyster)</li>
+        <li><span class="field-label">Farming Method</span> Floating tide-tumbled bags</li>
+        <li><span class="field-label">Grow-Out</span> ~2 years (longer than standard Shigoku for larger size)</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium — ~25 ppt</li>
+        <li><span class="field-label">Size</span> Large — 2.5–3.25"; notably plump and deep-cupped</li>
+        <li><span class="field-label">Shell</span> Round, smooth, very deep cup from tumbling; thick walls; clean appearance</li>
+        <li><span class="field-label">Tasting Notes</span> Bright, savory flavor; full brine with a sweet finish; plump and substantial; notes of melon; firm texture with generous liquor</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Essentially an oversized Shigoku — same farm, same technique, same terroir, just grown longer for a larger, rounder, heftier oyster.
+      </div>
+    </article>
+
+    <article class="oyster" id="french-kiss"
+      data-salinity="low" data-size="small-medium" data-region="nb"
+      data-search="french kiss miramichi bay new brunswick canada beau soleil aged hazelnut">
+      <h2>French Kiss</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Miramichi Bay, Acadian Peninsula, New Brunswick, Canada</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Suspension tray; same method as Beau Soleil, grown longer</li>
+        <li><span class="field-label">Grow-Out</span> 3–4 years total (Beau Soleil + 1–2 additional years)</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Low to moderate — 10–22 ppt; flavor registers as notably briny despite lower ppt</li>
+        <li><span class="field-label">Size</span> Medium — 3–3.25"; paisley-shaped shell profile</li>
+        <li><span class="field-label">Shell</span> Deeply cupped, paisley-shaped; full meats; consistent from suspension tray farming</li>
+        <li><span class="field-label">Tasting Notes</span> Salty and sweet with a subtle hazelnut finish; profound salinity and briny liquor; full body with tender flesh; deeper and more developed than Beau Soleil</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Directly related to Beau Soleil — same farm, same technique, same terroir, just older. The extra grow time creates a significantly more complex and meatier oyster. A side-by-side comparison with Beau Soleil illustrates the effect of age on oyster flavor.
+      </div>
+    </article>
+
+    <article class="oyster" id="great-white"
+      data-salinity="high" data-size="medium" data-region="ma"
+      data-search="great white barnstable harbor cape cod massachusetts cape cod oyster company melon citrus cucumber brine">
+      <h2>Great White</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Barnstable Harbor, Cape Cod, Massachusetts</li>
+        <li><span class="field-label">Farmer</span> Cape Cod Oyster Company</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Seedlings raised in North Bay; hand-grown and harvested in Barnstable Harbor; bottom culture in mesh bags or trays</li>
+        <li><span class="field-label">Grow-Out</span> 2–3 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> High — Barnstable Harbor full-ocean salinity</li>
+        <li><span class="field-label">Size</span> Medium — 2.5–3"</li>
+        <li><span class="field-label">Shell</span> Smooth edges, white to off-white or brownish coloring; consistent shape</li>
+        <li><span class="field-label">Tasting Notes</span> High salinity tapering into notes of green melon, citrus, and cucumber; the balance between saltiness and subtle fruit notes is the signature</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        One of Cape Cod Oyster Company's premium Barnstable Harbor offerings. The "Great White" name references both the surrounding Cape Cod waters and the oyster's pale shell color. A strong East Coast brine paired with distinctly West-Coast-style fruit notes.
+      </div>
+    </article>
+
+    <article class="oyster" id="hammerheads"
+      data-salinity="high" data-size="large" data-region="ma"
+      data-search="hammerheads west bay cape cod massachusetts cape cod oyster company disney springs bob getchell large shucking brine sweet">
+      <h2>Hammerheads</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Nantucket Sound, Cape Cod, Massachusetts</li>
+        <li><span class="field-label">Farmer</span> Cape Cod Oyster Company</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Bottom planted, sand-finished; naturally deep-cupped from the deep-channel grow site</li>
+        <li><span class="field-label">Grow-Out</span> 2–3 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> High — West Bay, Cape Cod</li>
+        <li><span class="field-label">Size</span> Large — 3–4"; notable size and depth</li>
+        <li><span class="field-label">Shell</span> Elongated with jagged, irregular shell edges resembling a hammerhead shark; deep cup; robust enough for high-volume shucking</li>
+        <li><span class="field-label">Tasting Notes</span> Strong brine up front evolving into a sweet aftertaste; clean finish with hints of minerality; "ocean-in-a-shell" character</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Originally commissioned by Chef Bob Getchell of the Boathouse restaurant at Disney Springs, who needed an oyster whose shell could survive shucking thousands per night. Cape Cod Oyster Company designed the grow protocol around that spec. The distinctive shark-fin shell shape is a direct result of the deep-channel, sand-finished farming method.
+      </div>
+    </article>
+
+    <article class="oyster" id="hearts-desire"
+      data-salinity="medium" data-size="small-medium" data-region="ma"
+      data-search="hearts desire plymouth bay massachusetts cape cod bear tide oysters muscadet">
+      <h2>Heart's Desire</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> White Flat, Plymouth Bay, Plymouth, Massachusetts (near the Mayflower's historic anchorage)</li>
+        <li><span class="field-label">Farmer</span> Bear Tide Oysters</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Off-bottom bags, tumbled, then transferred to trays for final grow-out</li>
+        <li><span class="field-label">Grow-Out</span> 18–24 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; peak winter/early spring</li>
+        <li><span class="field-label">Salinity</span> Moderate — rated ~2.5–3/5 intensity; 11–12 foot tidal swings from Cape Cod Bay</li>
+        <li><span class="field-label">Size</span> Medium — ~2.75"</li>
+        <li><span class="field-label">Shell</span> Standard eastern oyster form; mud/sand/silt bottom produces a rounded profile</li>
+        <li><span class="field-label">Tasting Notes</span> Creamy texture; light, delicate brine (shio broth-like quality); clean, refreshing finish; moderate and approachable saltiness</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Pangea Shellfish recommends pairing with Muscadet. Plymouth Bay's massive tidal range provides regular, fresh saltwater exchange that keeps the flavor clean and consistent.
+      </div>
+    </article>
+
+    <article class="oyster" id="irish-point"
+      data-salinity="medium-high" data-size="small-medium" data-region="pei"
+      data-search="irish point rustico harbour hope river prince edward island raspberry point oyster company pei">
+      <h2>Irish Point</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Rustico Harbour / Hope River area, North Shore, Prince Edward Island, Canada (Gulf of St. Lawrence)</li>
+        <li><span class="field-label">Farmer</span> Raspberry Point Oyster Company (Scott Linkletter; est. 1992; third-generation family operation)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Floating surface cages; submerged below the freeze line in winter to protect from PEI ice sheets</li>
+        <li><span class="field-label">Grow-Out</span> 4–6 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium to high — tidal exchange between Hope River and the Gulf of St. Lawrence; described as "full, mild salinity" to "strong salt" depending on season</li>
+        <li><span class="field-label">Size</span> Small to medium — 2.5–3" (cocktail)</li>
+        <li><span class="field-label">Shell</span> Deep-cupped for its size; clean from off-bottom floating cage farming; shells occasionally develop seasonal green hues from algae-rich waters</li>
+        <li><span class="field-label">Tasting Notes</span> Sweet brine entry; full salty ocean character mid-palate; smooth, clean mineral finish with earthy undertones; buttery and creamy meat; approachable and well-balanced</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        One of eight branded varieties from Raspberry Point Oyster Company, one of PEI's most established producers (35+ years, 26M+ oysters/year pre-Hurricane Fiona). Named for a geographic point near the Hope River growing site. Founded by the same family behind COWS Creamery. Winter harvest requires workers to cut through ice to access submerged cages. Traditional pairing suggestion: Irish whiskey.
+      </div>
+    </article>
+
+    <article class="oyster" id="james-river"
+      data-salinity="low" data-size="medium" data-region="va"
+      data-search="james river virginia chesapeake wild harvest jamestown historic sweet low brine">
+      <h2>James River</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> James River estuary, Virginia — Wreck Shoal and Newport News area; descended from reefs John Smith encountered in 1607</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Wild-harvested and aquaculture rack-and-bag</li>
+        <li><span class="field-label">Grow-Out</span> Wild: 3–5 years; aquaculture: 18–24 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round (triploid oysters used for consistent summer meats)</li>
+        <li><span class="field-label">Salinity</span> Low — 10–17 ppt (mesohaline zone; James River is a major freshwater source)</li>
+        <li><span class="field-label">Size</span> Medium — ~3"; often sold in larger "stew" or "select" sizes</li>
+        <li><span class="field-label">Shell</span> Rough, irregular, grayish-brown (wild); deeper cup in aquaculture-farmed specimens</li>
+        <li><span class="field-label">Tasting Notes</span> Mild and sweet with very low brininess; full, plump meats with slight chew; clean, mild finish with faint Blue Ridge watershed minerality; quintessential sweet Chesapeake oyster</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        One of the most historically significant oyster fisheries in the Americas — the James River reefs fed early Jamestown colonists. One of the last major wild fisheries still operating in the Chesapeake.
+      </div>
+    </article>
+
+    <article class="oyster" id="jimmy-fund-gold"
+      data-salinity="very-high" data-size="small-medium" data-region="me"
+      data-search="jimmy fund gold maquoit bay brunswick maine mere point oyster dana farber cancer charitable">
+      <h2>Jimmy Fund Gold</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Maquoit Bay, Brunswick, Maine</li>
+        <li><span class="field-label">Farmer</span> Mere Point Oyster Company</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Off-bottom floating cages; tumbled multiple times before market</li>
+        <li><span class="field-label">Grow-Out</span> 18–24 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Very high — Maquoit Bay has minimal freshwater influence and 8–10 foot tidal swings; rated 5/5 intensity</li>
+        <li><span class="field-label">Size</span> Medium — 2.5–2.75" (cocktail to select)</li>
+        <li><span class="field-label">Shell</span> Clean, grit-free from repeated tumbling; plump meats</li>
+        <li><span class="field-label">Tasting Notes</span> Bold, maximum brine upfront; crisp, clean finish; subtle sweetness and delicate minerality beneath the salt; full oceanic flavor</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        A charitable oyster — $4 from every bag sold is donated to Dana-Farber Cancer Institute for pediatric cancer research. One of the saltiest oysters produced in Maine. Pangea Shellfish recommends pairing with a mellow IPA.
+      </div>
+    </article>
+
+    <article class="oyster" id="katama"
+      data-salinity="high" data-size="large" data-region="ma"
+      data-search="katama bay marthas vineyard massachusetts signature oyster farm ryan julia smith edgartown renewable energy salt bomb large">
+      <h2>Katama</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Katama Bay, Martha's Vineyard, Massachusetts</li>
+        <li><span class="field-label">Farmer</span> Signature Oyster Farm (Ryan &amp; Julia Smith, est. 2006, Edgartown, MA)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Tidal-powered upwellers → floating bins → off-bottom rack-and-bag; wind-powered daily tumbling; nearly all machinery powered by renewable wind and tidal energy</li>
+        <li><span class="field-label">Grow-Out</span> 2–3 years</li>
+        <li><span class="field-label">Seasonal Availability</span> October–May (retail); summer farm tours offered July–August</li>
+        <li><span class="field-label">Salinity</span> High — deep bay with strong 5–7 foot tides and full open-ocean influence</li>
+        <li><span class="field-label">Size</span> Large — average 3.75"; selects grade</li>
+        <li><span class="field-label">Shell</span> Clean white, hard, deep cups from daily tumbling; naturally scrubbed by strong currents over sandy substrate; stout and palm-sized</li>
+        <li><span class="field-label">Tasting Notes</span> "Salt bomb with a sweet-as-candy finish" — intense, caper-like brine up front, transitioning through vegetal and earthy undertones, finishing with roasted sweet potato notes and cream</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        One of the few US oyster farms powered almost entirely by renewable energy. Distinct from Sweet Petite (also from Katama Bay, different farm). Distributed through Island Creek Oysters. Production peaks March–August (~30,000/week). Katama Bay hosts ~12 farms producing 2+ million oysters/year.
+      </div>
+    </article>
+
+    <article class="oyster" id="kumamoto"
+      data-salinity="medium" data-size="small" data-region="wa"
+      data-search="kumamoto totten inlet washington california pacific taylor shellfish japanese deep cup buttery sweet melon gateway beginner">
+      <h2>Kumamoto</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Originally Yatsushiro Bay, Kumamoto Prefecture, Japan; now farmed primarily in Washington State (Totten Inlet) and California</li>
+        <li><span class="field-label">Farmer</span> Taylor Shellfish Farms (largest producer)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea sikamea</em> (Kumamoto oyster — distinct from Pacific <em>C. gigas</em>)</li>
+        <li><span class="field-label">Farming Method</span> Suspended cage or off-bottom tray culture; slow-growing cold-water farming</li>
+        <li><span class="field-label">Grow-Out</span> 3–5 years (extremely slow growth)</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; peak fall through winter</li>
+        <li><span class="field-label">Salinity</span> Medium — 20–35 ppt (varies by site and tide)</li>
+        <li><span class="field-label">Size</span> Very small — rarely exceeds 2–3"; deep cup with large meat relative to shell</li>
+        <li><span class="field-label">Shell</span> Deeply fluted, petite, very deep-cupped; distinctive ruffled appearance; roughly round</li>
+        <li><span class="field-label">Tasting Notes</span> Creamy, buttery texture with sweet, mild, almost nutty flavor; signature melon-like finish; light brininess; exceptionally refreshing</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Introduced to the US after World War II, the Kumamoto has become one of the most beloved oysters in America. Its deep cup, small size, and consistently sweet flavor make it the ideal gateway oyster. The species' slow grow-out and limited range keep supply tight and demand perpetually high.
+      </div>
+    </article>
+
+    <article class="oyster" id="le-petite-barachois"
+      data-salinity="medium" data-size="small" data-region="pei"
+      data-search="le petite barachois cymbria prince edward island atlantic aqua farms pei lagoon cocktail">
+      <h2>Le Petite Barachois</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Cymbria, Prince Edward Island, Canada</li>
+        <li><span class="field-label">Farmer</span> Atlantic Aqua Farms</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Aquaculture cages; submerged in winter to avoid ice</li>
+        <li><span class="field-label">Grow-Out</span> Not specified; PEI aquaculture typically 3–5 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium — clean, cold PEI waters</li>
+        <li><span class="field-label">Size</span> Small — 2.5–3" (cocktail); intentionally harvested small</li>
+        <li><span class="field-label">Shell</span> Deep cup, clean, uniform from aquaculture farming</li>
+        <li><span class="field-label">Tasting Notes</span> Superb blend of sweet and salty; clean and balanced; ideal introductory oyster</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        "Barachois" refers to a coastal lagoon partially enclosed from the sea — a geography common in the Maritimes that provides nutrient-rich, protected growing conditions. The "Petit" designation signals harvest at cocktail size rather than full size.
+      </div>
+    </article>
+
+    <article class="oyster" id="little-bears"
+      data-salinity="medium" data-size="small-medium" data-region="ma"
+      data-search="little bears plymouth bay massachusetts family producer seaweed mineral sweet brine small">
+      <h2>Little Bears</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Plymouth Bay, Massachusetts</li>
+        <li><span class="field-label">Farmer</span> Small family producer (details undocumented)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Undocumented</li>
+        <li><span class="field-label">Grow-Out</span> Undocumented</li>
+        <li><span class="field-label">Seasonal Availability</span> Undocumented</li>
+        <li><span class="field-label">Salinity</span> Medium — Plymouth Bay</li>
+        <li><span class="field-label">Size</span> Undocumented</li>
+        <li><span class="field-label">Shell</span> Reportedly thick and can be challenging to shuck</li>
+        <li><span class="field-label">Tasting Notes</span> Rich mineral brine with seaweed notes and a sweet finish</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Limited online presence; farm origin and full profile have not been publicly documented. Shell is reportedly thick and can be challenging to shuck. Update this entry when harvest tag or direct supplier information becomes available.
+      </div>
+    </article>
+
+    <article class="oyster" id="love-shuck"
+      data-salinity="high" data-size="small-medium" data-region="me"
+      data-search="love shuck damariscotta river maine dodge cove marine farm oldest valentine granite mineral">
+      <h2>Love Shuck</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Damariscotta River, Maine</li>
+        <li><span class="field-label">Farmer</span> Dodge Cove Marine Farm (Maine's oldest working oyster farm; near 2,000-year-old Indigenous oyster middens)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Off-bottom and surface cage</li>
+        <li><span class="field-label">Grow-Out</span> 18–36 months (varies by grow-out location in the river)</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; often highlighted as a Valentine's Day offering</li>
+        <li><span class="field-label">Salinity</span> High — 28–32 ppt; massive tidal flushes, minimal freshwater dilution</li>
+        <li><span class="field-label">Size</span> Small to medium — 2.5–3"</li>
+        <li><span class="field-label">Shell</span> Deep cup, well-balanced; dense meat</li>
+        <li><span class="field-label">Tasting Notes</span> Bright mineral brine on opening; crisp entry; dense, meaty texture; light sweetness on the finish; distinctive granite-channel minerality from the Damariscotta River</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Dodge Cove Marine Farm is one of the oldest oyster operations in Maine. The Damariscotta River is arguably New England's premier oyster river — cold, clean, nutrient-dense water with significant tidal exchange producing reliably high-quality product.
+      </div>
+    </article>
+
+    <article class="oyster" id="lovers-river"
+      data-salinity="low" data-size="medium" data-region="nb"
+      data-search="lovers river acadian peninsula new brunswick canada floating tray sweet clean finish valentine sustainable">
+      <h2>Lovers River</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Acadian Peninsula, New Brunswick, Canada (specific river not publicly confirmed)</li>
+        <li><span class="field-label">Farmer</span> Not publicly disclosed; distributed through Santa Monica Seafood</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Floating bag/tray culture; gentle wave and tidal action naturally tumbles oysters, producing deep, elegant cups and clean, plump meats</li>
+        <li><span class="field-label">Grow-Out</span> ~4 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Low to medium — 10–22 ppt (typical Acadian Peninsula estuarine range)</li>
+        <li><span class="field-label">Size</span> Not documented; described as "full and supple meats"</li>
+        <li><span class="field-label">Shell</span> Deep, elegant cups from floating culture; clean appearance</li>
+        <li><span class="field-label">Tasting Notes</span> Full and supple meats with medium salinity and a clean, slightly sweet finish; delicate and balanced</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Rated "Green – Best Option" by Santa Monica Seafood for sustainability. The romantic name makes it a natural Valentine's Day feature. Part of New Brunswick's premium floating-culture tradition alongside Beau Soleil, French Kiss, and Sex on the Bay.
+      </div>
+    </article>
+
+    <article class="oyster" id="mama-mia"
+      data-salinity="medium" data-size="small-medium" data-region="pei"
+      data-search="mama mia prince edward island pei floating cage fruity medium brine">
+      <h2>Mama Mia</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Prince Edward Island, Canada</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Surface floating cages; cages submerged below freeze line in winter</li>
+        <li><span class="field-label">Grow-Out</span> Not specified; floating cage PEI oysters typically 4–5 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium — upfront medium brine transitioning to milder finish</li>
+        <li><span class="field-label">Size</span> Small to medium — 2.5–3"</li>
+        <li><span class="field-label">Shell</span> Hard-shell PEI profile; clean from surface cage farming</li>
+        <li><span class="field-label">Tasting Notes</span> Salty taste of the sea upfront, finishing more mild; medium brine with a slightly fruity finish</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        A smaller or newer PEI brand with limited additional public documentation. The winter ice management protocol (sinking cages below the freeze line) is standard for northern PEI producers.
+      </div>
+    </article>
+
+    <article class="oyster" id="malpeque"
+      data-salinity="medium" data-size="medium" data-region="pei"
+      data-search="malpeque bay prince edward island canada wild semi-wild historic world best 1900 paris world fair crisp lettuce">
+      <h2>Malpeque</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Malpeque Bay, Prince Edward Island, Canada</li>
+        <li><span class="field-label">Farmer</span> Multiple farms; Malpeque Bay Oyster Farms is the historic anchor operation</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Wild/semi-wild harvesting in glacial-depth bay; traditional PEI oyster culture</li>
+        <li><span class="field-label">Grow-Out</span> 5–8 years (slow cold-water growth)</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; salinity and sweetness varies seasonally as snowmelt dilutes bay in spring</li>
+        <li><span class="field-label">Salinity</span> Medium — briny with clean sweet finish; spring oysters taste milder as snowmelt dilutes salt</li>
+        <li><span class="field-label">Size</span> Medium — teardrop shaped, 2.5–3.5"</li>
+        <li><span class="field-label">Shell</span> Narrow teardrop or deep-cupped depending on grade; subtle pea-green tint</li>
+        <li><span class="field-label">Tasting Notes</span> Crisp lettuce-like flavor with noticeable brininess; clean and sweet finish; meaty and plump; balanced between ocean salinity and delicate sweetness</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Won "World's Best Oyster" at the 1900 Paris World Fair — one of the most storied oysters in North America. Malpeque is the generic regional name for PEI oysters; "true" Malpeques come from Malpeque Bay specifically. The name has become nearly synonymous with "Canadian oyster."
+      </div>
+    </article>
+
+    <article class="oyster" id="masonboro-pearl"
+      data-salinity="medium-high" data-size="medium" data-region="nc"
+      data-search="masonboro pearl north carolina middle sound mariculture topsail stump sounds buttery">
+      <h2>Masonboro Pearl</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Masonboro, Stump, and Topsail Sounds, North Carolina</li>
+        <li><span class="field-label">Farmer</span> Middle Sound Mariculture (named after the farmer's daughter, Pearl)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Half-shell aquaculture</li>
+        <li><span class="field-label">Grow-Out</span> ~18 months (standard NC aquaculture)</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round via aquaculture; peak flavor October–April</li>
+        <li><span class="field-label">Salinity</span> Medium to high — grown near Atlantic inlets providing consistent salt exposure</li>
+        <li><span class="field-label">Size</span> Medium — typically 2.5–3.5"</li>
+        <li><span class="field-label">Shell</span> Deep-cupped, clean; crafted for the half-shell market</li>
+        <li><span class="field-label">Tasting Notes</span> Salty, buttery, and rich; full-flavored with good meat fill</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Middle Sound Mariculture is one of North Carolina's more established half-shell producers, farming multiple sound systems.
+      </div>
+    </article>
+
+    <article class="oyster" id="mookiemoto"
+      data-salinity="high" data-size="medium" data-region="me"
+      data-search="mookiemoto damariscotta river maine mook sea farm bill mook kumamoto name briny mineral sweet">
+      <h2>Mookiemoto</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Damariscotta River, Midcoast Maine</li>
+        <li><span class="field-label">Farmer</span> Mook Sea Farm (est. 1985 by Bill Mook)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Surface cage culture; hatchery-raised from egg</li>
+        <li><span class="field-label">Grow-Out</span> Comparable to Moondancer: 18–24 months (undocumented)</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> High — Damariscotta River, 27–30 ppt</li>
+        <li><span class="field-label">Size</span> Undocumented (cocktail to medium inferred)</li>
+        <li><span class="field-label">Shell</span> Undocumented</li>
+        <li><span class="field-label">Tasting Notes</span> A briny kiss gives way to creamy sweetness with a cucumber-melon finish; emulates West Coast oyster character</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        The name "Mookiemoto" playfully combines "Mook" (the farm) with "moto" (evoking Kumamoto), but no confirmed <em>C. sikamea</em> cross has been documented. Likely a distinct size grade or grow-site variant from Mook Sea Farm — sister to Moondancer.
+      </div>
+    </article>
+
+    <article class="oyster" id="moondancer"
+      data-salinity="high" data-size="large" data-region="me"
+      data-search="moondancer damariscotta river maine mook sea farm bill mook hatchery briny mineral sweet vegetal">
+      <h2>Moondancer</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Damariscotta River, Midcoast Maine</li>
+        <li><span class="field-label">Farmer</span> Mook Sea Farm (est. 1985 by Bill Mook)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Surface cage culture; disease-resistant NEH® and 4DXB genetic lines; egg-to-market hatchery</li>
+        <li><span class="field-label">Grow-Out</span> 18–24 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> High — Damariscotta River, 27–30 ppt</li>
+        <li><span class="field-label">Size</span> Medium to large — 3–4" (Select and Signature grades)</li>
+        <li><span class="field-label">Shell</span> Clean, well-cupped; smooth from cage tumbling</li>
+        <li><span class="field-label">Tasting Notes</span> Big briny kiss up front that finishes with a sweet glow; mineral, earthy, and vegetal notes alongside the salt; briny with delicious minerality yielding medium sweetness</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Bill Mook is one of Maine's most influential oyster pioneers — Mook Sea Farm has been raising oysters on the Damariscotta since 1985, nearly single-handedly reviving Maine's aquaculture industry. Moondancer is their flagship product. Sister oyster to Mookiemoto.
+      </div>
+    </article>
+
+    <article class="oyster" id="moonrise"
+      data-salinity="medium" data-size="medium" data-region="ma"
+      data-search="moonrise cape cod massachusetts umami mineral sweet brine plump">
+      <h2>Moonrise</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Cape Cod, Massachusetts</li>
+        <li><span class="field-label">Farmer</span> Undocumented</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster, inferred)</li>
+        <li><span class="field-label">Farming Method</span> Undocumented</li>
+        <li><span class="field-label">Grow-Out</span> Undocumented</li>
+        <li><span class="field-label">Seasonal Availability</span> Undocumented</li>
+        <li><span class="field-label">Salinity</span> Medium — Cape Cod waters</li>
+        <li><span class="field-label">Size</span> Undocumented</li>
+        <li><span class="field-label">Shell</span> Undocumented</li>
+        <li><span class="field-label">Tasting Notes</span> Plump bite with intense brine; notes of umami; sweet mineral finish</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Farm details not publicly documented. Origin confirmed as Cape Cod, MA. Update this entry when harvest tag or direct supplier information becomes available.
+      </div>
+    </article>
+
+    <article class="oyster" id="nc-ikigai"
+      data-salinity="medium-high" data-size="small-medium" data-region="nc"
+      data-search="nc ikigai newport river morehead city north carolina crystal coast oysters kyle frey melon cucumber">
+      <h2>NC Ikigai</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Newport River, Morehead City, North Carolina (Carteret County)</li>
+        <li><span class="field-label">Farmer</span> Crystal Coast Oysters (Kyle Frey &amp; Phillip Lannon, est. 2019)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Hybrid — seed started in bottom cages, transferred to floating bags at ~1 inch, returned to bottom cages for final grow-out on an intertidal sandbar; hand-cultivated</li>
+        <li><span class="field-label">Grow-Out</span> ~18 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Moderate to high — Newport River delivers a well-balanced mix of fresh and saltwater with strong algae/phytoplankton populations; historically one of North Carolina's premier wild oyster rivers</li>
+        <li><span class="field-label">Size</span> Cocktail to medium — typically 2.5–3.5"</li>
+        <li><span class="field-label">Shell</span> Deep-cupped, clean from the hybrid cage/floating bag method</li>
+        <li><span class="field-label">Tasting Notes</span> Sweet and salty with notes of melon and cucumber; balanced ocean character with a clean finish</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        "Ikigai" is a Japanese concept meaning "reason for being" — the name reflects the farm's philosophy toward their craft. Crystal Coast Oysters is one of a growing number of Carteret County aquaculture operations reviving the Newport River's centuries-long oyster heritage. The Newport River has historically produced wild oysters prized by Native Americans and European settlers alike.
+      </div>
+    </article>
+
+    <article class="oyster" id="olde-salt"
+      data-salinity="very-high" data-size="medium" data-region="va"
+      data-search="olde salt chincoteague bay virginia rappahannock oyster co croxton atlantic very salty fast grow">
+      <h2>Olde Salt</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Chincoteague Bay, Chincoteague Island, Virginia</li>
+        <li><span class="field-label">Farmer</span> Rappahannock Oyster Co. (Travis and Ryan Croxton)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Off-bottom tray/cage</li>
+        <li><span class="field-label">Grow-Out</span> ~6 months — remarkably fast due to high-salinity, high-nutrient environment; roughly one-third the time of the Rappahannock River oyster</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; best September–April (triploid oysters used in summer)</li>
+        <li><span class="field-label">Salinity</span> Very high — 28–33 ppt; Chincoteague Bay is fed almost exclusively by the Atlantic through Chincoteague Inlet; one of the saltiest oyster environments on the East Coast</li>
+        <li><span class="field-label">Size</span> Medium — ~3"</li>
+        <li><span class="field-label">Shell</span> Consistent, clean shells from off-bottom farming; white to gray exterior, deep cup, springy meats</li>
+        <li><span class="field-label">Tasting Notes</span> Bold, bracing seaside brininess; true taste of fresh seawater; smooth, clean follow-through without aftertaste; the epitome of a salty East Coast oyster</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Rappahannock Oyster Co. deliberately sited this oyster at the extreme high-salinity end of their portfolio as a counterpoint to their freshwater-influenced Rappahannock River oyster. The 6-month grow-out is among the fastest of any East Coast half-shell oyster.
+      </div>
+    </article>
+
+    <article class="oyster" id="olympic-view"
+      data-salinity="medium-high" data-size="small-medium" data-region="wa"
+      data-search="olympic view totten inlet bruceport washington south puget sound pacific oyster pangea shellfish iodine watermelon rind fast">
+      <h2>Olympic View</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Totten Inlet, Bruceport, Washington (South Puget Sound)</li>
+        <li><span class="field-label">Farmer</span> Undocumented (confirmed through Pangea Shellfish)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea gigas</em> (Pacific oyster)</li>
+        <li><span class="field-label">Farming Method</span> Intertidal, bag to beach; powerful current and tide action on a gravelly, steep beach</li>
+        <li><span class="field-label">Grow-Out</span> ~12 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium to high — Totten Inlet mixing with Nisqually Reach glacial nutrients</li>
+        <li><span class="field-label">Size</span> Small-medium — 2.75" average</li>
+        <li><span class="field-label">Shell</span> Firm, gravelly beach finish; steep intertidal beach and strong currents produce hard, well-formed shells</li>
+        <li><span class="field-label">Tasting Notes</span> Fragrant flavor profile with a touch of iodine hovering over a robust watermelon rind base; clean and distinctive</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Named for the spectacular views of the Olympic Mountains visible from the farm's beach. Located in a rare South Sound location that receives powerful currents — glacial nutrients from Nisqually Reach mix with ocean saltwater to create exceptional growing conditions for a fast-maturing Pacific oyster.
+      </div>
+    </article>
+
+    <article class="oyster" id="pink-moon"
+      data-salinity="medium-high" data-size="small" data-region="pei"
+      data-search="pink moon new london bay prince edward island pei north shore hope river complex">
+      <h2>Pink Moon</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> New London Bay, Prince Edward Island, Canada (wild north shore; influenced by Hope River)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Floating suspension cages</li>
+        <li><span class="field-label">Grow-Out</span> 4–6 years — cold Atlantic-facing bay waters significantly slow growth</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round (PEI producers manage cages for winter conditions)</li>
+        <li><span class="field-label">Salinity</span> Medium to high — ~32 ppt; cold New London Bay with Hope River nutrient influence</li>
+        <li><span class="field-label">Size</span> Small — 2.5–3" (cocktail)</li>
+        <li><span class="field-label">Shell</span> Pale to pinkish-colored with wavy or fluted edges; traditional oval to teardrop shape; medium cup depth</li>
+        <li><span class="field-label">Tasting Notes</span> Rich and briny; opens with bright, crisp brininess, transitions to smooth, sweet, almost buttery body, finishes with a distinct mineral note; impeccable salt balance; one of the more complex PEI oysters</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        New London Bay is one of the most northerly oyster-growing areas on PEI's wild north shore. The 4–6 year grow period is long even by PEI standards. The Hope River provides nutrients and gentle tumbling currents.
+      </div>
+    </article>
+
+    <article class="oyster" id="queens-cup"
+      data-salinity="medium-high" data-size="small-medium" data-region="pei"
+      data-search="queens cup rustico bay new london bay prince edward island atlantic aqua farms two-stage terroir">
+      <h2>Queen's Cup</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Rustico Bay (grow-out) and New London Bay (finishing), North Shore, Prince Edward Island, Canada</li>
+        <li><span class="field-label">Farmer</span> Atlantic Aqua Farms (est. 1989; one of North America's largest shellfish producers; US operations based in Eliot, Maine)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Two-stage cage culture with tumbling — extended grow-out in nutrient-rich Rustico Bay, then a finishing period in the cooler, cleaner waters of New London Bay (partially within PEI National Park)</li>
+        <li><span class="field-label">Grow-Out</span> ~3–5 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; peak flavor September–April when cold water concentrates glycogen and flavor</li>
+        <li><span class="field-label">Salinity</span> Moderate to high — ~29.5 ppt (regional North Rustico estimate); described as clean, balanced saltiness without extreme brininess</li>
+        <li><span class="field-label">Size</span> Small to medium — 2.5–3" (cocktail)</li>
+        <li><span class="field-label">Shell</span> Deep-cupped from years of tumbling and tidal rocking in cages; well-manicured and consistent</li>
+        <li><span class="field-label">Tasting Notes</span> Salty-sweet opening; plump, silky meat; earthy mineral finish; clean and balanced — the New London Bay finishing stage contributes a cooler, crisper closing character</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        The two-bay growing method — Rustico Bay grow-out, New London Bay finish — is the oyster's defining differentiating feature, functioning like a terroir-shaping finishing stage for the final flavor profile. The name likely references PEI's royal heritage (the province is named for Prince Edward, Duke of Kent).
+      </div>
+    </article>
+
+    <article class="oyster" id="red-raider"
+      data-salinity="medium-high" data-size="medium" data-region="ma"
+      data-search="red raider east coast fortune fish gourmet tidal flats 12 foot tides strong shell sweet salty crisp">
+      <h2>Red Raider</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> East Coast, USA — likely Rhode Island or Massachusetts; coastal inter-tidal flats (specific water body not publicly disclosed)</li>
+        <li><span class="field-label">Farmer</span> Not publicly disclosed; distributed by Fortune Fish &amp; Gourmet</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Bottom culture on sandy inter-tidal flats; 12-foot tidal range naturally hardens shells and strengthens adductor muscles through repeated air exposure</li>
+        <li><span class="field-label">Grow-Out</span> Not documented</li>
+        <li><span class="field-label">Seasonal Availability</span> Not documented</li>
+        <li><span class="field-label">Salinity</span> Medium to high (specific ppt not documented)</li>
+        <li><span class="field-label">Size</span> Not documented</li>
+        <li><span class="field-label">Shell</span> Hard, firm shells strengthened by extreme tidal action</li>
+        <li><span class="field-label">Tasting Notes</span> Sweet and salty with a bright, crisp finish</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        The defining feature of Red Raider growing conditions is the 12-foot tidal range — one of the largest on the US East Coast — which forces repeated aerial exposure, producing unusually hard shells and tightly developed adductor muscles. Sourcing details are not publicly disclosed.
+      </div>
+    </article>
+
+    <article class="oyster" id="rappahannock"
+      data-salinity="low" data-size="small-medium" data-region="va"
+      data-search="rappahannock river virginia chesapeake bay croxton sweet buttery low salt minerality awarded">
+      <h2>Rappahannock</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Mouth of the Rappahannock River where it meets the Chesapeake Bay, Virginia</li>
+        <li><span class="field-label">Farmer</span> Rappahannock Oyster Co. (family operation dating to 1899)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Off-bottom cage (elevated ~6" off seafloor)</li>
+        <li><span class="field-label">Grow-Out</span> 18–24 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; best October–April (triploid oysters used in summer)</li>
+        <li><span class="field-label">Salinity</span> Low — 13–17 ppt; confluence of Rappahannock River freshwater with the Chesapeake creates a highly brackish, mineral-rich environment</li>
+        <li><span class="field-label">Size</span> Small to medium — petite: 1.5–2"; choice: 2.5–3"</li>
+        <li><span class="field-label">Shell</span> Smooth, rippled, predominantly white; round, well-formed, deep cup; fluted edges; among the most aesthetically attractive eastern oyster shells</li>
+        <li><span class="field-label">Tasting Notes</span> Sweet, buttery, and full-bodied; understated low saltiness that lets natural oyster flavor dominate; refreshing, clean, crisp finish with distinctive Blue Ridge minerality; quintessential sweet Virginia oyster</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        One of America's most awarded and recognized oyster brands. Travis and Ryan Croxton revived a 100-year-old family business and helped spark the modern Virginia oyster renaissance. The low salinity / high minerality profile is a deliberate consequence of siting the farm at the river's mouth.
+      </div>
+    </article>
+
+    <article class="oyster" id="royal-miyagi"
+      data-salinity="medium-high" data-size="medium" data-region="bc"
+      data-search="royal miyagi sunshine coast baynes sound british columbia canada pacific oyster longline beach finish kiwi sweet melon">
+      <h2>Royal Miyagi</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Sunshine Coast and Baynes Sound, British Columbia, Canada</li>
+        <li><span class="field-label">Farmer</span> Multiple BC farms (undocumented)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea gigas</em> (Pacific oyster)</li>
+        <li><span class="field-label">Farming Method</span> Suspended longline culture for most of grow-out; beach culture finish during final 6 months to develop stronger shells and firmer meats</li>
+        <li><span class="field-label">Grow-Out</span> 2–3 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium to high — 25–32 ppt</li>
+        <li><span class="field-label">Size</span> Medium — 2.5–3"</li>
+        <li><span class="field-label">Shell</span> Firm, well-shaped from beach finishing; stronger shell than typical suspended-only Pacific oyster</li>
+        <li><span class="field-label">Tasting Notes</span> Smooth, creamy texture; mild brininess; unique kiwi-like finish; notes of white sugar sweetness, earthy organic undertones, crisp minerality, and melon; slightly astringent</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        The "Miyagi" name honors Miyagi Prefecture in Japan, the ancestral homeland of <em>C. gigas</em> aquaculture. The Royal Miyagi's two-phase grow-out (suspended then beach) delivers Pacific oyster flavor with East Coast-style shell durability. A versatile, widely available premium West Coast oyster.
+      </div>
+    </article>
+
+    <article class="oyster" id="savage-blonde"
+      data-salinity="high" data-size="small-medium" data-region="pei"
+      data-search="savage blonde savage harbour bay northeastern prince edward island atlantic shellfish dockendorff blonde shell">
+      <h2>Savage Blonde</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Savage Harbour Bay, northeastern Prince Edward Island, Canada</li>
+        <li><span class="field-label">Farmer</span> Atlantic Shellfish (Russell and Jacob Dockendorff)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Floating bags; flipped every few weeks to dry oysters, kill fouling, and tumble shells</li>
+        <li><span class="field-label">Grow-Out</span> 3–4 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round (including winter ice-breaking operations)</li>
+        <li><span class="field-label">Salinity</span> High — rated 4/5 intensity; 6–10 foot tidal range flushes the bay with Atlantic water twice daily; red clay and eelgrass bed substrate</li>
+        <li><span class="field-label">Size</span> Small to medium — ~2.75" average</li>
+        <li><span class="field-label">Shell</span> Smooth, blonde (light-colored) shells — the defining visual characteristic; strong construction</li>
+        <li><span class="field-label">Tasting Notes</span> Pronounced brine with crisp meats and a sweet, stony finish; sharp salinity, crunchy texture, sweet aftertaste; clean and direct</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        The distinctive "blonde" shell coloration is a natural result of eastern PEI water chemistry combined with the farming method. Pangea Shellfish recommends pairing with a farmhouse ale.
+      </div>
+    </article>
+
+    <article class="oyster" id="sex-on-the-bay"
+      data-salinity="medium-high" data-size="medium" data-region="nb"
+      data-search="sex on the bay bay of bedek new brunswick canada bottom cage briny buttery umami brioche">
+      <h2>Sex on the Bay</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Bay of Bedek, New Brunswick, Canada</li>
+        <li><span class="field-label">Farmer</span> Undocumented</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Bottom cage culture</li>
+        <li><span class="field-label">Grow-Out</span> Undocumented</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium to high — Atlantic New Brunswick waters</li>
+        <li><span class="field-label">Size</span> Undocumented</li>
+        <li><span class="field-label">Shell</span> Undocumented</li>
+        <li><span class="field-label">Tasting Notes</span> Moderate brine with plump, creamy meats; umami depth with a buttery mineral finish</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        A playfully named New Brunswick oyster. Detailed farm profile is not publicly documented. Origin confirmed as Bay of Bedek, New Brunswick, Canada.
+      </div>
+    </article>
+
+    <article class="oyster" id="shigoku"
+      data-salinity="medium" data-size="small-medium" data-region="wa"
+      data-search="shigoku willapa bay samish bay washington taylor shellfish pacific gigas deep cup tumbled ultimate">
+      <h2>Shigoku</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Willapa Bay and Samish Bay, Washington State</li>
+        <li><span class="field-label">Farmer</span> Taylor Shellfish Farms (first released commercially 2009)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea gigas</em> (Pacific oyster)</li>
+        <li><span class="field-label">Farming Method</span> Proprietary floating tide-tumbled bag system — bags attached to floats that rise and fall with tides, naturally tumbling oysters twice daily</li>
+        <li><span class="field-label">Grow-Out</span> ~2 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; peak flavor fall–spring (coldest water)</li>
+        <li><span class="field-label">Salinity</span> Medium — ~25 ppt</li>
+        <li><span class="field-label">Size</span> Small to medium — 2–2.5"; deep-cupped, compact, round; much smaller and rounder than a standard Pacific oyster</li>
+        <li><span class="field-label">Shell</span> Extraordinarily deep, smooth cup — arguably the deepest cup-to-size ratio of any commercial oyster; very round and compact from constant tumbling; clean, consistent appearance</li>
+        <li><span class="field-label">Tasting Notes</span> Crisp, clean, deeply briny upfront; moderate salinity balanced by subtle lingering sweetness; notes of melon or cucumber on the finish; creamy texture; plump, compact meat</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        "Shigoku" means "ultimate" in Japanese. Taylor Shellfish invented the specialized low-energy suspension tray system specifically for this oyster. The Willapa Bay and Samish Bay locations produce slightly different characteristics. Shigoku won numerous awards and transformed the premium Pacific oyster market.
+      </div>
+    </article>
+
+    <article class="oyster" id="southern-salt"
+      data-salinity="high" data-size="medium" data-region="nc"
+      data-search="southern salt new river inlet onslow county north carolina atlantic bold brine salty">
+      <h2>Southern Salt</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> New River Inlet, Onslow County, North Carolina</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Aquaculture; four tidal fluctuations daily deliver alternating fresh Atlantic seawater and upriver nutrients</li>
+        <li><span class="field-label">Grow-Out</span> ~18 months (standard NC aquaculture)</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; best fall–spring</li>
+        <li><span class="field-label">Salinity</span> High — New River Inlet is one of the more open-to-the-Atlantic inlet systems in NC, providing sustained high-salinity conditions</li>
+        <li><span class="field-label">Size</span> Medium — typically 2.5–3.5"</li>
+        <li><span class="field-label">Shell</span> Deep-cupped, clean; grown for the half-shell market</li>
+        <li><span class="field-label">Tasting Notes</span> Packed with brine and ocean-fresh flavor; bold, direct salt character; suitable both raw and lightly steamed</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        The name directly references the flavor profile — this oyster is marketed primarily on its salinity. New River Inlet's Atlantic exposure is the defining geographic feature.
+      </div>
+    </article>
+
+    <article class="oyster" id="spindrift"
+      data-salinity="medium-high" data-size="medium" data-region="ma"
+      data-search="spindrift westport massachusetts buzzards bay westport sea farms mineral cream brine tidal high-flow">
+      <h2>Spindrift</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Buzzards Bay, Massachusetts (mouth of the West Branch of the Westport River)</li>
+        <li><span class="field-label">Farmer</span> Westport Sea Farms</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Seed in shore trays (exposed 25–50% of day by tide); moved to bottom cages on ocean floor at ~0.5"; strong 3-foot tidal range and high-flow currents</li>
+        <li><span class="field-label">Grow-Out</span> ~24 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium to high — Buzzards Bay with freshwater creek influence adding mineral complexity</li>
+        <li><span class="field-label">Size</span> Medium — 2.5–3"</li>
+        <li><span class="field-label">Shell</span> Clean, moderately deep-cupped; high-energy tidal location produces sturdy shells</li>
+        <li><span class="field-label">Tasting Notes</span> Intense mineral brine with a sweet, lingering cream finish; complex brine with a hint of sweet cream; distinct Buzzards Bay mineral character</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Neighbor to the Beach Plum in the same Westport River watershed but grown by a separate farm using different methods. The salt pond and freshwater creek proximity imparts a layered mineral-cream quality that distinguishes Spindrift from other Buzzards Bay oysters.
+      </div>
+    </article>
+
+    <article class="oyster" id="sweet-petite"
+      data-salinity="medium-high" data-size="small" data-region="ma"
+      data-search="sweet petite katama bay marthas vineyard massachusetts jack blake wind tumbler cocktail approachable">
+      <h2>Sweet Petite</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Katama Bay, Martha's Vineyard, Massachusetts</li>
+        <li><span class="field-label">Farmer</span> Jack Blake</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Semi-tumbled, off-bottom cage farming with a distinctive wind-powered tumbler</li>
+        <li><span class="field-label">Grow-Out</span> Not specified; harvested intentionally at small cocktail size</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round (Massachusetts oysters generally available year-round)</li>
+        <li><span class="field-label">Salinity</span> Medium to high — oceanic character; Katama Bay is open to Atlantic influence through an inlet</li>
+        <li><span class="field-label">Size</span> Small (cocktail) — intentionally harvested smaller than the companion Sweet Neck oyster</li>
+        <li><span class="field-label">Shell</span> Semi-tumbled method produces a cleaner, rounder shell than wild-grown</li>
+        <li><span class="field-label">Tasting Notes</span> Sweet and salty; mild and well-rounded; approachable and balanced; not aggressively meaty; pairs well with fruity or aromatic whites</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        The wind-powered tumbling system is an environmentally innovative farming method. Designed for ease of eating and approachability, especially for newcomers to raw oysters.
+      </div>
+    </article>
+
+    <article class="oyster" id="ta"
+      data-salinity="medium" data-size="small-medium" data-region="nc"
+      data-search="t&a varnamtown brunswick county north carolina lockwood folly river intracoastal waterway">
+      <h2>T&amp;A</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Varnamtown, Brunswick County, North Carolina (Lockwood Folly River / ICW area)</li>
+        <li><span class="field-label">Farmer</span> T&amp;A Oyster Company</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Aquaculture; exact method not publicly documented — standard NC half-shell aquaculture typically uses floating bags or off-bottom cages</li>
+        <li><span class="field-label">Grow-Out</span> ~18 months (standard NC aquaculture)</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; best fall–spring</li>
+        <li><span class="field-label">Salinity</span> Moderate — Lockwood Folly River and Intracoastal Waterway; mix of tidal Atlantic influence and river input</li>
+        <li><span class="field-label">Size</span> Not publicly documented; likely cocktail to medium (2.5–3")</li>
+        <li><span class="field-label">Shell</span> Not publicly documented</li>
+        <li><span class="field-label">Tasting Notes</span> Not publicly documented; Brunswick County oysters in this salinity range are typically mild to moderately briny with a clean, sweet finish</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Varnamtown is a small fishing community on the Lockwood Folly River with a deep oyster harvesting tradition — Carson Varnam's Shellfish Market has operated in the community since the early 1970s. T&amp;A Oyster Company is a small, newer aquaculture operation carrying on this local legacy. The name uses the founders' initials. Limited public documentation reflects the farm's small scale and direct-to-market focus.
+      </div>
+    </article>
+
+    <article class="oyster" id="taylor-virginica"
+      data-salinity="medium-high" data-size="large" data-region="wa"
+      data-search="taylor virginica totten inlet puget sound washington taylor shellfish rare east coast west coast atlantic pacific">
+      <h2>Taylor Virginica</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Totten Inlet, southern Puget Sound, Washington State (small quantities also from Samish Bay)</li>
+        <li><span class="field-label">Farmer</span> Taylor Shellfish Farms</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster) — one of the only commercial West Coast operations successfully cultivating an Atlantic species</li>
+        <li><span class="field-label">Farming Method</span> Beach/rack farming at Totten Inlet where algae-rich Little Skookum Inlet water mixes with deeper Puget Sound water</li>
+        <li><span class="field-label">Grow-Out</span> 3–5 years to reach 3.5" (significantly slower than Pacific oyster due to Atlantic species adaptation challenges)</li>
+        <li><span class="field-label">Seasonal Availability</span> Extremely limited and highly seasonal — peak fall and winter; Taylor Shellfish now reserves nearly all production for their own Seattle restaurants, making these scarce commercially</li>
+        <li><span class="field-label">Salinity</span> Medium to high — Totten Inlet algae-rich freshwater mixing with Puget Sound; firmly briny flavor profile</li>
+        <li><span class="field-label">Size</span> Medium to large — typically 3–3.5" at market</li>
+        <li><span class="field-label">Shell</span> Pear-shaped; flat top, slightly concave bottom; smoother and more symmetrical than Pacific oyster (<em>C. gigas</em>); lacks the sharp flutes of a standard Pacific; moderate, well-formed cup</li>
+        <li><span class="field-label">Tasting Notes</span> Firm, full meats with heavy brine leading to a buttery taste; hint of sweetness on the finish; crisp and clean; notable Blue Ridge-meets-Pacific mineral quality; more complex and meatier than Pacific oysters from the same waters</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Considered one of the rarest and most collectible oysters in North America. Won Best Flavor at the East Coast Shellfish Growers Association competition — remarkable for a West Coast farm. The challenge of growing a distinctly Atlantic species in Pacific waters has been solved only at Totten Inlet, where unique algae-water chemistry creates a viable analog to East Coast conditions. Supply perpetually falls short of demand.
+      </div>
+    </article>
+
+    <article class="oyster" id="tuxedo"
+      data-salinity="medium-high" data-size="medium" data-region="pei"
+      data-search="tuxedo cascumpec bay prince edward island pei suspension tidal tumbled striped shell black white banding sweet delicate">
+      <h2>Tuxedo</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Cascumpec Bay, Prince Edward Island, Canada</li>
+        <li><span class="field-label">Farmer</span> Undocumented (PEI aquaculture operation)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Tide-tumbled suspension culture; constant wave and tidal action polishes and strengthens shells</li>
+        <li><span class="field-label">Grow-Out</span> 3–4 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Medium to high — PEI north coast</li>
+        <li><span class="field-label">Size</span> Medium — 3.25" average</li>
+        <li><span class="field-label">Shell</span> Distinctive darker brown shell with alternating black and white banding; tuxedo-like contrasting stripes. Strong, uniform, easy to shuck.</li>
+        <li><span class="field-label">Tasting Notes</span> Delicate meats with good brine; slightly sweet notes; clean finish</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        One of PEI's most visually striking oysters — the tuxedo-like black-and-white shell banding is natural, not a processing artifact, and makes these instantly recognizable on a raw bar platter. The 3–4 year grow-out in cold Cascumpec Bay water produces a refined, delicate flavor despite the bold shell appearance.
+      </div>
+    </article>
+
+    <article class="oyster" id="watch-hill"
+      data-salinity="high" data-size="medium" data-region="ri"
+      data-search="watch hill winnapaug pond westerly rhode island gardner family granite minerality lime butter cream high salinity">
+      <h2>Watch Hill</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Winnapaug Pond, Westerly, Rhode Island (100 yards from the open Atlantic Ocean)</li>
+        <li><span class="field-label">Farmer</span> Jeff Gardner &amp; family (over 25 years)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Cage culture in nutrient-rich barrier-beach pond; natural barrier beach provides ocean proximity with storm protection</li>
+        <li><span class="field-label">Grow-Out</span> 2–3 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> High — near-ocean pond; crisp, punchy brine</li>
+        <li><span class="field-label">Size</span> Medium — 2.5–3"</li>
+        <li><span class="field-label">Shell</span> Clean, well-cupped; granitic Westerly bedrock visually tints shells and influences flavor</li>
+        <li><span class="field-label">Tasting Notes</span> High salinity up front; full-bodied, creamy transition; mellow buttery sweetness; distinctive granitic minerality; with a lime squeeze: citrus-salt entry with butter and sweet finish</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        The Gardner family has farmed Winnapaug Pond for over 25 years — one of Rhode Island's most established oyster operations. Water percolates through Westerly's signature granite bedrock before reaching the farm, imparting the distinctive minerality the oyster is known for. One of the true "Rhodie" classics.
+      </div>
+    </article>
+
+    <article class="oyster" id="wellfleet"
+      data-salinity="high" data-size="medium" data-region="ma"
+      data-search="wellfleet cape cod massachusetts appellation alliance bottom cage rack wild centuries tradition salty seaweed crisp mineral">
+      <h2>Wellfleet</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Wellfleet Harbor, Cape Cod, Massachusetts</li>
+        <li><span class="field-label">Farmer</span> Multiple farms (Wellfleet Oyster Alliance coordinates the appellation)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Various — bottom culture, cage, rack-and-bag; Wellfleet is a growing appellation, not a single farm</li>
+        <li><span class="field-label">Grow-Out</span> 3–5 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round; especially prized fall through spring</li>
+        <li><span class="field-label">Salinity</span> High — 28–30 ppt</li>
+        <li><span class="field-label">Size</span> Medium — 2.5–3"; plump meats</li>
+        <li><span class="field-label">Shell</span> Clean, deep-cupped; brown to grey exterior; classic New England appearance</li>
+        <li><span class="field-label">Tasting Notes</span> Clean, salty, and crisp upfront; prominent brine followed by a hint of sweetness; distinct seaweed finish; delicate mineral undertones; refreshing and complex</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        One of the most famous oyster appellations in North America — "Wellfleet" on a menu is a signal of quality and terroir. The designation applies to all oysters grown within Wellfleet waters; individual farms vary. The town has been synonymous with Cape Cod oyster culture for centuries.
+      </div>
+    </article>
+
+    <article class="oyster" id="white-stone"
+      data-salinity="medium" data-size="medium" data-region="va"
+      data-search="white stone north point virginia chesapeake bay tom perry rack-and-bag open bay surf mushroom miso umami sweet">
+      <h2>White Stone</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Chesapeake Bay, Virginia (North Point, just north of the Rappahannock River)</li>
+        <li><span class="field-label">Farmer</span> White Stone Oyster Company (est. 2015 by Tom Perry)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Rack-and-bag culture; the first oyster farm to grow oysters entirely in the open Chesapeake Bay; oysters float in unforgiving Chesapeake surf for their entire lives</li>
+        <li><span class="field-label">Grow-Out</span> 18–24 months</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> Low to medium — 15–20 ppt (blend of Rappahannock freshwater and Chesapeake Bay salinity)</li>
+        <li><span class="field-label">Size</span> Medium — 2.5–3"</li>
+        <li><span class="field-label">Shell</span> Clean, uniform from consistent surf exposure; rack-and-bag produces consistent sizing</li>
+        <li><span class="field-label">Tasting Notes</span> Sweet mushroom and vegetal notes upfront; salty miso finish; the relatively low Chesapeake salinity produces distinctly earthy, sweet flavors instead of sharp brine</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Tom Perry founded White Stone in 2015 as the first operation to grow oysters fully exposed to open Chesapeake Bay conditions rather than in protected coves or inlets. The blend of freshwater from the Rappahannock and Bay salinity creates the unusually low-salinity, umami-forward profile.
+      </div>
+    </article>
+
+    <article class="oyster" id="wianno"
+      data-salinity="high" data-size="medium" data-region="ma"
+      data-search="wianno cape cod bay nantucket sound massachusetts barnstable osterville dual site bottom rack-and-bag briny sweet meaty always three inches">
+      <h2>Wianno</h2>
+      <ul>
+        <li><span class="field-label">Origin</span> Nantucket Sound, Cape Cod, Massachusetts (Osterville / Barnstable area)</li>
+        <li><span class="field-label">Farmer</span> Wianno Oyster (WiAnno brand; multiple grow sites)</li>
+        <li><span class="field-label">Species</span> <em>Crassostrea virginica</em> (Eastern oyster)</li>
+        <li><span class="field-label">Farming Method</span> Rack-and-bag (Barnstable Harbor) and bottom-planted (West Bay); dual-site approach maximizes flavor and shell strength</li>
+        <li><span class="field-label">Grow-Out</span> 2–3 years</li>
+        <li><span class="field-label">Seasonal Availability</span> Year-round</li>
+        <li><span class="field-label">Salinity</span> High — Cape Cod Bay and Nantucket Sound open-ocean exposure</li>
+        <li><span class="field-label">Size</span> Medium — consistently ~3"; brown top, green and white bottom shell</li>
+        <li><span class="field-label">Shell</span> Deep-cupped for its size; brown exterior, green/white interior; well-formed and hand-harvested</li>
+        <li><span class="field-label">Tasting Notes</span> Impeccably clean; sweet, briny flavor; slightly pink/white meat; profoundly salty with a sweet undertone; medium brine with excellent mouthfeel</li>
+      </ul>
+      <div class="notable">
+        <span class="notable-label">Notable</span>
+        Wianno is named for the historic village of Wianno on the south shore of Cape Cod. The dual grow-site approach (bottom-planted in West Bay for depth of flavor + off-bottom cages in Barnstable Harbor for consistency) is unusual and produces a remarkably well-rounded oyster. Always three inches — a defining quality standard.
+      </div>
+    </article>
+
+    <!-- ── Quick Reference Table ── -->
+    <section id="quick-reference">
+      <h2>Quick Reference Summary</h2>
+      <div class="table-wrap"><table>
+        <thead>
+          <tr>
+            <th>Oyster</th><th>Region</th><th>Species</th><th>Salinity</th><th>Size</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><a href="#barstool">Barstool</a></td><td>Rustico Bay, PEI, Canada</td><td><em>C. virginica</em></td><td>Medium–high</td><td>Small (2.5–3", cocktail)</td></tr>
+          <tr><td><a href="#beach-plum">Beach Plum</a></td><td>Westport, MA</td><td><em>C. virginica</em></td><td>Medium (24–28 ppt)</td><td>Medium (3–3.5")</td></tr>
+          <tr><td><a href="#bear-tide">Bear Tide</a></td><td>Plymouth Bay, MA</td><td><em>C. virginica</em></td><td>Medium–high</td><td>Large (robust)</td></tr>
+          <tr><td><a href="#beau-soleil">Beau Soleil</a></td><td>Miramichi Bay, NB, Canada</td><td><em>C. virginica</em></td><td>Low–medium (10–22 ppt)</td><td>Small (≤2.5")</td></tr>
+          <tr><td><a href="#blackberry">Blackberry</a></td><td>Chesapeake Bay / Little Wicomico River, VA</td><td><em>C. virginica</em></td><td>Medium (18–22 ppt)</td><td>Medium (2.5–3")</td></tr>
+          <tr><td><a href="#blue-point-ct">Blue Point, CT</a></td><td>Long Island Sound, CT</td><td><em>C. virginica</em></td><td>Medium–high</td><td>Medium–large (2.5–3.5")</td></tr>
+          <tr><td><a href="#boomamoto">Boomamoto</a></td><td>Barnstable Harbor, MA</td><td><em>C. virginica</em></td><td>Medium–high</td><td>Small (2.5" deep cup)</td></tr>
+          <tr><td><a href="#breakwater">Breakwater</a></td><td>Narragansett Bay, RI</td><td><em>C. virginica</em></td><td>High</td><td>Large (3.5")</td></tr>
+          <tr><td><a href="#cable-creek">Cable Creek</a></td><td>Cape Cod, MA</td><td><em>C. virginica</em></td><td>Medium</td><td>Medium (2.5–3")</td></tr>
+          <tr><td><a href="#carolina-envy">Carolina Envy</a></td><td>Stump Sound, NC</td><td><em>C. virginica</em></td><td>High</td><td>Not documented</td></tr>
+          <tr><td><a href="#carolina-gold">Carolina Gold</a></td><td>Newport River, NC</td><td><em>C. virginica</em></td><td>Very high (31–33 ppt)</td><td>Medium (2–3")</td></tr>
+          <tr><td><a href="#carolina-jade">Carolina Jade</a></td><td>Core Sound, NC</td><td><em>C. virginica</em></td><td>Medium (lower salinity)</td><td>Not documented</td></tr>
+          <tr><td><a href="#divine-pines">Divine Pines</a></td><td>Topsail Sound, NC</td><td><em>C. virginica</em></td><td>High</td><td>Small–medium (cocktail)</td></tr>
+          <tr><td><a href="#fat-bastard">Fat Bastard</a></td><td>Willapa Bay, WA</td><td><em>C. gigas</em></td><td>Medium (~25 ppt)</td><td>Large (2.5–3.25")</td></tr>
+          <tr><td><a href="#french-kiss">French Kiss</a></td><td>Miramichi Bay, NB, Canada</td><td><em>C. virginica</em></td><td>Low–medium (10–22 ppt)</td><td>Medium (3–3.25")</td></tr>
+          <tr><td><a href="#great-white">Great White</a></td><td>Barnstable Harbor, MA</td><td><em>C. virginica</em></td><td>High</td><td>Medium (2.5–3")</td></tr>
+          <tr><td><a href="#hammerheads">Hammerheads</a></td><td>Nantucket Sound, MA</td><td><em>C. virginica</em></td><td>High</td><td>Large (3–4")</td></tr>
+          <tr><td><a href="#hearts-desire">Heart's Desire</a></td><td>Plymouth Bay, MA</td><td><em>C. virginica</em></td><td>Moderate</td><td>Medium (~2.75")</td></tr>
+          <tr><td><a href="#irish-point">Irish Point</a></td><td>Rustico Harbour, PEI, Canada</td><td><em>C. virginica</em></td><td>Medium–high</td><td>Small–medium (2.5–3")</td></tr>
+          <tr><td><a href="#james-river">James River</a></td><td>James River, VA</td><td><em>C. virginica</em></td><td>Low (10–17 ppt)</td><td>Medium (~3")</td></tr>
+          <tr><td><a href="#jimmy-fund-gold">Jimmy Fund Gold</a></td><td>Maquoit Bay, ME</td><td><em>C. virginica</em></td><td>Very high</td><td>Medium (2.5–2.75")</td></tr>
+          <tr><td><a href="#katama">Katama</a></td><td>Katama Bay, Martha's Vineyard, MA</td><td><em>C. virginica</em></td><td>High</td><td>Large (~3.75")</td></tr>
+          <tr><td><a href="#kumamoto">Kumamoto</a></td><td>Totten Inlet, WA / CA</td><td><em>C. sikamea</em></td><td>Medium (20–35 ppt)</td><td>Very small (2–3")</td></tr>
+          <tr><td><a href="#le-petite-barachois">Le Petite Barachois</a></td><td>Barachois Pond, PEI, Canada</td><td><em>C. virginica</em></td><td>Medium</td><td>Small (2.5–3")</td></tr>
+          <tr><td><a href="#little-bears">Little Bears</a></td><td>Plymouth Bay, MA</td><td><em>C. virginica</em></td><td>Medium</td><td>Not documented</td></tr>
+          <tr><td><a href="#love-shuck">Love Shuck</a></td><td>Damariscotta River, ME</td><td><em>C. virginica</em></td><td>High (28–32 ppt)</td><td>Small–medium (2.5–3")</td></tr>
+          <tr><td><a href="#lovers-river">Lovers River</a></td><td>Acadian Peninsula, NB, Canada</td><td><em>C. virginica</em></td><td>Low–medium (10–22 ppt)</td><td>Not documented</td></tr>
+          <tr><td><a href="#malpeque">Malpeque</a></td><td>Malpeque Bay, PEI, Canada</td><td><em>C. virginica</em></td><td>Medium</td><td>Medium (2.5–3.5")</td></tr>
+          <tr><td><a href="#mama-mia">Mama Mia</a></td><td>Prince Edward Island, Canada</td><td><em>C. virginica</em></td><td>Medium</td><td>Small–medium (2.5–3")</td></tr>
+          <tr><td><a href="#masonboro-pearl">Masonboro Pearl</a></td><td>Masonboro Sound, NC</td><td><em>C. virginica</em></td><td>Medium–high</td><td>Medium (2.5–3.5")</td></tr>
+          <tr><td><a href="#mookiemoto">Mookiemoto</a></td><td>Damariscotta River, ME</td><td><em>C. virginica</em></td><td>High (27–30 ppt)</td><td>Not documented</td></tr>
+          <tr><td><a href="#moondancer">Moondancer</a></td><td>Damariscotta River, ME</td><td><em>C. virginica</em></td><td>High (27–30 ppt)</td><td>Large (3–4")</td></tr>
+          <tr><td><a href="#moonrise">Moonrise</a></td><td>Cape Cod, MA</td><td><em>C. virginica</em></td><td>Medium</td><td>Not documented</td></tr>
+          <tr><td><a href="#nc-ikigai">NC Ikigai</a></td><td>Newport River, NC</td><td><em>C. virginica</em></td><td>Moderate–high</td><td>Cocktail–medium (2.5–3.5")</td></tr>
+          <tr><td><a href="#olde-salt">Olde Salt</a></td><td>Chincoteague Bay, VA</td><td><em>C. virginica</em></td><td>Very high (28–33 ppt)</td><td>Medium (~3")</td></tr>
+          <tr><td><a href="#olympic-view">Olympic View</a></td><td>Totten Inlet, WA</td><td><em>C. gigas</em></td><td>Medium–high</td><td>Small-medium (2.75")</td></tr>
+          <tr><td><a href="#pink-moon">Pink Moon</a></td><td>New London Bay, PEI, Canada</td><td><em>C. virginica</em></td><td>Medium–high (~32 ppt)</td><td>Small (2.5–3")</td></tr>
+          <tr><td><a href="#queens-cup">Queen's Cup</a></td><td>Rustico Bay, PEI, Canada</td><td><em>C. virginica</em></td><td>Moderate–high (~29.5 ppt)</td><td>Small–medium (2.5–3")</td></tr>
+          <tr><td><a href="#red-raider">Red Raider</a></td><td>East Coast, USA</td><td><em>C. virginica</em></td><td>Medium–high</td><td>Not documented</td></tr>
+          <tr><td><a href="#rappahannock">Rappahannock</a></td><td>Rappahannock River, VA</td><td><em>C. virginica</em></td><td>Low (13–17 ppt)</td><td>Small–medium (1.5–3")</td></tr>
+          <tr><td><a href="#royal-miyagi">Royal Miyagi</a></td><td>Sunshine Coast / Baynes Sound, BC, Canada</td><td><em>C. gigas</em></td><td>Medium–high (25–32 ppt)</td><td>Medium (2.5–3")</td></tr>
+          <tr><td><a href="#savage-blonde">Savage Blonde</a></td><td>Savage Harbour, PEI, Canada</td><td><em>C. virginica</em></td><td>High</td><td>Small–medium (~2.75")</td></tr>
+          <tr><td><a href="#sex-on-the-bay">Sex on the Bay</a></td><td>Bay of Bedek, NB, Canada</td><td><em>C. virginica</em></td><td>Medium–high</td><td>Not documented</td></tr>
+          <tr><td><a href="#shigoku">Shigoku</a></td><td>Willapa Bay / Samish Bay, WA</td><td><em>C. gigas</em></td><td>Medium (~25 ppt)</td><td>Small–medium (2–2.5")</td></tr>
+          <tr><td><a href="#southern-salt">Southern Salt</a></td><td>New River Inlet, NC</td><td><em>C. virginica</em></td><td>High</td><td>Medium (2.5–3.5")</td></tr>
+          <tr><td><a href="#spindrift">Spindrift</a></td><td>Buzzards Bay, MA</td><td><em>C. virginica</em></td><td>Medium–high</td><td>Medium (2.5–3")</td></tr>
+          <tr><td><a href="#sweet-petite">Sweet Petite</a></td><td>Katama Bay, Martha's Vineyard, MA</td><td><em>C. virginica</em></td><td>Medium–high</td><td>Small (cocktail)</td></tr>
+          <tr><td><a href="#ta">T&amp;A</a></td><td>Lockwood Folly River, NC</td><td><em>C. virginica</em></td><td>Moderate</td><td>Cocktail–medium (2.5–3")</td></tr>
+          <tr><td><a href="#taylor-virginica">Taylor Virginica</a></td><td>Totten Inlet, Puget Sound, WA</td><td><em>C. virginica</em></td><td>Medium–high</td><td>Medium–large (3–3.5")</td></tr>
+          <tr><td><a href="#tuxedo">Tuxedo</a></td><td>Cascumpec Bay, PEI, Canada</td><td><em>C. virginica</em></td><td>Medium–high</td><td>Medium (3.25")</td></tr>
+          <tr><td><a href="#watch-hill">Watch Hill</a></td><td>Winnapaug Pond, RI</td><td><em>C. virginica</em></td><td>High</td><td>Medium (2.5–3")</td></tr>
+          <tr><td><a href="#wellfleet">Wellfleet</a></td><td>Wellfleet Harbor, MA</td><td><em>C. virginica</em></td><td>High (28–30 ppt)</td><td>Medium (2.5–3")</td></tr>
+          <tr><td><a href="#white-stone">White Stone</a></td><td>North Point, VA (Chesapeake Bay)</td><td><em>C. virginica</em></td><td>Low–medium (15–20 ppt)</td><td>Medium (2.5–3")</td></tr>
+          <tr><td><a href="#wianno">Wianno</a></td><td>Nantucket Sound, MA</td><td><em>C. virginica</em></td><td>High</td><td>Medium (~3")</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ── Back to top ── -->
+<button class="back-to-top" id="back-to-top" aria-label="Back to top">
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="2,8 6,4 10,8"/>
+  </svg>
+  Top
+</button>
+
+<script>
+(function () {
+  // ── State ──────────────────────────────────────────
+  const activeFilters = { salinity: new Set(), size: new Set(), region: new Set() };
+  let searchTerm      = '';
+  let filterServing   = false;          // is "on menu" filter active?
+  let currentSort     = 'az';           // current sort mode
+
+  // Populated from Firebase on load
+  let servingIds = new Set();
+
+  // ── Sort helpers ───────────────────────────────────
+  const SAL_SORT  = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
+  const SIZE_SORT = { 'small':1, 'small-medium':2, 'medium':3, 'large':4 };
+  const TOTAL = document.querySelectorAll('article.oyster').length;
+
+  // ── DOM refs ───────────────────────────────────────
+  const articles      = Array.from(document.querySelectorAll('article.oyster'));
+  const navItems      = Array.from(document.querySelectorAll('#nav-links li[data-target]'));
+  const searchInput   = document.getElementById('oyster-search');
+  const clearBtn      = document.getElementById('clear-filters');
+  const countEl       = document.getElementById('result-count');
+  const noResults     = document.getElementById('no-results');
+  const chipGroups    = document.querySelectorAll('.filter-chips[data-group]');
+  const servingToggle = document.getElementById('serving-toggle');
+
+  // Oyster names keyed by id (built from articles)
+  const oysterNames = {};
+  articles.forEach(a => {
+    oysterNames[a.id] = a.querySelector('h2').textContent.trim();
+  });
+
+  function syncOnMenuClass() {
+    articles.forEach(a => a.classList.toggle('on-menu', servingIds.has(a.id)));
+  }
+
+  // ── Core filter function ───────────────────────────
+  function applyFilters() {
+    const hasFilters = activeFilters.salinity.size || activeFilters.size.size ||
+                       activeFilters.region.size   || searchTerm || filterServing;
+    clearBtn.classList.toggle('visible', !!hasFilters);
+
+    let visible = 0;
+
+    articles.forEach(article => {
+      const id = article.id;
+
+      const matchSalinity = !activeFilters.salinity.size || activeFilters.salinity.has(article.dataset.salinity);
+      const matchSize     = !activeFilters.size.size     || activeFilters.size.has(article.dataset.size);
+      const matchRegion   = !activeFilters.region.size   || activeFilters.region.has(article.dataset.region);
+      const matchSearch   = !searchTerm || (article.dataset.search + ' ' + article.textContent).toLowerCase().includes(searchTerm);
+      const matchServing  = !filterServing || servingIds.has(id);
+
+      const show = matchSalinity && matchSize && matchRegion && matchSearch && matchServing;
+      article.classList.toggle('hidden', !show);
+      if (show) visible++;
+
+      const navItem = navItems.find(li => li.dataset.target === id);
+      if (navItem) navItem.classList.toggle('hidden-link', !show);
+    });
+
+    countEl.textContent = hasFilters ? `Showing ${visible} of ${TOTAL}` : '';
+    noResults.classList.toggle('visible', visible === 0);
+    sortArticles();
+  }
+
+  // ── Sort articles in the DOM ───────────────────────
+  function sortArticles() {
+    const mainEl  = document.querySelector('main');
+    const quickRef = document.getElementById('quick-reference');
+    const visible  = articles.filter(a => !a.classList.contains('hidden'));
+    const hidden   = articles.filter(a =>  a.classList.contains('hidden'));
+
+    if (currentSort === 'az') {
+      visible.sort((a, b) => a.querySelector('h2').textContent.trim().localeCompare(b.querySelector('h2').textContent.trim()));
+    } else if (currentSort === 'za') {
+      visible.sort((a, b) => b.querySelector('h2').textContent.trim().localeCompare(a.querySelector('h2').textContent.trim()));
+    } else if (currentSort === 'salinity') {
+      visible.sort((a, b) => (SAL_SORT[a.dataset.salinity] || 2) - (SAL_SORT[b.dataset.salinity] || 2));
+    } else if (currentSort === 'size') {
+      visible.sort((a, b) => (SIZE_SORT[a.dataset.size] || 3) - (SIZE_SORT[b.dataset.size] || 3));
+    }
+
+    // Re-insert: visible (sorted) first, then hidden, all before quick-reference
+    [...visible, ...hidden].forEach(a => mainEl.insertBefore(a, quickRef));
+  }
+
+  // ── Chip toggles (salinity / size / region) ────────
+  chipGroups.forEach(group => {
+    const groupName = group.dataset.group;
+    group.addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      const val = chip.dataset.value;
+      if (activeFilters[groupName].has(val)) {
+        activeFilters[groupName].delete(val);
+        chip.classList.remove('active');
+      } else {
+        activeFilters[groupName].add(val);
+        chip.classList.add('active');
+      }
+      applyFilters();
+    });
+  });
+
+  // ── Sort chips (mutually exclusive) ───────────────
+  const sortChipsEl = document.getElementById('sort-chips');
+  if (sortChipsEl) {
+    sortChipsEl.addEventListener('click', e => {
+      const chip = e.target.closest('.sort-chip');
+      if (!chip) return;
+      currentSort = chip.dataset.sort;
+      sortChipsEl.querySelectorAll('.sort-chip').forEach(c => c.classList.toggle('active', c === chip));
+      applyFilters();
+    });
+  }
+
+  // ── Search ─────────────────────────────────────────
+  searchInput.addEventListener('input', e => {
+    searchTerm = e.target.value.trim().toLowerCase();
+    applyFilters();
+  });
+
+  // ── Clear all ──────────────────────────────────────
+  clearBtn.addEventListener('click', () => {
+    activeFilters.salinity.clear();
+    activeFilters.size.clear();
+    activeFilters.region.clear();
+    searchTerm    = '';
+    filterServing = false;
+    searchInput.value = '';
+    document.querySelectorAll('.chip.active').forEach(c => c.classList.remove('active'));
+    filterServing = false;
+    servingToggle.classList.remove('active');
+    // Reset sort to A→Z and re-activate its chip
+    currentSort = 'az';
+    if (sortChipsEl) {
+      sortChipsEl.querySelectorAll('.sort-chip').forEach(c => c.classList.toggle('active', c.dataset.sort === 'az'));
+    }
+    applyFilters();
+  });
+
+  // ── Currently Serving toggle ───────────────────────
+  servingToggle.addEventListener('click', () => {
+    if (servingIds.size === 0) return; // nothing to filter if not loaded
+    filterServing = !filterServing;
+    servingToggle.classList.toggle('active', filterServing);
+    applyFilters();
+  });
+
+  // ── Mobile sidebar toggle ──────────────────────────
+  const sidebar    = document.getElementById('sidebar');
+  const navOverlay = document.getElementById('nav-overlay');
+  const menuBtn    = document.getElementById('menu-btn');
+
+  function openSidebar()  { sidebar.classList.add('open'); navOverlay.classList.add('open'); }
+  function closeSidebar() { sidebar.classList.remove('open'); navOverlay.classList.remove('open'); }
+
+  menuBtn.addEventListener('click', openSidebar);
+  navOverlay.addEventListener('click', closeSidebar);
+
+  // Close sidebar when a jump link is tapped on mobile
+  document.querySelectorAll('#nav-links a').forEach(a => {
+    a.addEventListener('click', () => { if (window.innerWidth <= 768) closeSidebar(); });
+  });
+
+  // ── Smooth scroll ──────────────────────────────────
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', e => {
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  });
+
+  // ── Make oyster names link to detail pages ─────────────────────────
+  document.querySelectorAll('article.oyster h2').forEach(h2 => {
+    const id   = h2.closest('article').id;
+    const link = document.createElement('a');
+    link.href  = `oyster.html?id=${id}`;
+    link.style.cssText = 'color:inherit;text-decoration:none;';
+    link.addEventListener('mouseenter', () => link.style.textDecoration = 'underline');
+    link.addEventListener('mouseleave', () => link.style.textDecoration = 'none');
+    // Move h2 text content (but not the ::after badge) into the link
+    const text = h2.childNodes[0];
+    if (text && text.nodeType === Node.TEXT_NODE) {
+      link.appendChild(text.cloneNode());
+      text.remove();
+      h2.prepend(link);
+    }
+  });
+
+  // ── Build hero panels: salinity dots + tasting notes ──────────────
+  (function buildHeroPanels() {
+    const DOTS = { 'low': 1, 'medium': 2, 'medium-high': 3, 'high': 4, 'very-high': 5 };
+    document.querySelectorAll('article.oyster').forEach(art => {
+      const h2 = art.querySelector('h2');
+      const ul = art.querySelector('ul');
+      if (!h2 || !ul) return;
+      let salinityLi = null, tastingLi = null;
+      ul.querySelectorAll('li').forEach(li => {
+        const lbl = li.querySelector('.field-label');
+        if (!lbl) return;
+        const key = lbl.textContent.replace(':','').trim().toLowerCase();
+        if (key === 'salinity')      salinityLi = li;
+        if (key === 'tasting notes') tastingLi  = li;
+      });
+      if (!salinityLi && !tastingLi) return;
+      const hero = document.createElement('div');
+      hero.className = 'oyster-hero';
+      if (salinityLi) {
+        const level  = art.dataset.salinity || 'medium';
+        const filled = DOTS[level] || 2;
+        const salText = salinityLi.textContent.replace(salinityLi.querySelector('.field-label').textContent,'').trim();
+        const dotsHtml = Array.from({length:5},(_,i) => `<span class="${i<filled?'filled':''}"></span>`).join('');
+        const row = document.createElement('div');
+        row.className = 'salinity-row';
+        row.innerHTML = `<span class="salinity-label-tag">Salinity</span><div class="salinity-dots">${dotsHtml}</div><span class="salinity-value-text">${salText}</span>`;
+        hero.appendChild(row);
+        salinityLi.remove();
+      }
+      if (tastingLi) {
+        const text = tastingLi.textContent.replace(tastingLi.querySelector('.field-label').textContent,'').trim();
+        const p = document.createElement('p');
+        p.className = 'tasting-hero';
+        p.textContent = text;
+        hero.appendChild(p);
+        tastingLi.remove();
+      }
+      h2.insertAdjacentElement('afterend', hero);
+    });
+  })();
+
+  // ── Back to top ────────────────────────────────────
+  (function() {
+    const btn = document.getElementById('back-to-top');
+    window.addEventListener('scroll', () => {
+      btn.classList.toggle('visible', window.scrollY > 300);
+    }, { passive: true });
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  })();
+
+  // ── Init ───────────────────────────────────────────
+  applyFilters(); // initial render with empty servingIds
+
+  // ── Firebase: load currently-serving IDs ───────────
+  (function () {
+    const firebaseConfig = {
+      apiKey: "AIzaSyDNuyGuzAmow0YehKlztihYn3l57--82L8",
+      authDomain: "half-shell-oyster-menu.firebaseapp.com",
+      databaseURL: "https://half-shell-oyster-menu-default-rtdb.firebaseio.com",
+      projectId: "half-shell-oyster-menu",
+      storageBucket: "half-shell-oyster-menu.firebasestorage.app",
+      messagingSenderId: "784452175310",
+      appId: "1:784452175310:web:2d56ed01d06bb39886179f"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    firebase.database().ref('menu/serving').once('value').then(snapshot => {
+      const ids = snapshot.val() || [];
+      servingIds = new Set(ids);
+      syncOnMenuClass();
+      if (ids.length === 0) servingToggle.style.opacity = '0.5';
+    }).catch(() => {});
+  })();
+
+})();
+</script>
+</body>
+</html>

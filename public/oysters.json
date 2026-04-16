@@ -1,0 +1,50 @@
+{
+  "lastUpdated": "2026-04-16T00:00:00Z",
+  "note": "This is a placeholder. Once Toast API credentials are added as GitHub Secrets, the sync-oysters workflow will overwrite this file every 15 minutes with live availability data.",
+  "oysterCount": 6,
+  "availableCount": 6,
+  "oysters": [
+    {
+      "id": "beau-soleil",
+      "name": "Beau Soleil",
+      "description": "Miramichi Bay, New Brunswick — delicate, mild brine, sweet clean finish",
+      "price": 4.00,
+      "available": true
+    },
+    {
+      "id": "kumamoto",
+      "name": "Kumamoto",
+      "description": "West Coast — deep cup, creamy, sweet with a honeydew finish",
+      "price": 4.00,
+      "available": true
+    },
+    {
+      "id": "blue-point-ct",
+      "name": "Blue Point, CT",
+      "description": "Long Island Sound — classic Atlantic brine, firm and bracing",
+      "price": 3.00,
+      "available": true
+    },
+    {
+      "id": "blackberry",
+      "name": "Blackberry",
+      "description": "Little Wicomico River, Virginia — sweet, buttery, clean briny finish",
+      "price": 3.00,
+      "available": true
+    },
+    {
+      "id": "beach-plum",
+      "name": "Beach Plum",
+      "description": "Buzzards Bay, Massachusetts — bold brine, dense creamy body, mineral finish",
+      "price": 4.00,
+      "available": true
+    },
+    {
+      "id": "french-kiss",
+      "name": "French Kiss",
+      "description": "Miramichi Bay, New Brunswick — light brine, sweet, silky texture",
+      "price": 4.00,
+      "available": true
+    }
+  ]
+}
