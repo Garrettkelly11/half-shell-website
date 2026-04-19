@@ -195,11 +195,14 @@ function writeOutput(oysters) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  if (!process.env.TOAST_RESTAURANT_GUID) {
-    throw new Error(
-      'Missing TOAST_RESTAURANT_GUID environment variable.\n' +
-      'Add it as a GitHub Secret: Settings → Secrets and variables → Actions.'
-    );
+  const missingCreds =
+    !process.env.TOAST_CLIENT_ID ||
+    !process.env.TOAST_CLIENT_SECRET ||
+    !process.env.TOAST_RESTAURANT_GUID;
+
+  if (missingCreds) {
+    console.log('Toast API credentials not configured — skipping sync. Add TOAST_CLIENT_ID, TOAST_CLIENT_SECRET, and TOAST_RESTAURANT_GUID as GitHub Secrets when ready.');
+    return;
   }
 
   console.log(`[${new Date().toISOString()}] Starting oyster sync...`);
