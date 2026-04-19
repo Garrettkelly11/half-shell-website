@@ -4,14 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Half Shell Raw Bar — Log in or sign up to access your account." />
-  <title>Half Shell — Login</title>
+  <title>Half Shell — Account</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"></noscript>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
 
     body {
       font-family: 'Playfair Display', Georgia, serif;
@@ -21,6 +20,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 1rem;
     }
 
     .login-container {
@@ -36,7 +36,8 @@
     .login-logo {
       height: 72px;
       width: auto;
-      margin-bottom: 1rem;
+      margin: 0 auto 1rem;
+      display: block;
       filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
     }
 
@@ -54,7 +55,16 @@
       font-size: 1.5rem;
       font-weight: 400;
       color: #0e2d3a;
+      margin-bottom: 0.4rem;
+    }
+
+    .state-hint {
+      font-family: 'Montserrat', sans-serif;
+      font-style: italic;
+      font-size: 0.82rem;
+      color: #6a8f9a;
       margin-bottom: 1.5rem;
+      line-height: 1.5;
     }
 
     .login-container label {
@@ -69,7 +79,7 @@
       text-align: left;
     }
 
-    .login-container input[type="tel"] {
+    .login-container input {
       width: 100%;
       padding: 0.6rem 0.75rem;
       border: 1px solid #9ec4bc;
@@ -82,9 +92,17 @@
       margin-bottom: 1.25rem;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .login-container input[type="tel"]:focus {
+    .login-container input:focus {
       border-color: #e89438;
       box-shadow: 0 0 0 2px rgba(232,148,56,0.18);
+    }
+
+    /* OTP input — larger, centered digits */
+    #otp-input {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 1.6rem;
+      letter-spacing: 0.25em;
+      text-align: center;
     }
 
     .btn-group {
@@ -109,6 +127,10 @@
       transition: background 0.15s;
     }
     .btn-primary:hover { background: #1a4a5a; }
+    .btn-primary:disabled {
+      background: #bcd4ce;
+      cursor: not-allowed;
+    }
 
     .btn-secondary {
       width: 100%;
@@ -162,8 +184,7 @@
       gap: 0.75rem;
       margin: 0.25rem 0;
     }
-    .divider::before,
-    .divider::after {
+    .divider::before, .divider::after {
       content: '';
       flex: 1;
       height: 1px;
@@ -191,9 +212,63 @@
       text-decoration: none;
       margin-top: 1.25rem;
       cursor: pointer;
+      background: none;
+      border: none;
       transition: color 0.15s;
     }
     .back-link:hover { color: #e89438; }
+
+    /* Error message */
+    .error-msg {
+      display: none;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.78rem;
+      color: #c0392b;
+      background: #fdf0ee;
+      border: 1px solid #e8b4ae;
+      border-radius: 4px;
+      padding: 0.55rem 0.75rem;
+      margin-bottom: 1rem;
+      text-align: left;
+    }
+
+    /* Save confirmation */
+    .save-confirm {
+      display: none;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.78rem;
+      color: #2a7f94;
+      background: #e8f2ef;
+      border: 1px solid #bcd4ce;
+      border-radius: 4px;
+      padding: 0.55rem 0.75rem;
+      margin-top: 0.75rem;
+    }
+
+    /* Profile meta (phone display) */
+    .profile-phone {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.82rem;
+      color: #6a8f9a;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Logout */
+    .logout-link {
+      display: block;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #9ec4bc;
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: color 0.15s;
+    }
+    .logout-link:hover { color: #c0392b; }
 
     @media (max-width: 400px) {
       .login-container { padding: 2rem 1.25rem; }
@@ -203,29 +278,325 @@
 <body>
 
 <div class="login-container">
-  <img src="assets/logo.png" alt="Half Shell Raw Bar" class="login-logo" width="72" height="72" />
-  <div class="login-eyebrow">Half Shell Raw Bar</div>
-  <h2>Welcome</h2>
 
-  <label for="phone-number">Phone Number</label>
-  <input type="tel" id="phone-number" placeholder="(555) 123-4567" autocomplete="tel" />
+  <!-- ── State: Phone entry ── -->
+  <div id="state-phone">
+    <img src="assets/logo.png" alt="Half Shell Raw Bar" class="login-logo" width="72" height="72" />
+    <div class="login-eyebrow">Half Shell Raw Bar</div>
+    <h2>Welcome</h2>
+    <p class="state-hint">Enter your phone number to sign in or get started.</p>
 
-  <div class="btn-group">
-    <button class="btn-primary" id="login-btn">Log In</button>
-    <button class="btn-secondary" id="signup-btn">Sign Up</button>
+    <div class="error-msg" id="phone-error"></div>
+
+    <label for="phone-input">Phone Number</label>
+    <input type="tel" id="phone-input" placeholder="(704) 555-0123" autocomplete="tel" inputmode="numeric" />
+
+    <div class="btn-group">
+      <button class="btn-primary" id="send-code-btn">Send Verification Code</button>
+    </div>
+
+    <div id="recaptcha-container"></div>
+
+    <div class="divider"><span>or</span></div>
+    <a class="btn-employee" href="employee.html">Employee Login</a>
+
+    <a class="back-link" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9,2 4,7 9,12"/>
+      </svg>
+      Back to Menu
+    </a>
   </div>
 
-  <div class="divider"><span>or</span></div>
+  <!-- ── State: OTP entry ── -->
+  <div id="state-otp" style="display:none">
+    <img src="assets/logo.png" alt="Half Shell Raw Bar" class="login-logo" width="72" height="72" />
+    <div class="login-eyebrow">Half Shell Raw Bar</div>
+    <h2>Check Your Texts</h2>
+    <p class="state-hint" id="otp-hint">We sent a 6-digit code to your number.</p>
 
-  <a class="btn-employee" href="employee.html">Employee Login</a>
+    <div class="error-msg" id="otp-error"></div>
 
-  <a class="back-link" href="javascript:history.back()">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="9,2 4,7 9,12"/>
-    </svg>
-    Back to Menu
-  </a>
+    <label for="otp-input">Verification Code</label>
+    <input type="text" id="otp-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+
+    <div class="btn-group">
+      <button class="btn-primary" id="verify-btn">Verify</button>
+      <button class="btn-secondary" id="resend-btn">Resend Code</button>
+    </div>
+
+    <button class="back-link" id="back-to-phone-btn">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9,2 4,7 9,12"/>
+      </svg>
+      Change Number
+    </button>
+  </div>
+
+  <!-- ── State: Profile ── -->
+  <div id="state-profile" style="display:none">
+    <img src="assets/logo.png" alt="Half Shell Raw Bar" class="login-logo" width="72" height="72" />
+    <div class="login-eyebrow">Half Shell Raw Bar</div>
+    <h2 id="profile-greeting">My Profile</h2>
+    <p class="profile-phone" id="profile-phone"></p>
+
+    <div class="error-msg" id="profile-error"></div>
+
+    <label for="profile-name">Name</label>
+    <input type="text" id="profile-name" placeholder="Your name" autocomplete="name" />
+
+    <label for="profile-email">Email</label>
+    <input type="email" id="profile-email" placeholder="your@email.com" autocomplete="email" />
+
+    <div class="btn-group">
+      <button class="btn-primary" id="save-btn">Save Changes</button>
+    </div>
+
+    <p class="save-confirm" id="save-confirm">Profile saved.</p>
+
+    <a class="back-link" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9,2 4,7 9,12"/>
+      </svg>
+      Back to Menu
+    </a>
+
+    <button class="logout-link" id="logout-btn">Sign Out</button>
+  </div>
+
 </div>
+
+<script>
+(function () {
+  const FIREBASE_CONFIG = {
+    apiKey:            "AIzaSyDNuyGuzAmow0YehKlztihYn3l57--82L8",
+    authDomain:        "half-shell-oyster-menu.firebaseapp.com",
+    databaseURL:       "https://half-shell-oyster-menu-default-rtdb.firebaseio.com",
+    projectId:         "half-shell-oyster-menu",
+    storageBucket:     "half-shell-oyster-menu.firebasestorage.app",
+    messagingSenderId: "784452175310",
+    appId:             "1:784452175310:web:2d56ed01d06bb39886179f"
+  };
+
+  function loadScript(src, cb) {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = cb;
+    s.onerror = function () { cb(new Error('Failed to load ' + src)); };
+    document.head.appendChild(s);
+  }
+
+  // Load Firebase Auth + DB SDKs sequentially
+  loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js', function () {
+    loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js', function () {
+      loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js', function () {
+        initApp();
+      });
+    });
+  });
+
+  function initApp() {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const auth = firebase.auth();
+    const db   = firebase.database();
+
+    let confirmationResult = null;
+    let recaptchaVerifier  = null;
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    function showState(name) {
+      ['phone', 'otp', 'profile'].forEach(function (s) {
+        document.getElementById('state-' + s).style.display = s === name ? '' : 'none';
+      });
+    }
+
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.style.display = msg ? 'block' : 'none';
+    }
+
+    function formatPhone(digits) {
+      return '(' + digits.slice(0, 3) + ') ' + digits.slice(3, 6) + '-' + digits.slice(6);
+    }
+
+    function toE164(raw) {
+      const digits = raw.replace(/\D/g, '');
+      return digits.length === 10 ? '+1' + digits : null;
+    }
+
+    function setLoading(btnId, loading) {
+      const btn = document.getElementById(btnId);
+      btn.disabled = loading;
+      btn.textContent = loading ? 'Please wait…' : btn.dataset.label;
+    }
+
+    // Cache button labels for loading state
+    ['send-code-btn', 'verify-btn'].forEach(function (id) {
+      const btn = document.getElementById(id);
+      btn.dataset.label = btn.textContent;
+    });
+
+    // ── Auth state ────────────────────────────────────────────────────────────
+
+    auth.onAuthStateChanged(function (user) {
+      if (user) {
+        loadProfile(user);
+      } else {
+        showState('phone');
+      }
+    });
+
+    // ── Phone entry ───────────────────────────────────────────────────────────
+
+    // Format phone input as user types
+    document.getElementById('phone-input').addEventListener('input', function () {
+      const digits = this.value.replace(/\D/g, '').slice(0, 10);
+      if (digits.length >= 7)      this.value = '(' + digits.slice(0,3) + ') ' + digits.slice(3,6) + '-' + digits.slice(6);
+      else if (digits.length >= 4) this.value = '(' + digits.slice(0,3) + ') ' + digits.slice(3);
+      else if (digits.length >= 1) this.value = digits;
+    });
+
+    document.getElementById('send-code-btn').addEventListener('click', async function () {
+      showError('phone-error', '');
+      const phone = toE164(document.getElementById('phone-input').value);
+      if (!phone) {
+        showError('phone-error', 'Please enter a valid 10-digit US phone number.');
+        return;
+      }
+
+      setLoading('send-code-btn', true);
+
+      try {
+        if (!recaptchaVerifier) {
+          recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+            size: 'invisible'
+          });
+        }
+        confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
+        const digits = phone.replace('+1', '');
+        document.getElementById('otp-hint').textContent =
+          'We sent a 6-digit code to ' + formatPhone(digits) + '.';
+        showState('otp');
+        document.getElementById('otp-input').focus();
+      } catch (err) {
+        showError('phone-error', 'Could not send code — please check your number and try again.');
+        // Reset reCAPTCHA so next attempt works
+        if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
+      }
+
+      setLoading('send-code-btn', false);
+    });
+
+    // ── OTP entry ─────────────────────────────────────────────────────────────
+
+    document.getElementById('verify-btn').addEventListener('click', async function () {
+      showError('otp-error', '');
+      const code = document.getElementById('otp-input').value.trim();
+      if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+        showError('otp-error', 'Please enter the 6-digit code from your text message.');
+        return;
+      }
+
+      setLoading('verify-btn', true);
+
+      try {
+        const result = await confirmationResult.confirm(code);
+        loadProfile(result.user);
+      } catch (err) {
+        showError('otp-error', 'Incorrect or expired code. Please try again or request a new one.');
+      }
+
+      setLoading('verify-btn', false);
+    });
+
+    document.getElementById('resend-btn').addEventListener('click', async function () {
+      showError('otp-error', '');
+      // Go back to phone state and re-trigger send
+      showState('phone');
+      if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
+      document.getElementById('send-code-btn').click();
+    });
+
+    document.getElementById('back-to-phone-btn').addEventListener('click', function () {
+      showState('phone');
+      if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
+      document.getElementById('otp-input').value = '';
+    });
+
+    // Allow Enter key on OTP input
+    document.getElementById('otp-input').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') document.getElementById('verify-btn').click();
+    });
+
+    // ── Profile ───────────────────────────────────────────────────────────────
+
+    async function loadProfile(user) {
+      showState('profile');
+      showError('profile-error', '');
+
+      const digits = user.phoneNumber.replace('+1', '');
+      document.getElementById('profile-phone').textContent = formatPhone(digits);
+
+      try {
+        const snap = await db.ref('users/' + user.uid).once('value');
+        const data = snap.val() || {};
+
+        document.getElementById('profile-name').value  = data.name  || '';
+        document.getElementById('profile-email').value = data.email || '';
+        document.getElementById('profile-greeting').textContent =
+          data.name ? 'Welcome, ' + data.name.split(' ')[0] : 'My Profile';
+
+        // Write phone on first load so it's stored for future Toast matching
+        if (!data.phone) {
+          db.ref('users/' + user.uid).update({ phone: user.phoneNumber });
+        }
+      } catch (err) {
+        showError('profile-error', 'Could not load your profile. Please try again.');
+      }
+    }
+
+    document.getElementById('save-btn').addEventListener('click', async function () {
+      showError('profile-error', '');
+      const user  = auth.currentUser;
+      if (!user) return;
+
+      const name  = document.getElementById('profile-name').value.trim();
+      const email = document.getElementById('profile-email').value.trim();
+
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showError('profile-error', 'Please enter a valid email address.');
+        return;
+      }
+
+      try {
+        await db.ref('users/' + user.uid).update({
+          name:      name,
+          email:     email,
+          phone:     user.phoneNumber,
+          updatedAt: new Date().toISOString()
+        });
+        document.getElementById('profile-greeting').textContent =
+          name ? 'Welcome, ' + name.split(' ')[0] : 'My Profile';
+
+        const confirm = document.getElementById('save-confirm');
+        confirm.style.display = 'block';
+        setTimeout(function () { confirm.style.display = 'none'; }, 3000);
+      } catch (err) {
+        showError('profile-error', 'Could not save your profile. Please try again.');
+      }
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', function () {
+      auth.signOut().then(function () {
+        showState('phone');
+        document.getElementById('phone-input').value = '';
+      });
+    });
+  }
+})();
+</script>
 
 </body>
 </html>
