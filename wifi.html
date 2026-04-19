@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Welcome to Half Shell Raw Bar — you're connected to our WiFi." />
+  <title>Half Shell — Welcome</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"></noscript>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Playfair Display', Georgia, serif;
+      background: #0e2d3a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .portal-card {
+      background: #f3f8f6;
+      border-radius: 6px;
+      width: 380px;
+      max-width: 92vw;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+
+    /* ── Hero ── */
+    .card-hero {
+      position: relative;
+      background: url('assets/hero-slide-1.jpg') center / cover no-repeat;
+      padding: 2rem 1.5rem 1.75rem;
+      text-align: center;
+      border-bottom: 3px solid #e89438;
+    }
+    .card-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 28, 38, 0.68);
+    }
+    .card-hero > * { position: relative; z-index: 1; }
+
+    .portal-logo {
+      height: 72px;
+      width: auto;
+      margin: 0 auto 0.75rem;
+      display: block;
+      filter: drop-shadow(0 2px 10px rgba(0,0,0,0.5));
+    }
+
+    .card-hero h1 {
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: #f5f0e8;
+      letter-spacing: 0.03em;
+    }
+
+    .card-hero p {
+      font-size: 0.82rem;
+      color: #c8dfe5;
+      margin-top: 0.35rem;
+      font-style: italic;
+    }
+
+    /* ── Body ── */
+    .card-body {
+      padding: 1.75rem 1.75rem 2rem;
+      text-align: center;
+    }
+
+    .wifi-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #2a7f94;
+      background: #e8f2ef;
+      border: 1px solid #bcd4ce;
+      border-radius: 20px;
+      padding: 0.3rem 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-body h2 {
+      font-size: 1.4rem;
+      font-weight: 400;
+      color: #0e2d3a;
+      margin-bottom: 0.4rem;
+    }
+
+    .card-body .tagline {
+      font-family: 'Montserrat', sans-serif;
+      font-style: italic;
+      font-size: 0.85rem;
+      color: #6a8f9a;
+      line-height: 1.55;
+      margin-bottom: 1.75rem;
+    }
+
+    /* ── Buttons ── */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .btn-primary {
+      display: block;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: #0e2d3a;
+      color: #f5f0e8;
+      border: none;
+      border-radius: 4px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      text-decoration: none;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #1a4a5a; }
+
+    .btn-secondary {
+      display: block;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: transparent;
+      color: #0e2d3a;
+      border: 1.5px solid #9ec4bc;
+      border-radius: 4px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .btn-secondary:hover {
+      background: #e8f2ef;
+      border-color: #2a7f94;
+      color: #2a7f94;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #bcd4ce;
+    }
+    .divider span {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #9ec4bc;
+    }
+
+    /* ── Connected confirmation ── */
+    .connected-msg {
+      display: none;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: #3d7080;
+      letter-spacing: 0.02em;
+      line-height: 1.5;
+      padding: 0.85rem 1rem;
+      border: 1px solid #bcd4ce;
+      border-radius: 4px;
+      background: #e8f2ef;
+    }
+
+    @media (max-width: 400px) {
+      .card-body { padding: 1.5rem 1.25rem 1.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="portal-card">
+
+  <div class="card-hero">
+    <img src="assets/logo.png" alt="Half Shell Raw Bar" class="portal-logo" width="72" height="72" />
+    <h1>Half Shell Raw Bar</h1>
+    <p>Fresh selections, sourced from both coasts</p>
+  </div>
+
+  <div class="card-body">
+
+    <div class="wifi-badge">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+        <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+        <line x1="12" y1="20" x2="12.01" y2="20"/>
+      </svg>
+      Connected to Half Shell WiFi
+    </div>
+
+    <h2>Welcome In</h2>
+    <p class="tagline">Explore tonight's oyster selection or continue to browse the web.</p>
+
+    <div class="btn-group" id="btn-group">
+      <a class="btn-primary" href="index.html">View Tonight's Menu</a>
+      <div class="divider"><span>or</span></div>
+      <button class="btn-secondary" id="continue-btn">Continue Browsing</button>
+    </div>
+
+    <p class="connected-msg" id="connected-msg">
+      You're all set — enjoy your visit to Half Shell.
+    </p>
+
+  </div>
+</div>
+
+<script>
+  document.getElementById('continue-btn').addEventListener('click', function () {
+    document.getElementById('btn-group').style.display = 'none';
+    document.getElementById('connected-msg').style.display = 'block';
+  });
+</script>
+
+</body>
+</html>
