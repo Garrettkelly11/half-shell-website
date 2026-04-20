@@ -270,8 +270,64 @@
     }
     .logout-link:hover { color: #c0392b; }
 
+    /* Coming Soon Overlay - Simplified & Robust */
+    .coming-soon-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 140px;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .coming-soon-overlay h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      color: #f3f8f6;
+      margin: 0 0 15px 0;
+      text-align: center;
+    }
+
+    .coming-soon-overlay p {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.85rem;
+      color: #bcd4ce;
+      max-width: 250px;
+      text-align: center;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .login-container {
+      position: relative;
+    }
+
+    .state-phone .divider {
+      position: relative;
+      z-index: 20;
+    }
+
+    .state-phone .btn-employee {
+      position: relative;
+      z-index: 20;
+    }
+
     @media (max-width: 400px) {
       .login-container { padding: 2rem 1.25rem; }
+      .coming-soon-overlay {
+        bottom: 120px;
+      }
+
+      .coming-soon-overlay h3 {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
@@ -285,6 +341,12 @@
     <div class="login-eyebrow">Half Shell Raw Bar</div>
     <h2>Welcome</h2>
     <p class="state-hint">Enter your phone number to sign in or get started.</p>
+
+    <!-- Coming Soon Overlay -->
+    <div class="coming-soon-overlay">
+      <h3>Coming Soon</h3>
+      <p>Customer sign-in is launching very soon. Stay tuned!</p>
+    </div>
 
     <div class="error-msg" id="phone-error"></div>
 
