@@ -814,7 +814,9 @@ function render(servingIds) {
 
       function startListener() {
         ref.on('value', snapshot => {
-          const ids = snapshot.val() || [];
+          // New format: object with oyster IDs as keys: {id: {addedAt, lastUpdated, source}, ...}
+          const servingObj = snapshot.val() || {};
+          const ids = Object.keys(servingObj);
           render(new Set(ids));
         });
       }
