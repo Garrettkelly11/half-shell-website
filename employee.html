@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Half Shell Raw Bar employee portal — manage the nightly oyster menu." />
+  <meta name="description" content="Half Shell — Staff Menu Manager. Manage tonight's oyster selection." />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Half Shell — Employee Portal</title>
+  <title>Half Shell — Staff Menu Manager</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -305,6 +305,23 @@
     }
     .save-status.saved { color: #2a7f94; }
     .save-status.error { color: #c0392b; }
+
+    /* ── Error/Success Messages ── */
+    .error-message {
+      background: #fadbd8;
+      border: 1px solid #f5b7b1;
+      border-radius: 4px;
+      padding: 0.75rem 1rem;
+      color: #c0392b;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+      font-family: 'Lato', sans-serif;
+    }
+    .error-message.success {
+      background: #d5f4e6;
+      border-color: #abebc6;
+      color: #16a085;
+    }
     .save-btn {
       font-family: 'Lato', sans-serif;
       font-size: 0.72rem;
@@ -481,17 +498,25 @@
     <!-- Currently Serving -->
     <div class="section-title">
       Tonight's Menu
-      <span class="badge amber" id="serving-badge">0 / 6</span>
+      <span class="badge amber" id="serving-badge">0 oysters</span>
     </div>
     <div class="serving-panel">
       <div class="serving-panel-head">
-        <span>Select up to 6 oysters</span>
+        <span>
+          <input type="text" id="search-input" placeholder="Search by name or origin…" style="padding:0.4rem 0.75rem; border:1px solid #bcd4ce; border-radius:4px; font-size:0.85rem; width:250px; max-width:100%;" />
+        </span>
         <span class="counter" id="head-counter">0 selected</span>
       </div>
       <div class="serving-checklist" id="serving-checklist"></div>
-      <div class="serving-panel-foot">
-        <span class="save-status" id="save-status"></span>
-        <button class="save-btn" id="save-btn">Save Menu</button>
+      <div class="serving-panel-foot" style="justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span class="save-status" id="save-status"></span>
+          <div style="font-size:0.7rem; color:#6a8f9a; margin-top:0.3rem;">Last Toast sync: <span id="last-sync-time">Never</span></div>
+        </div>
+        <div style="display:flex; gap:0.75rem;">
+          <button class="save-btn" id="sync-toast-btn" style="background:#e89438; color:#0e2d3a;">Sync Toast</button>
+          <button class="save-btn" id="save-btn">Save Menu</button>
+        </div>
       </div>
     </div>
 
@@ -534,6 +559,8 @@
 </div>
 
 <script src="./data/oysters.js?v=2"></script>
+<script src="src/firebase-config.js"></script>
+<script src="src/menu-manager.js"></script>
 <script>
 // ── Auth ──────────────────────────────────────────────────────────────────
 const AUTH_KEY  = 'halfshell-employee-auth';
@@ -570,24 +597,43 @@ gatePwd.addEventListener('keydown', e => {
 });
 
 
-const DOTS_MAP    = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
-const MAX_SERVING = 6;
+const DOTS_MAP = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
 
 // ── Firebase setup ──────────────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey:            "AIzaSyDNuyGuzAmow0YehKlztihYn3l57--82L8",
-  authDomain:        "half-shell-oyster-menu.firebaseapp.com",
-  databaseURL:       "https://half-shell-oyster-menu-default-rtdb.firebaseio.com",
-  projectId:         "half-shell-oyster-menu",
-  storageBucket:     "half-shell-oyster-menu.firebasestorage.app",
-  messagingSenderId: "784452175310",
-  appId:             "1:784452175310:web:2d56ed01d06bb39886179f"
-};
-firebase.initializeApp(firebaseConfig);
-const menuRef = firebase.database().ref('menu/serving');
-
-let serving        = new Set();
+let db = null;
+let menuManager = null;
+let serving = new Set();
 let pendingServing = new Set();
+let lastSyncTime = null;
+let isSyncing = false;
+
+// Initialize Firebase and MenuManager
+(async function initFirebase() {
+  db = await initializeFirebase();
+  if (!db) {
+    console.error('Failed to connect to Firebase');
+    return;
+  }
+  const servingRef = getMenuServingRef(db);
+  const auditLogRef = getAuditLogRef(db);
+  menuManager = new MenuManager(servingRef, auditLogRef);
+
+  // Load current menu
+  const currentMenu = await menuManager.getCurrentMenu();
+  serving = new Set(Object.keys(currentMenu));
+  pendingServing = new Set(serving);
+
+  // Set up real-time listener for changes from other sources (Toast sync)
+  servingRef.on('value', (snapshot) => {
+    const menu = snapshot.val() || {};
+    serving = new Set(Object.keys(menu));
+    pendingServing = new Set(serving);
+    syncCounter();
+  });
+
+  lastSyncTime = localStorage.getItem('lastToastSync');
+  updateSyncTimeDisplay();
+})();
 
 function buildDotsSm(level) {
   const filled = DOTS_MAP[level] || 2;
@@ -596,13 +642,12 @@ function buildDotsSm(level) {
 
 function syncCounter() {
   const n = pendingServing.size;
-  document.getElementById('serving-badge').textContent = `${n} / ${MAX_SERVING}`;
+  document.getElementById('serving-badge').textContent = `${n} oyster${n !== 1 ? 's' : ''}`;
   document.getElementById('head-counter').textContent  = `${n} selected`;
-  // Dim unchosen items if at limit
+  // Update UI for all items (no limit)
   document.querySelectorAll('.serving-item').forEach(el => {
     const id = el.dataset.id;
     el.classList.toggle('checked', pendingServing.has(id));
-    el.classList.toggle('at-limit', n >= MAX_SERVING && !pendingServing.has(id));
     el.querySelector('input').checked = pendingServing.has(id);
   });
   // Sync table rows
@@ -614,11 +659,15 @@ function syncCounter() {
   });
 }
 
-function initPage() {
-  // Build checklist
+function renderChecklist(filter = '') {
   const checklist = document.getElementById('serving-checklist');
   const regionLabel = { ct:'CT', ma:'MA', me:'ME', nc:'NC', va:'VA', wa:'WA', nb:'NB', pei:'PEI' };
-  checklist.innerHTML = OYSTERS.map(o => `
+
+  const filtered = OYSTERS.filter(o =>
+    !filter || o.name.toLowerCase().includes(filter) || o.origin.toLowerCase().includes(filter)
+  );
+
+  checklist.innerHTML = filtered.map(o => `
     <div class="serving-item${pendingServing.has(o.id) ? ' checked' : ''}" data-id="${o.id}">
       <input type="checkbox" ${pendingServing.has(o.id) ? 'checked' : ''} />
       <span class="serving-item-name">${o.name}</span>
@@ -632,7 +681,6 @@ function initPage() {
       if (pendingServing.has(id)) {
         pendingServing.delete(id);
       } else {
-        if (pendingServing.size >= MAX_SERVING) return;
         pendingServing.add(id);
       }
       document.getElementById('save-status').textContent = '';
@@ -640,6 +688,19 @@ function initPage() {
       syncCounter();
     });
   });
+}
+
+function initPage() {
+  // Build initial checklist
+  renderChecklist();
+
+  // Add search input listener
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      renderChecklist(searchInput.value.toLowerCase());
+    });
+  }
 
   // Build table
   const tbody = document.getElementById('table-body');
@@ -658,54 +719,170 @@ function initPage() {
 
   syncCounter();
 
-  // Save button — writes to Firebase, syncs all devices instantly
-  document.getElementById('save-btn').addEventListener('click', () => {
-    serving = new Set(pendingServing);
+  // Save button — updates menu via MenuManager
+  document.getElementById('save-btn').addEventListener('click', async () => {
+    if (!menuManager) {
+      alert('Menu system not ready. Please refresh the page.');
+      return;
+    }
+
     const status = document.getElementById('save-status');
-    menuRef.set([...serving])
-      .then(() => {
-        status.textContent = `Saved — ${serving.size} oyster${serving.size !== 1 ? 's' : ''} on the menu`;
-        status.className = 'save-status saved';
-        setTimeout(() => {
-          if (status.className.includes('saved')) {
-            status.textContent = '';
-            status.className = 'save-status';
-          }
-        }, 4000);
-      })
-      .catch(err => {
-        status.textContent = 'Save failed — check connection';
-        status.className = 'save-status';
-        console.error('Firebase write error:', err);
+    status.textContent = 'Saving...';
+    status.className = 'save-status';
+
+    // Determine which oysters to add/remove
+    const currentIds = serving;
+    const newIds = pendingServing;
+
+    let updateCount = 0;
+    let errorCount = 0;
+
+    // Add oysters that are in pendingServing but not in serving
+    for (const id of newIds) {
+      if (!currentIds.has(id)) {
+        const result = await menuManager.toggleOyster(id, true, 'Staff');
+        if (result.success) updateCount++;
+        else errorCount++;
+      }
+    }
+
+    // Remove oysters that are in serving but not in pendingServing
+    for (const id of currentIds) {
+      if (!newIds.has(id)) {
+        const result = await menuManager.toggleOyster(id, false, 'Staff');
+        if (result.success) updateCount++;
+        else errorCount++;
+      }
+    }
+
+    serving = new Set(pendingServing);
+
+    if (errorCount === 0) {
+      status.textContent = `Saved — ${newIds.size} oyster${newIds.size !== 1 ? 's' : ''} on the menu`;
+      status.className = 'save-status saved';
+      setTimeout(() => {
+        if (status.className.includes('saved')) {
+          status.textContent = '';
+          status.className = 'save-status';
+        }
+      }, 4000);
+    } else {
+      status.textContent = `Save had ${errorCount} error${errorCount !== 1 ? 's' : ''} — check connection`;
+      status.className = 'save-status error';
+    }
+  });
+
+  // Toast sync button - fetches from Toast and updates checkboxes for preview
+  document.getElementById('sync-toast-btn').addEventListener('click', async () => {
+    if (isSyncing) return;
+
+    const btn = document.getElementById('sync-toast-btn');
+    const status = document.getElementById('save-status');
+    isSyncing = true;
+    btn.disabled = true;
+    btn.textContent = '⏳ Fetching…';
+
+    try {
+      const response = await fetch('/api/sync-toast-menu', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
       });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        if (!result.configured) {
+          status.textContent = '⚠️ Toast not configured. Update Toast API credentials in GitHub Secrets to enable syncing.';
+          status.className = 'error-message';
+        } else {
+          status.textContent = `Failed to fetch from Toast: ${result.error}`;
+          status.className = 'error-message';
+        }
+        setTimeout(() => {
+          status.textContent = '';
+        }, 6000);
+      } else if (result.oysterIds.length === 0) {
+        status.textContent = '✓ Toast returned 0 oysters. No changes made.';
+        status.className = 'error-message success';
+        setTimeout(() => {
+          status.textContent = '';
+        }, 4000);
+      } else {
+        // Update checkboxes based on Toast list (preview only)
+        // Mark Toast oysters and uncheck anything not in Toast
+        const toastSet = new Set(result.oysterIds);
+
+        // Update pending selection to match Toast
+        pendingServing.clear();
+        toastSet.forEach(id => pendingServing.add(id));
+
+        renderChecklist(document.getElementById('search-input').value.toLowerCase());
+        syncCounter();
+
+        status.textContent = `✓ Loaded ${result.count} oysters from Toast. Review the selection below, then click "Save Menu" to apply.`;
+        status.className = 'error-message success';
+        setTimeout(() => {
+          status.textContent = '';
+        }, 5000);
+
+        // Update last sync time
+        lastSyncTime = Date.now();
+        localStorage.setItem('lastToastSync', lastSyncTime);
+        updateSyncTimeDisplay();
+      }
+    } catch (error) {
+      status.textContent = `Network error: ${error.message}`;
+      status.className = 'error-message';
+      setTimeout(() => {
+        status.textContent = '';
+      }, 5000);
+    } finally {
+      isSyncing = false;
+      btn.disabled = false;
+      btn.textContent = 'Sync Toast';
+    }
   });
 }
 
-// Load current menu from Firebase, then init page
-menuRef.once('value').then(snapshot => {
-  const raw = snapshot.val() || [];
-  // Normalise: Firebase may return an object with numeric keys if the array had gaps
-  const allIds = Array.isArray(raw) ? raw : Object.values(raw);
-
-  // Enforce the MAX_SERVING cap on load — if Firebase somehow stored more
-  // than the allowed limit (e.g. data saved before the limit was introduced),
-  // trim to the first MAX_SERVING entries so the live menu stays in sync.
-  const trimmed = allIds.slice(0, MAX_SERVING);
-  serving        = new Set(trimmed);
-  pendingServing = new Set(trimmed);
-
-  // If the stored data exceeded the limit, flag that a save is needed so staff
-  // knows the menu will be corrected the next time they hit "Save Menu".
-  if (allIds.length > MAX_SERVING) {
-    const status = document.getElementById('save-status');
-    status.textContent = `Menu had ${allIds.length} oysters — trimmed to ${MAX_SERVING}. Please save to apply.`;
-    status.className = 'save-status error';
+function updateSyncTimeDisplay() {
+  const timeEl = document.getElementById('last-sync-time');
+  if (!lastSyncTime) {
+    timeEl.textContent = 'Never';
+    return;
   }
 
-  initPage();
-}).catch(() => {
-  // Firebase unavailable — still show the page with empty selection
-  initPage();
+  const now = Date.now();
+  const diff = now - lastSyncTime;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+
+  if (minutes < 1) {
+    timeEl.textContent = 'Just now';
+  } else if (minutes < 60) {
+    timeEl.textContent = `${minutes}m ago`;
+  } else if (hours < 24) {
+    timeEl.textContent = `${hours}h ago`;
+  } else {
+    timeEl.textContent = new Date(lastSyncTime).toLocaleDateString();
+  }
+}
+
+// Delay initialization until page is loaded and Firebase is ready
+document.addEventListener('DOMContentLoaded', () => {
+  const checkReady = setInterval(() => {
+    if (menuManager) {
+      clearInterval(checkReady);
+      initPage();
+    }
+  }, 100);
+  // Fallback timeout
+  setTimeout(() => {
+    clearInterval(checkReady);
+    if (!menuManager) {
+      console.warn('MenuManager not ready after 5s, initializing anyway');
+      initPage();
+    }
+  }, 5000);
 });
 
 // ── Menu-only filter toggle ──────────────────────────────────────────────────
