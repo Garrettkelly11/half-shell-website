@@ -783,7 +783,10 @@ function initPage() {
     btn.textContent = '⏳ Fetching…';
 
     try {
-      const response = await fetch('/api/sync-toast-menu', {
+      // Cloud Function URL — direct call since site is on GitHub Pages (no /api rewrites).
+      // If hosting ever moves to Firebase Hosting, this can become '/api/sync-toast-menu'.
+      const SYNC_URL = 'https://us-east1-half-shell-oyster-menu.cloudfunctions.net/syncToastMenu';
+      const response = await fetch(SYNC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -792,7 +795,7 @@ function initPage() {
 
       if (!result.success) {
         if (!result.configured) {
-          status.textContent = '⚠️ Toast not configured. Update Toast API credentials in GitHub Secrets to enable syncing.';
+          status.textContent = '⚠️ Toast not configured. Set credentials with `firebase functions:secrets:set` and redeploy.';
           status.className = 'error-message';
         } else {
           status.textContent = `Failed to fetch from Toast: ${result.error}`;
@@ -802,11 +805,19 @@ function initPage() {
           status.textContent = '';
         }, 6000);
       } else if (result.oysterIds.length === 0) {
-        status.textContent = '✓ Toast returned 0 oysters. No changes made.';
-        status.className = 'error-message success';
+        // Distinguish "Toast returned a real empty result" from "everything was unmatched":
+        // a high unmatchedCount with zero matches usually means catalog drift, not an empty menu.
+        if (result.unmatchedCount && result.unmatchedCount > 0) {
+          const sample = (result.unmatched || []).slice(0, 5).map(u => u.name).join(', ');
+          status.textContent = `⚠ Toast returned ${result.unmatchedCount} items but none matched the catalog (e.g., ${sample}). Likely a catalog/name mismatch — no changes made.`;
+          status.className = 'error-message';
+        } else {
+          status.textContent = '✓ Toast returned 0 oysters. No changes made.';
+          status.className = 'error-message success';
+        }
         setTimeout(() => {
           status.textContent = '';
-        }, 4000);
+        }, 8000);
       } else {
         // Update checkboxes based on Toast list (preview only)
         // Mark Toast oysters and uncheck anything not in Toast
@@ -819,11 +830,27 @@ function initPage() {
         renderChecklist(document.getElementById('search-input').value.toLowerCase());
         syncCounter();
 
-        status.textContent = `✓ Loaded ${result.count} oysters from Toast. Review the selection below, then click "Save Menu" to apply.`;
+        // Build the status message. If there are unmatched items, surface a count
+        // and a sample so staff know what's not making it onto the website.
+        let msg = `✓ Loaded ${result.count} oysters from Toast. Review the selection below, then click "Save Menu" to apply.`;
+        if (result.unmatchedCount && result.unmatchedCount > 0) {
+          const oysterShaped = (result.unmatched || []).filter(u => {
+            const n = (u.name || '').toLowerCase();
+            // Filter out obvious non-oysters (caviars, towers, crab, ceviche, shooters, oyster preparations)
+            // so the warning is mostly real candidates rather than menu noise.
+            return !/(caviar|tower|crab|shooter|sampler|crudo|ceviche|bienville|chargrilled|royale|stone)/i.test(n);
+          });
+          if (oysterShaped.length > 0) {
+            const sample = oysterShaped.slice(0, 4).map(u => u.name).join(', ');
+            const more = oysterShaped.length > 4 ? `, +${oysterShaped.length - 4} more` : '';
+            msg += `  Note: ${oysterShaped.length} Toast item${oysterShaped.length === 1 ? '' : 's'} couldn't be matched to the catalog (${sample}${more}). They won't appear on the website until added or aliased.`;
+          }
+        }
+        status.textContent = msg;
         status.className = 'error-message success';
         setTimeout(() => {
           status.textContent = '';
-        }, 5000);
+        }, 8000);
 
         // Update last sync time
         lastSyncTime = Date.now();
