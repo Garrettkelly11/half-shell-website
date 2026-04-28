@@ -27,3 +27,14 @@ netlify.toml
 
 # Logs
 *.log
+
+# Secrets / local env
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Generated build artifacts (regenerated on every deploy / probe run)
+functions/oyster-catalog.json
+tools/toast-menu-dump.json
