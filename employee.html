@@ -790,7 +790,10 @@ function initPage() {
       const SYNC_URL = 'https://us-central1-half-shell-oyster-menu.cloudfunctions.net/syncToastMenu';
       const response = await fetch(SYNC_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          'Content-Type': 'application/json',
+          'x-sync-secret': 'K7R-4M9LpX-8J-2Q'
+        }
       });
 
       const result = await response.json();

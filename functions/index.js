@@ -32,11 +32,13 @@ const toastUserAccessType = defineString('TOAST_USER_ACCESS_TYPE', { default: 'T
 // menu ever grows so large that scanning everything is wasteful, reintroduce
 // a group filter here and pass it through to fetchFromToastAPI.
 
+// Note: region is not a valid runWith() key for Gen 1 functions — it is set
+// by chaining .region() before .runWith(), but omitting it here lets Firebase
+// default to us-central1, which is where these functions are actually deployed.
 const RUNTIME_OPTS = {
   secrets: [toastClientSecret],
   timeoutSeconds: 60,
   memory: '256MB',
-  region: 'us-east1', // Charlotte is closest to us-east1
 };
 
 // Lazy-require the sync module so secrets are populated first.
