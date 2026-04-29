@@ -641,7 +641,10 @@ function buildDotsSm(level) {
 }
 
 function syncCounter() {
-  const n = pendingServing.size;
+  // Only count IDs that exist in the local OYSTERS catalog so stale Firebase
+  // entries (from old syncs or renamed oysters) don't inflate the display.
+  const knownIds = new Set(OYSTERS.map(o => o.id));
+  const n = [...pendingServing].filter(id => knownIds.has(id)).length;
   document.getElementById('serving-badge').textContent = `${n} oyster${n !== 1 ? 's' : ''}`;
   document.getElementById('head-counter').textContent  = `${n} selected`;
   // Update UI for all items (no limit)
@@ -783,9 +786,8 @@ function initPage() {
     btn.textContent = '⏳ Fetching…';
 
     try {
-      // Cloud Function URL — direct call since site is on GitHub Pages (no /api rewrites).
-      // If hosting ever moves to Firebase Hosting, this can become '/api/sync-toast-menu'.
-      const SYNC_URL = 'https://us-east1-half-shell-oyster-menu.cloudfunctions.net/syncToastMenu';
+      // Direct Cloud Function URL — site is on GitHub Pages so /api rewrites are not available.
+      const SYNC_URL = 'https://us-central1-half-shell-oyster-menu.cloudfunctions.net/syncToastMenu';
       const response = await fetch(SYNC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
