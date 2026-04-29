@@ -49,12 +49,22 @@ function normalize(s) {
   return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-// Build catalog lookup indexes: normalized id → entry, normalized name → entry.
+// Build catalog lookup indexes: normalized id → entry, normalized name → entry,
+// normalized alias → entry. Mirrors the production matcher in
+// functions/sync-toast-endpoint.js, which treats name/id/aliases as equally
+// valid match keys for an entry.
 const byNormId = new Map();
 const byNormName = new Map();
+const byNormAlias = new Map();
 for (const o of OYSTERS) {
   byNormId.set(normalize(o.id), o);
   byNormName.set(normalize(o.name), o);
+  if (Array.isArray(o.aliases)) {
+    for (const alias of o.aliases) {
+      const k = normalize(alias);
+      if (k) byNormAlias.set(k, o);
+    }
+  }
 }
 
 // Iterative Levenshtein, single-row.
@@ -87,9 +97,10 @@ function findMatch(toastName) {
   const norm = normalize(toastName);
   if (!norm) return { strategy: 'empty', oyster: null };
 
-  // Tier 1: exact normalized match against catalog name or id.
+  // Tier 1: exact normalized match against catalog name, id, or alias.
   if (byNormName.has(norm)) return { strategy: 'exact', oyster: byNormName.get(norm) };
   if (byNormId.has(norm)) return { strategy: 'exact-id', oyster: byNormId.get(norm) };
+  if (byNormAlias.has(norm)) return { strategy: 'exact-alias', oyster: byNormAlias.get(norm) };
 
   // Tier 2: handle trailing-s plural mismatch in either direction.
   if (norm.endsWith('s')) {
@@ -133,6 +144,7 @@ const menus = Array.isArray(dump) ? dump : (dump.menus || []);
 const buckets = {
   exact: [],
   'exact-id': [],
+  'exact-alias': [],
   plural: [],
   'plural-rev': [],
   near: [],
@@ -160,13 +172,13 @@ for (const menu of menus) {
 
 // ---- 5. Catalog entries that didn't match anything in Toast ---------------
 const matchedCatalogIds = new Set();
-for (const key of ['exact', 'exact-id', 'plural', 'plural-rev', 'near', 'substring', 'substring-id']) {
+for (const key of ['exact', 'exact-id', 'exact-alias', 'plural', 'plural-rev', 'near', 'substring', 'substring-id']) {
   for (const e of buckets[key]) if (e.oyster) matchedCatalogIds.add(e.oyster.id);
 }
 const catalogOnly = OYSTERS.filter((o) => !matchedCatalogIds.has(o.id));
 
 // ---- 6. Render ------------------------------------------------------------
-const totalConfident = buckets.exact.length + buckets['exact-id'].length;
+const totalConfident = buckets.exact.length + buckets['exact-id'].length + buckets['exact-alias'].length;
 const totalLightlyFuzzy = buckets.plural.length + buckets['plural-rev'].length;
 const totalSpeculative = buckets.near.length + buckets.substring.length + buckets['substring-id'].length;
 const totalUnmatched = buckets.none.length;
@@ -193,6 +205,7 @@ function printBucket(label, entries) {
 
 printBucket('EXACT name match', buckets.exact);
 printBucket('EXACT id match', buckets['exact-id']);
+printBucket('EXACT alias match', buckets['exact-alias']);
 printBucket('PLURAL — Toast plural / catalog singular', buckets.plural);
 printBucket('PLURAL-REV — Toast singular / catalog plural', buckets['plural-rev']);
 printBucket('NEAR — Levenshtein ≤ 2', buckets.near);
