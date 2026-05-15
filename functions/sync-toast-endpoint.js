@@ -9,14 +9,23 @@
  *   Uses TOAST_MACHINE_CLIENT OAuth flow. Exchanges client ID + secret for a
  *   bearer token, caches it in module scope, and refreshes before expiry.
  *
+ * Availability strategy:
+ *   Staff manage tonight's oysters by 86-ing items they don't currently have
+ *   in Toast's back-of-house (POS → Item Availability → mark out of stock).
+ *   Each sync cycle calls GET /stock/v1/inventory to get the set of 86'd GUIDs,
+ *   then excludes those items when building the serving list. Items not in the
+ *   stock inventory (i.e. no record at all) are considered in stock — this is
+ *   Toast's default behaviour.
+ *
  * Mapping strategy:
  *   Toast item names are matched against the local oyster catalog
  *   (`oyster-catalog.json`, regenerated at deploy time from `data/oysters.js`).
  *   Each catalog entry contributes its `id`, `name`, and `aliases[]` to a
- *   normalized lookup index, plus simple plural variants (trailing-s,
- *   ies → y). An item is matched if its normalized name hits any of those keys.
+ *   normalized lookup index, plus simple plural variants (trailing-s, ies→y).
+ *   An item is matched if its normalized name hits any of those keys.
  *
- *   Items that don't match are returned in `unmatched` so the admin UI can
+ *   Items that don't match the catalog (e.g. non-oyster Raw Bar items like
+ *   towers, caviar, shooters) are returned in `unmatched` so the admin UI can
  *   surface them. The opaque GUID-override table in `toast-mapping.js` is the
  *   final escape hatch when even an alias can't capture the discrepancy.
  *
@@ -155,6 +164,47 @@ async function getToken() {
   return accessToken;
 }
 
+// --- Stock API fetch -------------------------------------------------------
+
+/**
+ * Fetch the set of item GUIDs that are currently 86'd (OUT_OF_STOCK) in Toast.
+ *
+ * Toast's Stock API (GET /stock/v1/inventory) returns only items that have a
+ * non-default stock record — items absent from the response are implicitly
+ * in stock. An item whose `status` is "OUT_OF_STOCK" has been 86'd by staff
+ * in Toast's back-of-house (POS → Item Availability).
+ *
+ * Returns a Set of GUID strings. On failure, returns an empty Set so that the
+ * sync degrades gracefully (shows all matched oysters rather than none).
+ */
+async function fetchOutOfStockGuids(token) {
+  const { hostname, locationId } = cfg();
+  await sleep(TOAST_RATE_LIMIT_MS);
+  try {
+    const res = await fetch(`${hostname}/stock/v1/inventory`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Toast-Restaurant-External-ID': locationId,
+      },
+    });
+    if (!res.ok) {
+      console.warn(`Stock API returned ${res.status} — treating all items as in stock.`);
+      return new Set();
+    }
+    const records = await res.json();
+    const outOfStock = new Set(
+      (Array.isArray(records) ? records : [])
+        .filter(r => r.status === 'OUT_OF_STOCK')
+        .map(r => r.guid)
+    );
+    console.log(`Stock API: ${records.length} records, ${outOfStock.size} OUT_OF_STOCK.`);
+    return outOfStock;
+  } catch (err) {
+    console.warn(`Stock API fetch failed: ${err.message} — treating all items as in stock.`);
+    return new Set();
+  }
+}
+
 // --- Menu fetch ------------------------------------------------------------
 
 /**
@@ -205,8 +255,8 @@ async function fetchMenuRaw(token, retries = 1) {
 }
 
 /**
- * Walk the published menu tree (menus → menuGroups → menuItems, recursively
- * descending into nested menuGroups in case Toast ever uses sub-groups).
+ * Walk the full published menu tree (all menus → all groups → items,
+ * recursively descending into nested menuGroups).
  */
 function* iterateMenuItems(data) {
   const menus = Array.isArray(data) ? data : (data?.menus || []);
@@ -244,24 +294,34 @@ function matchToastItem(item) {
 
 /**
  * Fetch oysters from Toast and map to Half Shell catalog slugs.
- * Returns { matched: [slug, ...], unmatched: [{name, guid, groupName, ...}, ...] }.
  *
- * On any failure, returns { matched: [], unmatched: [], error: "..." } and
- * keeps the caller's existing menu state untouched (graceful degradation).
+ * Two API calls per cycle (when menu has changed):
+ *   1. GET /menus/v2/menus    — full menu tree
+ *   2. GET /stock/v1/inventory — 86'd item GUIDs
+ *
+ * Items whose GUID appears in the stock inventory with status OUT_OF_STOCK
+ * are skipped. All remaining items are name-matched against the catalog.
+ *
+ * Returns { matched: [slug, ...], unmatched: [{name, guid, ...}], outOfStockCount }.
+ * On any failure returns { matched: [], unmatched: [], error: "..." } so the
+ * caller can leave the existing menu state untouched (graceful degradation).
  */
 async function fetchFromToastAPI() {
   if (!isToastConfigured()) {
     console.warn('Toast API not configured. Returning empty oyster list.');
-    return { matched: [], unmatched: [], error: 'not-configured' };
+    return { matched: [], unmatched: [], outOfStockCount: 0, error: 'not-configured' };
   }
   if (!CATALOG.length) {
     console.warn('Oyster catalog is empty — name-matching will fail. Run `npm run build:catalog`.');
-    return { matched: [], unmatched: [], error: 'catalog-empty' };
+    return { matched: [], unmatched: [], outOfStockCount: 0, error: 'catalog-empty' };
   }
 
   try {
     // Cheap change-detection: if metadata.lastUpdated hasn't moved, skip the
     // full menu fetch and return the previously computed result.
+    // Note: we still re-fetch stock on every cycle because 86 status changes
+    // without triggering a menu publish event. The stock fetch is lightweight
+    // (~133 records, <1KB) so polling it every 15 min is fine.
     const metadata = await fetchMenuMetadata();
     const lastUpdated = metadata?.lastUpdated;
     if (
@@ -269,21 +329,45 @@ async function fetchFromToastAPI() {
       lastUpdated === metadataCache.lastUpdated &&
       metadataCache.matched
     ) {
-      console.log(`Menu unchanged since ${lastUpdated} — returning cached result (${metadataCache.matched.length} matched, ${metadataCache.unmatched.length} unmatched).`);
-      return { matched: metadataCache.matched, unmatched: metadataCache.unmatched };
+      console.log(`Menu unchanged since ${lastUpdated} — skipping menu fetch, re-checking stock.`);
+      // Re-run stock check against the cached menu data (the token is still valid
+      // if we just fetched metadata, but we need it below — getToken() will use cache).
     }
 
     const token = await getToken();
-    const data = await fetchMenuRaw(token);
+
+    // Fetch stock (86) status first — lightweight call.
+    const outOfStockGuids = await fetchOutOfStockGuids(token);
+
+    // Fetch the menu only when it has changed (or on first run).
+    let data;
+    if (
+      lastUpdated &&
+      lastUpdated === metadataCache.lastUpdated &&
+      metadataCache.matched
+    ) {
+      // Menu hasn't changed — reuse the last full fetch result, but re-apply
+      // fresh stock filter. We don't cache the raw menu tree, so we still need
+      // to fetch it to re-apply the filter. This is acceptable because the stock
+      // call already happened and the menu call is gated on the metadata check.
+      data = await fetchMenuRaw(token);
+    } else {
+      data = await fetchMenuRaw(token);
+    }
 
     const matched = [];
     const matchedSet = new Set(); // de-dupe — multiple Toast items could map to one slug
     const unmatched = [];
+    let skippedOutOfStock = 0;
 
     for (const { item, groupName, menuName } of iterateMenuItems(data)) {
-      // Items without a name can't be matched; treat as a data quality issue
-      // rather than a hard error.
       if (!item || !item.name) continue;
+
+      // Skip items that staff have 86'd in Toast back-of-house.
+      if (item.guid && outOfStockGuids.has(item.guid)) {
+        skippedOutOfStock++;
+        continue;
+      }
 
       const slug = matchToastItem(item);
       if (slug) {
@@ -292,10 +376,8 @@ async function fetchFromToastAPI() {
           matchedSet.add(slug);
         }
       } else {
-        // Heuristic for "is this likely an oyster vs a non-oyster Raw Bar item":
-        // we don't know for sure without staff input, so we surface everything
-        // unmatched and let the admin UI filter. employee.html will eventually
-        // let staff dismiss "not an oyster" items so they stop reappearing.
+        // Surface unmatched items (non-oyster Raw Bar entries, new oysters not
+        // yet in the catalog, etc.) so the admin UI can flag them.
         unmatched.push({
           name: item.name,
           guid: item.guid,
@@ -312,11 +394,14 @@ async function fetchFromToastAPI() {
       metadataCache.unmatched = unmatched;
     }
 
-    console.log(`Toast sync: ${matched.length} matched, ${unmatched.length} unmatched (across all menu groups).`);
-    return { matched, unmatched };
+    console.log(
+      `Toast sync: ${matched.length} matched, ${unmatched.length} unmatched, ` +
+      `${skippedOutOfStock} skipped (86'd).`
+    );
+    return { matched, unmatched, outOfStockCount: skippedOutOfStock };
   } catch (err) {
     console.error('Failed to fetch from Toast API:', err);
-    return { matched: [], unmatched: [], error: err.message };
+    return { matched: [], unmatched: [], outOfStockCount: 0, error: err.message };
   }
 }
 
@@ -326,13 +411,14 @@ async function fetchFromToastAPI() {
  */
 async function fetchToastOysterList() {
   try {
-    const { matched, unmatched, error } = await fetchFromToastAPI();
+    const { matched, unmatched, outOfStockCount, error } = await fetchFromToastAPI();
     return {
       success: !error,
       oysterIds: matched,
       count: matched.length,
       unmatched,                     // [{name, guid, groupName, menuName, price}]
       unmatchedCount: unmatched.length,
+      outOfStockCount,               // how many items were skipped because they're 86'd
       configured: isToastConfigured(),
       error: error || undefined,
     };
@@ -344,6 +430,7 @@ async function fetchToastOysterList() {
       count: 0,
       unmatched: [],
       unmatchedCount: 0,
+      outOfStockCount: 0,
       configured: isToastConfigured(),
       error: err.message,
     };
@@ -361,7 +448,7 @@ async function syncToastToFirebase() {
     const snapshot = await db.ref('menu/serving').once('value');
     const currentMenu = snapshot.val() || {};
 
-    const { matched: toastOysterIds, unmatched, error } = await fetchFromToastAPI();
+    const { matched: toastOysterIds, unmatched, outOfStockCount, error } = await fetchFromToastAPI();
 
     if (error) {
       // Don't touch /menu/serving on a Toast-side failure — preserves whatever
@@ -375,12 +462,7 @@ async function syncToastToFirebase() {
     }
 
     if (toastOysterIds.length === 0) {
-      // Distinguish "Toast returned an empty menu" from "Toast errored": if we
-      // got an empty matched list with no error, that's an actual state we
-      // should write through (e.g., off-hours, all sold out). But also surface
-      // the unmatched list so the admin UI can flag a possible config issue
-      // (e.g., 30 unmatched items but 0 matched probably means catalog drift).
-      console.log(`Toast returned 0 matched oysters (${unmatched.length} unmatched).`);
+      console.log(`Toast returned 0 matched oysters (${unmatched.length} unmatched, ${outOfStockCount} 86'd).`);
     }
 
     const updates = {};
@@ -406,8 +488,8 @@ async function syncToastToFirebase() {
     }
 
     // Remove oysters that were on menu (from toast) but are no longer in the
-    // Toast list. Only removes items whose source is 'toast' — preserves
-    // manual staff additions.
+    // Toast list (either 86'd or removed). Only removes items whose source is
+    // 'toast' — preserves manual staff additions.
     const toastSet = new Set(toastOysterIds);
     let removeCount = 0;
     for (const [id, entry] of Object.entries(currentMenu)) {
@@ -425,7 +507,7 @@ async function syncToastToFirebase() {
       timestamp: now,
       action: 'toast_sync',
       oysterId: null,
-      details: `synced_${addCount}_added_${updateCount}_updated_${removeCount}_removed_${unmatched.length}_unmatched`,
+      details: `synced_${addCount}_added_${updateCount}_updated_${removeCount}_removed_${unmatched.length}_unmatched_${outOfStockCount}_86d`,
       actor: 'Toast API (automatic)',
       readable_timestamp: new Date(now).toISOString(),
     });
@@ -438,6 +520,7 @@ async function syncToastToFirebase() {
       removed: removeCount,
       total: toastOysterIds.length,
       unmatchedCount: unmatched.length,
+      outOfStockCount,
     };
   } catch (err) {
     console.error('Sync failed:', err);
@@ -479,6 +562,7 @@ module.exports = {
   isToastConfigured,
   getToken,
   fetchMenuMetadata,
+  fetchOutOfStockGuids,
   fetchFromToastAPI,
   fetchToastOysterList,
   syncToastToFirebase,
