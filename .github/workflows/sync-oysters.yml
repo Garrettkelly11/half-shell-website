@@ -20,7 +20,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install dependencies
         run: npm install firebase-admin
@@ -29,6 +29,16 @@ jobs:
         env:
           FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_ADMIN_CREDENTIALS }}
         run: echo "$FIREBASE_CREDENTIALS" > /tmp/firebase-key.json
+
+      - name: Verify secrets are present
+        env:
+          TOAST_CLIENT_ID:     ${{ secrets.TOAST_CLIENT_ID }}
+          TOAST_CLIENT_SECRET: ${{ secrets.TOAST_CLIENT_SECRET }}
+          TOAST_LOCATION_ID:   ${{ secrets.TOAST_RESTAURANT_GUID }}
+        run: |
+          echo "TOAST_CLIENT_ID length:     $(echo -n "$TOAST_CLIENT_ID" | wc -c)"
+          echo "TOAST_CLIENT_SECRET length: $(echo -n "$TOAST_CLIENT_SECRET" | wc -c)"
+          echo "TOAST_LOCATION_ID length:   $(echo -n "$TOAST_LOCATION_ID" | wc -c)"
 
       - name: Run Toast → Firebase sync
         env:
