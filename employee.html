@@ -775,101 +775,65 @@ function initPage() {
     }
   });
 
-  // Toast sync button - fetches from Toast and updates checkboxes for preview
+  // Toast sync button — triggers GitHub Actions workflow dispatch.
+  // The PAT is stored in Firebase config (never in source code).
+  const GH_REPO     = 'Garrettkelly11/half-shell-website';
+  const GH_WORKFLOW = 'sync-oysters.yml';
+
   document.getElementById('sync-toast-btn').addEventListener('click', async () => {
     if (isSyncing) return;
 
-    const btn = document.getElementById('sync-toast-btn');
+    const btn    = document.getElementById('sync-toast-btn');
     const status = document.getElementById('save-status');
-    isSyncing = true;
+    isSyncing    = true;
     btn.disabled = true;
-    btn.textContent = '⏳ Fetching…';
+    btn.textContent = '⏳ Syncing…';
 
     try {
-      // Direct Cloud Function URL — site is on GitHub Pages so /api rewrites are not available.
-      const SYNC_URL = 'https://us-central1-half-shell-oyster-menu.cloudfunctions.net/syncToastMenu';
-      const response = await fetch(SYNC_URL, {
+      // Fetch PAT from Firebase config
+      const tokenSnap = await db.ref('config/ghToken').once('value');
+      const ghToken = tokenSnap.val();
+      if (!ghToken) {
+        status.textContent = '⚠ Sync not configured — contact your manager.';
+        status.className = 'error-message';
+        setTimeout(() => { status.textContent = ''; status.className = 'save-status'; }, 6000);
+        return;
+      }
+
+      const url = `https://api.github.com/repos/${GH_REPO}/actions/workflows/${GH_WORKFLOW}/dispatches`;
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-sync-secret': 'K7R-4M9LpX-8J-2Q'
-        }
+          'Accept':               'application/vnd.github+json',
+          'Authorization':        `Bearer ${ghToken}`,
+          'Content-Type':         'application/json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+        body: JSON.stringify({ ref: 'main' }),
       });
 
-      const result = await response.json();
-
-      if (!result.success) {
-        if (!result.configured) {
-          status.textContent = '⚠️ Toast not configured. Set credentials with `firebase functions:secrets:set` and redeploy.';
-          status.className = 'error-message';
-        } else {
-          status.textContent = `Failed to fetch from Toast: ${result.error}`;
-          status.className = 'error-message';
-        }
-        setTimeout(() => {
-          status.textContent = '';
-        }, 6000);
-      } else if (result.oysterIds.length === 0) {
-        // Distinguish "Toast returned a real empty result" from "everything was unmatched":
-        // a high unmatchedCount with zero matches usually means catalog drift, not an empty menu.
-        if (result.unmatchedCount && result.unmatchedCount > 0) {
-          const sample = (result.unmatched || []).slice(0, 5).map(u => u.name).join(', ');
-          status.textContent = `⚠ Toast returned ${result.unmatchedCount} items but none matched the catalog (e.g., ${sample}). Likely a catalog/name mismatch — no changes made.`;
-          status.className = 'error-message';
-        } else {
-          status.textContent = '✓ Toast returned 0 oysters. No changes made.';
-          status.className = 'error-message success';
-        }
-        setTimeout(() => {
-          status.textContent = '';
-        }, 8000);
-      } else {
-        // Update checkboxes based on Toast list (preview only)
-        // Mark Toast oysters and uncheck anything not in Toast
-        const toastSet = new Set(result.oysterIds);
-
-        // Update pending selection to match Toast
-        pendingServing.clear();
-        toastSet.forEach(id => pendingServing.add(id));
-
-        renderChecklist(document.getElementById('search-input').value.toLowerCase());
-        syncCounter();
-
-        // Build the status message. If there are unmatched items, surface a count
-        // and a sample so staff know what's not making it onto the website.
-        let msg = `✓ Loaded ${result.count} oysters from Toast. Review the selection below, then click "Save Menu" to apply.`;
-        if (result.unmatchedCount && result.unmatchedCount > 0) {
-          const oysterShaped = (result.unmatched || []).filter(u => {
-            const n = (u.name || '').toLowerCase();
-            // Filter out obvious non-oysters (caviars, towers, crab, ceviche, shooters, oyster preparations)
-            // so the warning is mostly real candidates rather than menu noise.
-            return !/(caviar|tower|crab|shooter|sampler|crudo|ceviche|bienville|chargrilled|royale|stone)/i.test(n);
-          });
-          if (oysterShaped.length > 0) {
-            const sample = oysterShaped.slice(0, 4).map(u => u.name).join(', ');
-            const more = oysterShaped.length > 4 ? `, +${oysterShaped.length - 4} more` : '';
-            msg += `  Note: ${oysterShaped.length} Toast item${oysterShaped.length === 1 ? '' : 's'} couldn't be matched to the catalog (${sample}${more}). They won't appear on the website until added or aliased.`;
-          }
-        }
-        status.textContent = msg;
+      if (res.status === 204) {
+        status.textContent = '✓ Synced from Toast — menu will refresh in about 30 seconds.';
         status.className = 'error-message success';
-        setTimeout(() => {
-          status.textContent = '';
-        }, 8000);
-
-        // Update last sync time
         lastSyncTime = Date.now();
         localStorage.setItem('lastToastSync', lastSyncTime);
         updateSyncTimeDisplay();
+        setTimeout(() => { status.textContent = ''; status.className = 'save-status'; }, 8000);
+      } else if (res.status === 401) {
+        status.textContent = '⚠ Sync failed: token expired — ask your manager to update it.';
+        status.className = 'error-message';
+        setTimeout(() => { status.textContent = ''; status.className = 'save-status'; }, 8000);
+      } else {
+        status.textContent = `⚠ Sync failed (HTTP ${res.status}) — try again or contact your manager.`;
+        status.className = 'error-message';
+        setTimeout(() => { status.textContent = ''; status.className = 'save-status'; }, 8000);
       }
     } catch (error) {
       status.textContent = `Network error: ${error.message}`;
       status.className = 'error-message';
-      setTimeout(() => {
-        status.textContent = '';
-      }, 5000);
+      setTimeout(() => { status.textContent = ''; status.className = 'save-status'; }, 5000);
     } finally {
-      isSyncing = false;
+      isSyncing    = false;
       btn.disabled = false;
       btn.textContent = 'Sync Toast';
     }
