@@ -664,7 +664,7 @@ function syncCounter() {
 
 function renderChecklist(filter = '') {
   const checklist = document.getElementById('serving-checklist');
-  const regionLabel = { ct:'CT', ma:'MA', me:'ME', nc:'NC', nj:'NJ', ri:'RI', va:'VA', wa:'WA', bc:'BC', nb:'NB', pei:'PEI' };
+  const regionLabel = { ct:'CT', ma:'MA', md:'MD', me:'ME', nc:'NC', nj:'NJ', ny:'NY', ri:'RI', va:'VA', wa:'WA', bc:'BC', nb:'NB', pei:'PEI' };
 
   const filtered = OYSTERS.filter(o =>
     !filter || o.name.toLowerCase().includes(filter) || o.origin.toLowerCase().includes(filter)
