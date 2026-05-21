@@ -423,6 +423,7 @@ var OYSTERS = [
   {
     id: "nc-ikigai",
     name: "NC Ikigai",
+    aliases: ["NC Igaki"],
     salinity: "medium-high",
     salinityText: "Moderate to high — Newport River",
     region: "nc",
@@ -1136,7 +1137,8 @@ var OYSTERS = [
   },
   {
     id: "katama",
-    name: "Katama",
+    name: "Katama Bay",
+    aliases: ["Katama"],
     salinity: "high",
     salinityText: "High — deep bay with strong 5–7 foot tides and full open-ocean influence",
     region: "ma",

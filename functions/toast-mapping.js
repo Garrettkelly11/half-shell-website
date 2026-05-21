@@ -31,9 +31,14 @@
  */
 
 const guidToSlug = {
-  // No overrides today. Add entries as needed; they should be the exception.
-  // Example:
-  //   '01234567-89ab-cdef-0123-456789abcdef': 'island-creek',
+  // T&A — Toast has the same oyster entered twice with slightly different
+  // casing ("TnA" and "TNA"). Both must resolve to the single catalog
+  // entry "ta". Name matching already handles this (both normalize to "tna"),
+  // but pinning the GUIDs is belt-and-suspenders insurance: if the catalog
+  // name ever changes, the historical Toast GUIDs still resolve.
+  //
+  '6789e2a8-f41a-43c3-a6ae-308a1cd7555d': 'ta',  // TnA (Toast variant 1)
+  '46f06d53-4027-4088-bdd1-76fb8a5fabf7': 'ta',  // TNA (Toast variant 2 — same oyster, different casing)
 };
 
 // Inverse map for hypothetical future write-back operations. Auto-derived.
