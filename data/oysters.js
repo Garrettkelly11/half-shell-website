@@ -1509,7 +1509,7 @@ var OYSTERS = [
     seasonalAvailability: "Year-round",
     size: "Cocktail — 2.5–3\"",
     shell: "Thick and chip-resistant — a favorite of rookie shuckers and veterans alike",
-    tastingNotes: "Mild brine up front with a bright, clean finish, an excelent choice for your first oyster experience.",
+    tastingNotes: "Mild brine up front with a bright, clean finish, an excellent choice for your first oyster experience.",
     notable: "Grown by Atlantic Aqua Farms, the same producer behind Barstool Cocktails, Irish Points, and Love Shucks. Note: producer lists origin as PEI's North Shore; distributor Fortune Fish lists southeastern New Brunswick.",
     photoUrl: null,
     photoAlt: "Fire Lake oysters on the half shell",
