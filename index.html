@@ -732,4 +732,11 @@ function render(servingIds) {
     if (!opt) return;
     currentSort = opt.dataset.sort;
     sortDrop.querySelectorAll('.sort-option').forEach(o => o.classList.toggle('active', o === opt));
-    sortDrop.classList.rem
+    sortDrop.classList.remove('open');
+    sortBtn.classList.remove('active');
+    render(lastServingIds);
+  });
+})();
+</script>
+</body>
+</html>
