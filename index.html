@@ -598,7 +598,7 @@ function render(servingIds) {
         ${o.price != null ? `<div class="card-price">$${o.price % 1 === 0 ? o.price : o.price.toFixed(2)}</div>` : ''}
       </div>
       <div class="card-salinity">
-        <span class="sal-label" data-tip="Salinity is the measure of salt in the water your oyster was grown&#10;&#10;More dots = Saltier oyster">Salinity</span>
+        <span class="sal-label" data-tip="Salinity (measured in ppt) describes the amount of salt in the water in which the oyster was grown.&#10;&#10;● - Low salinity (Least salty)&#10;|&#10;●●●●● - Very High Salinity (Most Salty)">Salinity</span>
         <div class="sal-dots">${buildDots(o.salinity)}</div>
         <span class="sal-text">${(function(t){
           if(!t||t==='TBD')return'';
