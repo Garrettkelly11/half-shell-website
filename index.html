@@ -495,6 +495,7 @@ const PHOTO_MAP = {
   'mookiemoto': 'assets/oysters/mookiemoto.webp',
   'moondancer': 'assets/oysters/moondancer.jpg',
   'moonrise': 'assets/oysters/moonrise.jpg',
+  'murphys-lucky-charms': 'assets/oysters/murphys-lucky-charms.webp',
   'nc-ikigai': 'assets/oysters/nc-ikigai.png',
   'olde-salt': 'assets/oysters/olde-salt.jpg',
   'olympic-view': 'assets/oysters/olympic-view.png',
@@ -507,6 +508,7 @@ const PHOTO_MAP = {
   'shigoku': 'assets/oysters/shigoku.jpg',
   'southern-salt': 'assets/oysters/southern-salt.webp',
   'spindrift': 'assets/oysters/spindrift.png',
+  'sweet-jesus': 'assets/oysters/sweet-jesus.jpg',
   'sweet-petite': 'assets/oysters/sweet-petite.avif',
   'ta': 'assets/oysters/ta.png',
   'taylor-virginica': 'assets/oysters/taylor-virginica.jpg',
@@ -730,11 +732,4 @@ function render(servingIds) {
     if (!opt) return;
     currentSort = opt.dataset.sort;
     sortDrop.querySelectorAll('.sort-option').forEach(o => o.classList.toggle('active', o === opt));
-    sortDrop.classList.remove('open');
-    sortBtn.classList.remove('active');
-    render(lastServingIds);
-  });
-})();
-</script>
-</body>
-</html>
+    sortDrop.classList.rem
