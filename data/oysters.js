@@ -44,6 +44,7 @@ var OYSTERS = [
   {
     id: "blackberry",
     name: "Blackberries",
+    aliases: ["Blackberry"],
     salinity: "medium",
     salinityText: "Medium — 18–22 ppt",
     region: "va",
@@ -144,7 +145,7 @@ var OYSTERS = [
     notable: "Twice-daily tidal exchange from the Atlantic maintains consistently very high salinity. Farm founded 2018, subsidiary of Three Little Spats Oyster Company.",
     photoUrl: null,
     photoAlt: "Carolina Gold oysters on the half shell",
-    price: 3
+    price: 4
   },
   {
     id: "divine-pines",
@@ -228,6 +229,27 @@ var OYSTERS = [
     notable: "Essentially an oversized Shigoku — same farm, same technique, same terroir, just grown longer for a larger, rounder, heftier oyster.",
     photoUrl: null,
     photoAlt: "Fat Bastard oysters on the half shell",
+    price: 4.5
+  },
+  {
+    id: "fat-bellies",
+    name: "Fat Bellies",
+    salinity: "high",
+    salinityText: "Medium-high — Newport River mouth sits close to Bogue Sound and Atlantic inlets; described as more ocean water than fresh",
+    region: "nc",
+    origin: "Newport River, Morehead City, North Carolina (Crystal Coast)",
+    farmer: "Crystal Coast Oysters (Kyle Frey & Phillip Lannon)",
+    farmerUrl: "https://crystalcoastoysters.co",
+    species: "Crassostrea virginica (Eastern oyster; triploid stock)",
+    farmingMethod: "Hybrid bottom cage / floating bag; seeds start in bottom cages, graduate to floating bags at ~1\", return to bottom cages to finish; regular machine tumbling for shell formation",
+    growOut: "13–18 months",
+    seasonalAvailability: "Year-round (triploid stock — no spawning, no milky summer meats)",
+    size: "Medium — 2.5–3\" (cocktail)",
+    shell: "Well-formed, deep cup promoted by tumbling",
+    tastingNotes: "Sweet and salty balance with notes of melon and cucumber; potato-chip-style sweetness; plump, oceanic brine.",
+    notable: "One of only a few cultured farms operating on the Newport River, a historically prolific wild oyster estuary. Distributed nationally — on menus at Bowen's Island (Charleston), Husk (Savannah), and restaurants in LA and Miami.",
+    photoUrl: null,
+    photoAlt: "Fat Bellies oysters on the half shell",
     price: 4
   },
   {
@@ -270,7 +292,7 @@ var OYSTERS = [
     notable: "Plymouth Bay's massive tidal range (11–12 foot tidal swings) provides regular, fresh saltwater exchange that keeps the flavor clean and consistent. Near the Mayflower's historic anchorage.",
     photoUrl: null,
     photoAlt: "Heart's Desire oysters on the half shell",
-    price: null
+    price: 4
   },
   {
     id: "irish-point",
@@ -461,7 +483,7 @@ var OYSTERS = [
     notable: "Rappahannock Oyster Co. deliberately sited this oyster at the extreme high-salinity end of their portfolio as a counterpoint to their freshwater-influenced Rappahannock River oyster. The 6-month grow-out is among the fastest of any East Coast half-shell oyster.",
     photoUrl: null,
     photoAlt: "Olde Salt oysters on the half shell",
-    price: 3
+    price: 4
   },
   {
     id: "pink-moon",
@@ -524,7 +546,7 @@ var OYSTERS = [
     notable: "The two-bay growing method — Rustico Bay grow-out, New London Bay finish — is the oyster's defining feature, functioning like a terroir-shaping finishing stage for the final flavor profile.",
     photoUrl: null,
     photoAlt: "Queen's Cup oysters on the half shell",
-    price: 3
+    price: 4
   },
   {
     id: "rappahannock",
@@ -608,7 +630,7 @@ var OYSTERS = [
     notable: "The name directly references the flavor profile. New River Inlet's Atlantic exposure is the defining geographic feature — one of the more open-to-the-ocean inlet systems in NC.",
     photoUrl: null,
     photoAlt: "Southern Salt oysters on the half shell",
-    price: 3
+    price: 4
   },
   {
     id: "sweet-petite",
@@ -671,7 +693,7 @@ var OYSTERS = [
     notable: "Considered one of the rarest and most collectible oysters in North America. Won Best Flavor at the East Coast Shellfish Growers Association — remarkable for a West Coast farm. Supply perpetually falls short of demand.",
     photoUrl: null,
     photoAlt: "Taylor Virginica oysters on the half shell",
-    price: 4
+    price: 4.5
   },
   {
     id: "moonrise",
@@ -1138,7 +1160,7 @@ var OYSTERS = [
   {
     id: "katama",
     name: "Katama Bay",
-    aliases: ["Katama"],
+    aliases: ["Katama", "Katama MA"],
     salinity: "high",
     salinityText: "High — deep bay with strong 5–7 foot tides and full open-ocean influence",
     region: "ma",
@@ -1155,7 +1177,7 @@ var OYSTERS = [
     notable: "One of the few US oyster farms powered almost entirely by renewable energy. Katama Bay hosts ~12 farms producing 2+ million oysters/year; Signature Oyster Farm is its flagship. Distinct from Sweet Petite (also Katama Bay, different farm). Distributed through Island Creek Oysters.",
     photoUrl: null,
     photoAlt: "Katama oysters on the half shell",
-    price: 3
+    price: 4
   },
   {
     id: "lovers-river",
@@ -1386,6 +1408,111 @@ var OYSTERS = [
     notable: "One of four signature oyster varieties from Hollywood Oyster Company on the Patuxent River. Grown in shallow coves with regular tumbling that develops deep cup and large, firm meat. Trademark of American Oyster Company (filed 2015).",
     photoUrl: null,
     photoAlt: "Va Va Voom oysters on the half shell",
+    price: 4
+  },
+  {
+    id: "morris-island",
+    name: "Morris Island",
+    salinity: "medium-high",
+    salinityText: "Medium to high — Charleston Harbor estuarine waters ~20–30 ppt",
+    region: "sc",
+    origin: "Charleston Harbor, South Carolina",
+    farmer: "Unknown — small local operation or distributor name",
+    farmerUrl: null,
+    species: "Crassostrea virginica (Eastern oyster)",
+    farmingMethod: "Unknown — SC Lowcountry farms typically use floating or bottom cages",
+    growOut: "Unknown (SC farmed singles typically 12–18 months)",
+    seasonalAvailability: "Unknown (likely year-round if triploid farmed stock)",
+    size: "Unknown (SC farmed singles typically 2.5–3\")",
+    shell: "Unknown",
+    tastingNotes: "Medium brine, sweet; delicate - like a sea-breeze cucumber salad.",
+    notable: "Named for the uninhabited 840-acre barrier island at the mouth of Charleston Harbor, historically significant for its Civil War-era lighthouse. Farm identity not publicly documented.",
+    photoUrl: null,
+    photoAlt: "Morris Island oysters on the half shell",
+    price: 4
+  },
+  {
+    id: "standish-shore",
+    name: "Standish Shore",
+    salinity: "high",
+    salinityText: "High — 28–30 ppt (near full ocean; 9–12 foot tidal swings)",
+    region: "ma",
+    origin: "Duxbury Bay, Massachusetts",
+    farmer: "Ben Lloyd — Pangea Shellfish Company (farm purchased 2010, first harvest 2012)",
+    farmerUrl: "https://www.standishshoreoysters.com",
+    species: "Crassostrea virginica (Eastern oyster)",
+    farmingMethod: "Hybrid cage-to-bottom: upwelled seed → nursery bags → bottom cages → tumbled 3–4 times → planted loose on sandy bottom flats to finish",
+    growOut: "~18 months",
+    seasonalAvailability: "July through March",
+    size: "Cocktail ~2.75\"; Select ~3.5\"",
+    shell: "Hard, uniform, deep cups from tumbling; white ridged exterior with distinctive black and purple streaks; easy to shuck",
+    tastingNotes: "Briny and crisp up front with a smooth mineral finish. Slightly fruity green apple sweetness  - clean and refreshing.",
+    notable: "Duxbury Bay has no historical record of wild oysters — water too cold for natural spawning. Pangea Shellfish is both grower and major wholesale distributor. Produces 4+ million oysters per year. Neighbor to Island Creek Oysters.",
+    photoUrl: null,
+    photoAlt: "Standish Shore oysters on the half shell",
+    price: 4
+  },
+  {
+    id: "fisher-island",
+    name: "Fisher Island",
+    salinity: "high",
+    salinityText: "High — 30–32 ppt (near full ocean)",
+    region: "ny",
+    origin: "West Harbor, Fishers Island, New York (Block Island Sound)",
+    farmer: "Fishers Island Oyster Farm (Sarah & Steve Malinowski, est. 1981)",
+    farmerUrl: "https://www.fishersislandoysters.com",
+    species: "Crassostrea virginica (Eastern oyster)",
+    farmingMethod: "Suspension culture in five-tiered lantern nets and pearl nets; never touch bottom; pulled every 3 weeks; selective spawning program",
+    growOut: "2–3 years",
+    seasonalAvailability: "Year-round; peak fall through winter",
+    size: "Medium — 3–3.5\"; petites 2.5–3\"",
+    shell: "Iconic teardrop shape with intricate fluting; ombré ivory-to-sable coloring; deep cup; flat top; clean from suspension culture",
+    tastingNotes: "Medium-high brine with a creamy, buttery body. Mineral-forward with a clean, dry finish.",
+    notable: "One of the first boutique oyster farms on the East Coast (est. 1981). The farm's hatchery supplies seed to many well-known producers. Steve Malinowski holds a PhD in Marine Ecology from UConn. ~75% of production goes to ~50 top NYC restaurants.",
+    photoUrl: null,
+    photoAlt: "Fisher Island oysters on the half shell",
+    price: 4
+  },
+  {
+    id: "peconic-gold",
+    name: "Peconic Gold",
+    salinity: "medium-high",
+    salinityText: "Medium-high — Great Peconic Bay ~25–28 ppt",
+    region: "ny",
+    origin: "Cutchogue Harbor, Great Peconic Bay, North Fork of Long Island, New York",
+    farmer: "Captain Matt Ketcham — Peconic Gold Oysters, Inc. (est. 2013)",
+    farmerUrl: "https://www.peconicgoldoysters.com",
+    species: "Crassostrea virginica (Eastern oyster)",
+    farmingMethod: "Off-bottom cages in shallow water; regularly tumbled and sorted",
+    growOut: "~2–3 years",
+    seasonalAvailability: "Year-round (NYS Grown & Certified)",
+    size: "Medium — 2.5–3\"",
+    shell: "Distinctive reddish-gold coloring from iron and nutrients in the bay; deep cups from tumbling",
+    tastingNotes: "Full-bodied brine with a sweet butterscotch finish - like salted caramel from the sea.",
+    notable: "Rated 4/5 by Rowan Jacobsen as 'the deepest cupped and fullest flavored oysters in Peconic Bay.' Matt Ketcham holds a B.S. in Aquaculture from URI and sits on the ECSGA board. Slow Food East End 'Snail of Approval' recognition.",
+    photoUrl: null,
+    photoAlt: "Peconic Gold oysters on the half shell",
+    price: 4
+  },
+  {
+    id: "fire-lake",
+    name: "Fire Lake",
+    salinity: "medium",
+    salinityText: "Medium — leads with brine, yields to a bright, clean finish",
+    region: "pei",
+    origin: "North Shore, Prince Edward Island, Canada",
+    farmer: "Atlantic Aqua Farms",
+    farmerUrl: "https://atlanticaquafarms.com/usa/oysters/fire-lake-oysters/",
+    species: "Crassostrea virginica (Eastern oyster)",
+    farmingMethod: "Farm-raised in the cold waters of Atlantic Canada",
+    growOut: "TBD",
+    seasonalAvailability: "Year-round",
+    size: "Cocktail — 2.5–3\"",
+    shell: "Thick and chip-resistant — a favorite of rookie shuckers and veterans alike",
+    tastingNotes: "Mild brine up front with a bright, clean finish - an easy, crowd-pleasing Canadian cocktail oyster.",
+    notable: "Grown by Atlantic Aqua Farms, the same producer behind Barstool Cocktails, Irish Points, and Love Shucks. Note: producer lists origin as PEI's North Shore; distributor Fortune Fish lists southeastern New Brunswick.",
+    photoUrl: null,
+    photoAlt: "Fire Lake oysters on the half shell",
     price: 4
   }
 ];
