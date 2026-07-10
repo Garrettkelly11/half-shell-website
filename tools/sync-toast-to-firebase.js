@@ -30,7 +30,8 @@
 const fs    = require('fs');
 const path  = require('path');
 const vm    = require('vm');
-const admin = require('firebase-admin');
+const { initializeApp, getApps, applicationDefault } = require('firebase-admin/app');
+const { getDatabase } = require('firebase-admin/database');
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 const HOSTNAME         = process.env.TOAST_API_HOSTNAME || 'https://ws-api.toasttab.com';
@@ -163,10 +164,10 @@ function* iterateAllItems(data) {
 }
 
 // ─── Firebase init ───────────────────────────────────────────────────────────
-if (!admin.apps.length) {
-  admin.initializeApp({ databaseURL: DATABASE_URL });
+if (!getApps().length) {
+  initializeApp({ credential: applicationDefault(), databaseURL: DATABASE_URL });
 }
-const db = admin.database();
+const db = getDatabase();
 
 // ─── Main sync ───────────────────────────────────────────────────────────────
 (async () => {

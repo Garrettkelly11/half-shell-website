@@ -23,7 +23,7 @@ jobs:
           node-version: '24'
 
       - name: Install dependencies
-        run: npm install firebase-admin
+        run: npm install firebase-admin@^13
 
       - name: Write Firebase service account credentials
         env:
@@ -51,4 +51,4 @@ jobs:
 
       - name: Clean up credentials
         if: always()
-        run: rm -f /tmp/firebase-key.json
+        run: rm -f /tmp/firebase-key.j
