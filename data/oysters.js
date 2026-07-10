@@ -1329,6 +1329,7 @@ var OYSTERS = [
   {
     id: "murphys-lucky-charms",
     name: "Murphy's Lucky Charms",
+    aliases: ["Murph's Lucky Charms"],
     salinity: "low",
     salinityText: "Low–medium",
     region: "pei",
