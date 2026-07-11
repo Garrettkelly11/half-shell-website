@@ -1515,5 +1515,28 @@ var OYSTERS = [
     photoUrl: null,
     photoAlt: "Fire Lake oysters on the half shell",
     price: 4
+  },
+  {
+    id: "dukes-of-topsail",
+    name: "Dukes of Topsail",
+    aliases: ["Dukes of Topsail Sound", "Dukes"],
+    salinity: "high",
+    salinityText: "High",
+    region: "nc",
+    origin: "Topsail Sound, North Carolina",
+    farmer: "N. SEA. Oyster Co.",
+    farmerUrl: "https://nseaoyster.com/pages/dukes",
+    species: "Crassostrea virginica (Eastern oyster)",
+    farmingMethod: "Suspended 300-ft longline (Australian/French hybrid technique) with a rigorous dry-and-tumble schedule for thick shells and a large adductor",
+    growOut: "~2 years",
+    seasonalAvailability: "Year-round; gills can turn jade green in winter algae blooms",
+    size: "Medium — 2.5–3\"",
+    shell: "Thick, clean shell from extreme air exposure and tumbling",
+    tastingNotes: "A wave of open-ocean salt up front, sweet scallop-like body, and a green, piney finish - like the long-leaf pines and spartina grass around the farm.",
+    notable: "Called 'arguably the best damn oyster in the South' - the upstart NC farm proving Topsail Sound belongs among the best growing waters anywhere. Averages ~32 ppt salinity.",
+    photoUrl: null,
+    photoAlt: "Dukes of Topsail oysters on the half shell",
+    price: 4
   }
+
 ];
