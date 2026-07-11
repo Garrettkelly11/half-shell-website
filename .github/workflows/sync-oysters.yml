@@ -51,4 +51,4 @@ jobs:
 
       - name: Clean up credentials
         if: always()
-        run: rm -f /tmp/firebase-key.j
+        run: rm -f /tmp/firebase-key.json
