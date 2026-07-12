@@ -145,7 +145,7 @@ var OYSTERS = [
     notable: "Twice-daily tidal exchange from the Atlantic maintains consistently very high salinity. Farm founded 2018, subsidiary of Three Little Spats Oyster Company.",
     photoUrl: null,
     photoAlt: "Carolina Gold oysters on the half shell",
-    price: 4
+    price: 3
   },
   {
     id: "divine-pines",
@@ -483,7 +483,7 @@ var OYSTERS = [
     notable: "Rappahannock Oyster Co. deliberately sited this oyster at the extreme high-salinity end of their portfolio as a counterpoint to their freshwater-influenced Rappahannock River oyster. The 6-month grow-out is among the fastest of any East Coast half-shell oyster.",
     photoUrl: null,
     photoAlt: "Olde Salt oysters on the half shell",
-    price: 4
+    price: 3
   },
   {
     id: "pink-moon",
@@ -546,7 +546,7 @@ var OYSTERS = [
     notable: "The two-bay growing method — Rustico Bay grow-out, New London Bay finish — is the oyster's defining feature, functioning like a terroir-shaping finishing stage for the final flavor profile.",
     photoUrl: null,
     photoAlt: "Queen's Cup oysters on the half shell",
-    price: 4
+    price: 3
   },
   {
     id: "rappahannock",
@@ -630,7 +630,7 @@ var OYSTERS = [
     notable: "The name directly references the flavor profile. New River Inlet's Atlantic exposure is the defining geographic feature — one of the more open-to-the-ocean inlet systems in NC.",
     photoUrl: null,
     photoAlt: "Southern Salt oysters on the half shell",
-    price: 4
+    price: 3
   },
   {
     id: "sweet-petite",
@@ -693,7 +693,7 @@ var OYSTERS = [
     notable: "Considered one of the rarest and most collectible oysters in North America. Won Best Flavor at the East Coast Shellfish Growers Association — remarkable for a West Coast farm. Supply perpetually falls short of demand.",
     photoUrl: null,
     photoAlt: "Taylor Virginica oysters on the half shell",
-    price: 4.5
+    price: 4
   },
   {
     id: "moonrise",
@@ -1177,7 +1177,7 @@ var OYSTERS = [
     notable: "One of the few US oyster farms powered almost entirely by renewable energy. Katama Bay hosts ~12 farms producing 2+ million oysters/year; Signature Oyster Farm is its flagship. Distinct from Sweet Petite (also Katama Bay, different farm). Distributed through Island Creek Oysters.",
     photoUrl: null,
     photoAlt: "Katama oysters on the half shell",
-    price: 4
+    price: 3
   },
   {
     id: "lovers-river",
@@ -1327,9 +1327,8 @@ var OYSTERS = [
     price: 4
   },
   {
-    id: "murphys-lucky-charms",
-    name: "Murphy's Lucky Charms",
-    aliases: ["Murph's Lucky Charms"],
+    id: "murphs-lucky-charms",
+    name: "Murph's Lucky Charms",
     salinity: "low",
     salinityText: "Low–medium",
     region: "pei",
@@ -1515,7 +1514,7 @@ var OYSTERS = [
     photoUrl: null,
     photoAlt: "Fire Lake oysters on the half shell",
     price: 4
-  },
+  }, 
   {
     id: "dukes-of-topsail",
     name: "Dukes of Topsail",
@@ -1538,5 +1537,4 @@ var OYSTERS = [
     photoAlt: "Dukes of Topsail oysters on the half shell",
     price: 4
   }
-
 ];
