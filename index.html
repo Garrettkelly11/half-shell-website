@@ -3,6 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3SQ3075FQ1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-3SQ3075FQ1');
+  </script>
   <meta name="description" content="Half Shell Raw Bar's nightly oyster menu — fresh selections sourced from both coasts, with flavor profiles and pricing." />
   <title>Half Shell — On the Half Shell Tonight</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -756,6 +765,20 @@ function render(servingIds) {
     render(lastServingIds);
   });
 })();
+</script>
+<script>
+  /* GA4 — oyster card interest. Delegated so it survives Firebase re-renders. */
+  document.addEventListener('click', function (e) {
+    var card = e.target.closest && e.target.closest('#card-grid .oyster-card');
+    if (!card || typeof gtag !== 'function') return;
+    var nameEl = card.querySelector('.card-name');
+    if (!nameEl) return;
+    gtag('event', 'select_item', {
+      item_list_id: 'tonights_menu',
+      item_list_name: "Tonight's Menu",
+      items: [{ item_name: nameEl.textContent.trim() }]
+    });
+  });
 </script>
 </body>
 </html>
