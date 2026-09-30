@@ -1,12 +1,26 @@
 name: Sync Oyster Menu from Toast
 
-# Runs every 15 minutes between 11 AM and 11 PM Eastern Time.
-# Triggerable manually from the Actions tab at any time.
+# Intended to run every 15 minutes between 11 AM and 11 PM Eastern Time,
+# year-round, regardless of daylight saving.
+#
+# GitHub Actions cron is UTC-only and has no timezone/DST awareness, so a
+# fixed UTC window (the old approach) silently drifts an hour off twice a
+# year at DST transitions. Fix: schedule a UTC window wide enough to cover
+# BOTH EDT (UTC-4) and EST (UTC-5), then have the "Check business hours"
+# step below compute the actual America/New_York wall-clock hour (which
+# the OS tzdata converts correctly across DST) and skip the run if it's
+# outside 11 AM–11:59 PM ET. Manual (workflow_dispatch) runs always proceed.
+#
+# Minutes are also offset off :00/:15/:30/:45 — GitHub's own docs warn that
+# exact quarter-hour marks are peak load for the scheduler and are the most
+# likely to be delayed or dropped, which is why this had been firing every
+# few hours instead of every 15 minutes.
 on:
   schedule:
-    # UTC equivalents of 11 AM – 11 PM ET
-    - cron: '*/15 15-23 * * *'   # 3 PM – 11:59 PM UTC  (11 AM – 7:59 PM ET)
-    - cron: '*/15 0-3 * * *'     # 12 AM – 3:59 AM UTC  (8 PM – 11:59 PM ET)
+    # Union of the 11 AM–11:59 PM ET window under EDT and EST:
+    #   EDT: 15:00–03:59 UTC   EST: 16:00–04:59 UTC   ->  15:00–04:59 UTC
+    - cron: '7,22,37,52 15-23 * * *'  # 15:00–23:59 UTC
+    - cron: '7,22,37,52 0-4 * * *'    # 00:00–04:59 UTC
   workflow_dispatch:
 
 jobs:
@@ -17,20 +31,35 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Check business hours (11 AM-11:59 PM America/New_York, DST-safe)
+        id: hours
+        run: |
+          HOUR=$(TZ="America/New_York" date +%H)
+          if [ "$HOUR" -ge 11 ] && [ "$HOUR" -le 23 ]; then
+            echo "in_window=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "in_window=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Current America/New_York hour: $HOUR"
+
       - name: Set up Node.js
+        if: github.event_name == 'workflow_dispatch' || steps.hours.outputs.in_window == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '24'
 
       - name: Install dependencies
+        if: github.event_name == 'workflow_dispatch' || steps.hours.outputs.in_window == 'true'
         run: npm install firebase-admin@^13
 
       - name: Write Firebase service account credentials
+        if: github.event_name == 'workflow_dispatch' || steps.hours.outputs.in_window == 'true'
         env:
           FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_ADMIN_CREDENTIALS }}
         run: echo "$FIREBASE_CREDENTIALS" > /tmp/firebase-key.json
 
       - name: Verify secrets are present
+        if: github.event_name == 'workflow_dispatch' || steps.hours.outputs.in_window == 'true'
         env:
           TOAST_CLIENT_ID:     ${{ secrets.TOAST_CLIENT_ID }}
           TOAST_CLIENT_SECRET: ${{ secrets.TOAST_CLIENT_SECRET }}
@@ -41,6 +70,7 @@ jobs:
           echo "TOAST_LOCATION_ID length:   $(echo -n "$TOAST_LOCATION_ID" | wc -c)"
 
       - name: Run Toast → Firebase sync
+        if: github.event_name == 'workflow_dispatch' || steps.hours.outputs.in_window == 'true'
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-key.json
           TOAST_CLIENT_ID:       ${{ secrets.TOAST_CLIENT_ID }}
