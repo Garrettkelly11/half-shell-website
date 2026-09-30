@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3SQ3075FQ1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-3SQ3075FQ1');
+  </script>
+  <meta name="description" content="Half Shell Raw Bar's curated oyster flights — sets of oysters chosen from tonight's menu to be tasted together." />
+  <title>Half Shell — Curated Flights</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="image" href="assets/hero-slide-1.webp" type="image/webp" fetchpriority="high" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"></noscript>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Playfair Display', Georgia, serif;
+      background: #f3f8f6;
+      color: #0e2d3a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      position: relative;
+      background: url('assets/hero-slide-1.webp') center / cover no-repeat;
+      color: #f5f0e8;
+      padding: 2rem 2.5rem 1.75rem;
+      border-bottom: 3px solid #e89438;
+      text-align: center;
+    }
+    .hero-login-link {
+      position: absolute;
+      top: 0.85rem;
+      right: 1rem;
+      z-index: 10;
+      background: rgba(14, 45, 58, 0.55);
+      border: 1px solid rgba(232, 148, 56, 0.35);
+      border-radius: 4px;
+      padding: 0.45rem 0.55rem;
+      color: #f5f0e8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .hero-login-link:hover { background: rgba(14, 45, 58, 0.88); }
+    .hero-login-link svg { display: block; }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 28, 38, 0.68);
+    }
+    header > * { position: relative; z-index: 1; }
+    .header-logo {
+      height: 80px;
+      width: auto;
+      margin-bottom: 1rem;
+      filter: drop-shadow(0 2px 10px rgba(0,0,0,0.5));
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      line-height: 1.2;
+    }
+    header p {
+      font-size: 0.9rem;
+      color: #c8dfe5;
+      margin-top: 0.4rem;
+      font-style: italic;
+    }
+
+    /* ── Page nav bar ── */
+    .page-nav {
+      background: #112f3d;
+      border-bottom: 1px solid #1a4a5a;
+      padding: 0 2rem;
+      display: flex;
+      gap: 0;
+    }
+    .page-nav a {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #7fb3c0;
+      text-decoration: none;
+      padding: 0.65rem 1rem;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .page-nav a:hover { color: #f5f0e8; }
+    .page-nav a.active { color: #e89438; border-bottom-color: #e89438; }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      padding: 2.5rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── Consumer advisory (same text and styling as Tonight's Menu) ── */
+    .advisory-banner {
+      background: #fff;
+      border: 1px solid #bcd4ce;
+      border-left: 4px solid #e89438;
+      border-radius: 6px;
+      padding: 0.9rem 1.25rem;
+      margin-bottom: 1.5rem;
+      font-style: italic;
+      font-size: 0.6rem;
+      line-height: 1.55;
+      color: #29525f;
+    }
+
+    /* ── Section header ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 2px solid #e89438;
+    }
+    .section-header h2 {
+      font-size: 1.3rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+    }
+    .section-note {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #3d7080;
+    }
+
+    /* ── Flight cards ── */
+    .flight-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .flight-card {
+      background: #fff;
+      border: 1px solid #bcd4ce;
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 12px rgba(14,45,58,0.07);
+    }
+    .flight-head {
+      background: #0e2d3a;
+      padding: 1.25rem 1.5rem 1.1rem;
+      border-bottom: 3px solid #e89438;
+    }
+    .flight-name {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 400;
+      color: #f5f0e8;
+      letter-spacing: 0.02em;
+    }
+    .flight-count {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #8ab4be;
+      margin-top: 0.35rem;
+    }
+    .flight-oysters {
+      list-style: none;
+      background: #112f3d;
+      padding: 0.9rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .flight-oysters li {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    .flight-oysters li::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #e89438;
+      flex-shrink: 0;
+    }
+    .flight-oysters a {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 1rem;
+      color: #f5f0e8;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .flight-oysters a:hover { color: #e89438; border-bottom-color: #e89438; }
+    .flight-desc {
+      padding: 1.25rem 1.5rem 1.5rem;
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: #1a3a45;
+    }
+
+    /* ── Loading / empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #6a8f9a;
+    }
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+    .empty-state h3 {
+      font-size: 1.4rem;
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+      color: #0e2d3a;
+    }
+    .empty-state p { font-style: italic; font-size: 0.9rem; }
+    .empty-state a {
+      display: inline-block;
+      margin-top: 1rem;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #e89438;
+      text-decoration: none;
+    }
+
+    /* ── Footer ── */
+    footer {
+      background: #0e2d3a;
+      border-top: 1px solid #1a4a5a;
+      padding: 1.25rem 2rem;
+      text-align: center;
+    }
+    footer a {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #7fb3c0;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    footer a:hover { color: #e89438; }
+    .sep { color: #1a4a5a; margin: 0 0.75rem; }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      header { padding: 1.5rem 1.25rem 1.25rem; }
+      header h1 { font-size: 1.7rem; }
+      .header-logo { height: 60px; }
+      .page-nav { padding: 0 0.5rem; }
+      .page-nav a { padding: 0.6rem 0.6rem; font-size: 0.6rem; }
+      main { padding: 1.5rem 1rem; }
+      .flight-grid { grid-template-columns: 1fr; }
+      footer a { font-size: 0.62rem; }
+      .sep { margin: 0 0.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="assets/logo.png" alt="Half Shell Raw Bar" class="header-logo" width="80" height="80" />
+  <h1>Curated Flights</h1>
+  <p>Oysters chosen from tonight's menu to be tasted together</p>
+  <a class="hero-login-link" href="user.html" aria-label="Login">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  </a>
+</header>
+
+<nav class="page-nav">
+  <a href="index.html">Tonight's Menu</a>
+  <a href="curated-flights.html" class="active">Curated Flights</a>
+  <a href="Oyster%20Overview.html">Oyster Library</a>
+</nav>
+
+<main>
+  <div class="advisory-banner" role="note">
+    CONSUMER ADVISORY — Eating raw, or undercooked oysters, clams or mussels may cause severe illness. People with the following conditions are at especially high risk: liver disease, alcoholism, diabetes, cancer, stomach or blood disorder, or weakened immune system. Ask your doctor if you are unsure of your risk. If you eat raw, or undercooked shellfish and become sick, see a doctor immediately.
+  </div>
+
+  <div class="section-header">
+    <h2>Tonight's Flights</h2>
+    <span class="section-note" id="flight-note"></span>
+  </div>
+
+  <div id="flight-grid" class="flight-grid"></div>
+
+  <div id="loading-state" class="empty-state">
+    <div class="empty-icon">🦪</div>
+    <p>Loading tonight's flights…</p>
+  </div>
+
+  <div id="empty-state" class="empty-state" style="display:none">
+    <div class="empty-icon">🦪</div>
+    <h3>No flights right now</h3>
+    <p>Flights appear once tonight's menu is posted.</p>
+    <a href="index.html">See Tonight's Menu &rarr;</a>
+  </div>
+</main>
+
+<footer>
+  <a href="index.html">Tonight's Menu</a>
+  <span class="sep">|</span>
+  <a href="curated-flights.html">Curated Flights</a>
+  <span class="sep">|</span>
+  <a href="Oyster%20Overview.html">Oyster Library</a>
+  <span class="sep">|</span>
+  <a href="employee.html">Employee Portal</a>
+</footer>
+
+<script src="data/oysters.js"></script>
+<script src="data/flights.js"></script>
+<script>
+// OYSTERS (data/oysters.js) is the catalog; HS_FLIGHTS (data/flights.js) holds the flight
+// pool and selection rules. This page only renders what they return.
+
+let lastServingIds = null;   // Set of ids from Firebase, or null until the first reply
+let lastRenderedDate = null;
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function render(servingIds) {
+  lastServingIds = servingIds;
+  const grid    = document.getElementById('flight-grid');
+  const empty   = document.getElementById('empty-state');
+  const loading = document.getElementById('loading-state');
+  const note    = document.getElementById('flight-note');
+  loading.style.display = 'none';
+
+  // Same filter the menu page uses: only ids that exist in the catalog, each once.
+  const seen = new Set();
+  const served = OYSTERS.filter(o => servingIds.has(o.id) && !seen.has(o.id) && seen.add(o.id));
+
+  lastRenderedDate = HS_FLIGHTS.rotationDate(new Date());
+  const flights = HS_FLIGHTS.selectFlights(served, lastRenderedDate);
+
+  if (!flights.length) {
+    grid.innerHTML = '';
+    grid.style.display = 'none';
+    note.textContent = '';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  grid.style.display = '';
+  note.textContent = flights.length + ' flight' + (flights.length === 1 ? '' : 's');
+  grid.innerHTML = flights.map(f => `
+    <article class="flight-card">
+      <div class="flight-head">
+        <h3 class="flight-name">${esc(f.name)}</h3>
+        <div class="flight-count">${f.oysters.length} oysters</div>
+      </div>
+      <ul class="flight-oysters">
+        ${f.oysters.map(o => `<li><a href="oyster.html?id=${encodeURIComponent(o.id)}">${esc(o.name)}</a></li>`).join('')}
+      </ul>
+      <p class="flight-desc">${esc(f.description)}</p>
+    </article>
+  `).join('');
+}
+
+// If Firebase never answers (offline, blocked), stop showing "Loading" and show the empty state.
+setTimeout(() => { if (lastServingIds === null) render(new Set()); }, 8000);
+
+// The rotation changes at midnight (New York). Re-render if the page is open across it.
+setInterval(() => {
+  if (lastServingIds && HS_FLIGHTS.rotationDate(new Date()) !== lastRenderedDate) render(lastServingIds);
+}, 60000);
+
+// ── Firebase real-time menu sync (same as index.html) ───────────────────────
+(function () {
+  function loadScript(src, cb) {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = cb;
+    s.onerror = function () {}; // Firebase CDN unreachable — the timeout above shows the empty state
+    document.head.appendChild(s);
+  }
+
+  loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js', function () {
+    loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js', function () {
+      const firebaseConfig = {
+        apiKey:            "AIzaSyDNuyGuzAmow0YehKlztihYn3l57--82L8",
+        authDomain:        "half-shell-oyster-menu.firebaseapp.com",
+        databaseURL:       "https://half-shell-oyster-menu-default-rtdb.firebaseio.com",
+        projectId:         "half-shell-oyster-menu",
+        storageBucket:     "half-shell-oyster-menu.firebasestorage.app",
+        messagingSenderId: "784452175310",
+        appId:             "1:784452175310:web:2d56ed01d06bb39886179f"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const db  = firebase.database();
+      const ref = db.ref('menu/serving');
+
+      function startListener() {
+        ref.on('value', snapshot => {
+          // Object with oyster ids as keys: {id: {addedAt, lastUpdated, source}, ...}
+          render(new Set(Object.keys(snapshot.val() || {})));
+        });
+      }
+
+      startListener();
+
+      // Disconnect the realtime listener when the page is hidden (allows bfcache),
+      // reconnect and re-fetch when it becomes visible again.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          ref.off();
+        } else {
+          startListener();
+        }
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
