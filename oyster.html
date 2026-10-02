@@ -388,65 +388,8 @@
   <a href="employee.html">Employee Portal</a>
 </footer>
 
-<script src="./data/oysters.js?v=2"></script>
+<script src="./data/oysters.js?v=3"></script>
 <script>
-const PHOTO_MAP = {
-  'barstool': 'assets/oysters/barstool.jpg',
-  'beach-plum': 'assets/oysters/beach-plum.webp',
-  'bear-tide': 'assets/oysters/bear-tide.jpg',
-  'beau-soleil': 'assets/oysters/Beau-soleil.jpg',
-  'blackberry': 'assets/oysters/blackberry.webp',
-  'blue-point-ct': 'assets/oysters/blue-point-ct.jpg',
-  'blue-point-ny': 'assets/oysters/blue-point-ny.jpg',
-  'boomamoto': 'assets/oysters/boomamoto.jpeg',
-  'breakwater': 'assets/oysters/breakwater.png',
-  'carolina-envy': 'assets/oysters/carolina-envy.png',
-  'carolina-gold': 'assets/oysters/carolina-gold.png',
-  'divine-pines': 'assets/oysters/divine-pines.png',
-  'dukes-of-topsail': 'assets/oysters/Dukes-of-topsail.jpg',
-  'fat-bastard': 'assets/oysters/fat-bastard.jpg',
-  'fire-lake': 'assets/oysters/fire-lake.jpg',
-  'french-kiss': 'assets/oysters/french-kiss.jpg',
-  'great-white': 'assets/oysters/great-white.webp',
-  'hammerheads': 'assets/oysters/hammerheads.webp',
-  'hearts-desire': 'assets/oysters/hearts-desire.JPG',
-  'irish-point': 'assets/oysters/irish-point.webp',
-  'james-river': 'assets/oysters/james-river.jpg',
-  'jimmy-fund-gold': 'assets/oysters/jimmy-fund-gold.jpg',
-  'kumamoto': 'assets/oysters/kumamoto.jpg',
-  'le-petite-barachois': 'assets/oysters/le-petite-barachois.jpg',
-  'love-shuck': 'assets/oysters/love-shuck.png',
-  'malpeque': 'assets/oysters/Malpeque.jpg',
-  'mama-mia': 'assets/oysters/mama-mia.jpg',
-  'masonboro-pearl': 'assets/oysters/masonboro-pearl.jpg',
-  'mookiemoto': 'assets/oysters/mookiemoto.webp',
-  'moondancer': 'assets/oysters/moondancer.jpg',
-  'moonrise': 'assets/oysters/moonrise.jpg',
-  'murphs-lucky-charms': 'assets/oysters/murphs-lucky-charms.webp',
-  'nc-ikigai': 'assets/oysters/nc-ikigai.png',
-  'olde-salt': 'assets/oysters/olde-salt.jpg',
-  'olympic-view': 'assets/oysters/olympic-view.png',
-  'pink-moon': 'assets/oysters/pink-moon.jpg',
-  'queens-cup': 'assets/oysters/queens-cup.png',
-  'rappahannock': 'assets/oysters/rappahannock.jpg',
-  'royal-miyagi': 'assets/oysters/royal-miyagi.jpeg',
-  'savage-blonde': 'assets/oysters/savage-blonde.jpg',
-  'sex-on-the-bay': 'assets/oysters/sex-on-the-bay.png',
-  'shigoku': 'assets/oysters/shigoku.jpg',
-  'southern-salt': 'assets/oysters/southern-salt.webp',
-  'spindrift': 'assets/oysters/spindrift.png',
-  'sweet-jesus': 'assets/oysters/sweet-jesus.jpg',
-  'sweet-petite': 'assets/oysters/sweet-petite.avif',
-  'ta': 'assets/oysters/ta.png',
-  'taylor-virginica': 'assets/oysters/taylor-virginica.jpg',
-  'tuxedo': 'assets/oysters/tuxedo.jpg',
-  'watch-hill': 'assets/oysters/watch-hill.jpg',
-  'wellfleet': 'assets/oysters/wellfleet.webp',
-  'white-stone': 'assets/oysters/white-stone.webp',
-  'wianno': 'assets/oysters/wianno.jpg'
-};
-OYSTERS.forEach(o => { if (!o.photoUrl) o.photoUrl = PHOTO_MAP[o.id] || null; });
-
 // ── Salinity dots ──────────────────────────────────────────────────────────
 const DOTS_MAP = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
 function buildDots(level) {
@@ -480,7 +423,7 @@ function render() {
   // Photo or placeholder
   const photoAlt = oyster.photoAlt || `${oyster.name} oysters on the half shell`;
   const photoEl = oyster.photoUrl
-    ? `<img class="oyster-photo" src="${oyster.photoUrl}" alt="${photoAlt}" loading="lazy" width="800" height="400" onerror="this.parentElement.innerHTML='<div class=\'oyster-photo-placeholder\'>🦪</div>'">`
+    ? `<img class="oyster-photo" src="${oyster.photoUrl}" alt="${photoAlt}" loading="lazy" width="800" height="400" onerror="this.parentElement.innerHTML='<div class=\\'oyster-photo-placeholder\\'>🦪</div>'">`
     : `<div class="oyster-photo-placeholder">🦪</div>`;
 
   // Farmer link

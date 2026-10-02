@@ -16,7 +16,7 @@ var OYSTERS = [
     shell: "Deep-cupped, thick, sturdy; clean appearance from high-energy deep water",
     tastingNotes: "Moderate brine, soft, sweet meat. Yellow plum sweetness, stone finish.",
     notable: "Named for the beach plum plants that blanket Westport's sand dunes and flower in June. The suspension cage system keeps oysters off the bottom, feeding on fresh phytoplankton.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/beach-plum.webp",
     photoAlt: "Beach Plum oysters on the half shell",
     price: 4
   },
@@ -37,7 +37,7 @@ var OYSTERS = [
     shell: "Petite, deep-cupped, uniformly shaped; shipped in wooden boxes",
     tastingNotes: "Balanced salt and sweet. Firm, springy bite. Hazelnut / warm-bread finish - almost like Champagne.",
     notable: "One of North America's most recognized boutique oysters. The cold, northern Miramichi Bay pushes C. virginica to the edge of its viable range, slowing growth and refining flavor. Sister oyster to French Kiss — same farm, younger age. Great beginner oyster.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/Beau-soleil.jpg",
     photoAlt: "Beau Soleil oysters on the half shell",
     price: 4
   },
@@ -59,14 +59,14 @@ var OYSTERS = [
     shell: "Deep-cupped, smooth, polished; subtle greenish hue with hints of dark blackberry-like coloring",
     tastingNotes: "Medium-sized, deep-cupped oysters with moderate salinity offering a balance of sweetness & brininess.",
     notable: "Named after Blackberry Hang Oyster Reef, a historic Chesapeake Bay reef adjacent to the grow site. Little Wicomico Oyster Company has farmed these waters continuously since 1930 — one of Virginia's oldest oyster operations.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/blackberry.webp",
     photoAlt: "Blackberry oysters on the half shell",
     price: 3
   },
   {
     id: "blue-point-ct",
     name: "Blue Point CT",
-    salinity: "medium",
+    salinity: "medium-high",
     salinityText: "Medium to high",
     region: "ct",
     origin: "Long Island Sound, Connecticut",
@@ -80,7 +80,7 @@ var OYSTERS = [
     shell: "Pearl gray with bluish/purplish hue; rough texture, round to oval, moderate cup",
     tastingNotes: "New York raw-bar royalty since the 1800s - moderate-high brine, plump bite, clean mineral snap on the finish.",
     notable: "\"Blue Point\" is one of the most misused names in seafood — technically an appellation for Long Island Sound but historically applied broadly. True CT Blue Points are semi-wild, dredge-harvested after 3–4 years.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/blue-point-ct.jpg",
     photoAlt: "Blue Point CT oysters on the half shell",
     price: 3
   },
@@ -93,14 +93,14 @@ var OYSTERS = [
     origin: "Little Wicomico River, Virginia",
     farmer: null,
     farmerUrl: null,
-    species: "Unknown",
-    farmingMethod: "Unknown",
-    growOut: "Unknown",
-    seasonalAvailability: "Unknown",
-    size: "Unknown",
-    shell: "Unknown",
-    tastingNotes: "Unknown",
-    notable: "Research on this oyster variety is incomplete. It comes from the Little Wicomico River in Virginia; farm name, species, farming method, and flavor profile have not yet been documented in publicly available oyster databases or direct producer information.",
+    species: "Crassostrea virginica (Eastern oyster)",
+    farmingMethod: "Bottom cages",
+    growOut: "12–18 months",
+    seasonalAvailability: "Year-round",
+    size: "Medium — ~3\"",
+    shell: "Pale, smooth, and clean teardrop shape with a full cup",
+    tastingNotes: "A mild, satisfying bite with subtly grassy notes. A good choice for your first oyster, or your hundredth.",
+    notable: "Grown in the Little Wicomico River, a short tidal river in Virginia's Northern Neck that meets the Chesapeake Bay near Smith Point, at the mouth of the Potomac.",
     photoUrl: null,
     photoAlt: "Buckwild oysters on the half shell",
     price: 3
@@ -122,7 +122,7 @@ var OYSTERS = [
     shell: "Deep cup; gills tinted teal to blue-green from native Haslea ostrearia algae",
     tastingNotes: "A rare green gill oyster — bold brine up front, earthy and nutty mid-palate, finishing with a rich truffle-like sweetness; teal gills from native Haslea algae",
     notable: "A green gill oyster — the teal color comes from Haslea ostrearia microalgae found in select NC estuaries, a marker of pristine water quality. Sister varieties from the same farm include Carolina Daydreams and Lea Island Reserves.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/carolina-envy.png",
     photoAlt: "Carolina Envy green gill oysters on the half shell",
     price: null
   },
@@ -143,7 +143,7 @@ var OYSTERS = [
     shell: "Deep, well-formed cup; clean from floating bag technique",
     tastingNotes: "High-salinity Carolina brine up front. Plump, deep-cupped bite. Sweet twist on the finish.",
     notable: "Twice-daily tidal exchange from the Atlantic maintains consistently very high salinity. Farm founded 2018, subsidiary of Three Little Spats Oyster Company.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/carolina-gold.png",
     photoAlt: "Carolina Gold oysters on the half shell",
     price: 3
   },
@@ -164,7 +164,7 @@ var OYSTERS = [
     shell: "Standard eastern oyster; distinctive green gills visible when shucked",
     tastingNotes: "Seasonal with emerald-green gills from natural Algae. High salinity, firm texture, and complex vegetal notes.",
     notable: "One of only a handful of places in the world producing natural greengill oysters. The green color comes from the rare diatom Haslea ostrearia — the same effect as France's fines de claires vertes. North Carolina's first and most prominent greengill producer.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/divine-pines.png",
     photoAlt: "Divine Pines greengill oysters on the half shell",
     price: 4
   },
@@ -227,7 +227,7 @@ var OYSTERS = [
     shell: "Round, smooth, very deep cup from tumbling; thick walls; clean appearance",
     tastingNotes: "Plump, deep-cupped bite with a bigger briny punch. Crisp cucumber notes, clean mineral finish.",
     notable: "Essentially an oversized Shigoku — same farm, same technique, same terroir, just grown longer for a larger, rounder, heftier oyster.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/fat-bastard.jpg",
     photoAlt: "Fat Bastard oysters on the half shell",
     price: 4.5
   },
@@ -255,7 +255,7 @@ var OYSTERS = [
   {
     id: "french-kiss",
     name: "French Kiss",
-    salinity: "medium",
+    salinity: "low",
     salinityText: "Low to moderate — 10–22 ppt",
     region: "nb",
     origin: "Miramichi Bay, New Brunswick, Canada",
@@ -269,7 +269,7 @@ var OYSTERS = [
     shell: "Deeply cupped, paisley-shaped; full meats; consistent from suspension tray farming",
     tastingNotes: "Cultivated in suspension, they have a clean, firm, and plump meat with a pronounced briny, salty taste, followed by a sweet, hazelnut finish.",
     notable: "Directly related to Beau Soleil — same farm, same technique, same terroir, just older. The extra grow time creates a significantly more complex and meatier oyster.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/french-kiss.jpg",
     photoAlt: "French Kiss oysters on the half shell",
     price: 4
   },
@@ -290,7 +290,7 @@ var OYSTERS = [
     shell: "Standard eastern oyster form; rounded profile",
     tastingNotes: "Creamy texture; light, delicate brine (shio broth-like quality); clean, refreshing finish",
     notable: "Plymouth Bay's massive tidal range (11–12 foot tidal swings) provides regular, fresh saltwater exchange that keeps the flavor clean and consistent. Near the Mayflower's historic anchorage.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/hearts-desire.JPG",
     photoAlt: "Heart's Desire oysters on the half shell",
     price: 4
   },
@@ -311,7 +311,7 @@ var OYSTERS = [
     shell: "Deep-cupped for its size; clean from off-bottom floating cage farming",
     tastingNotes: "Grown in cold PEI waters; fresh butter lettuce with a subtle citrus finish",
     notable: "One of eight branded varieties from Raspberry Point Oyster Company, one of PEI's most established producers (35+ years). Named for a geographic point near the Hope River. Traditional pairing suggestion: Irish whiskey.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/irish-point.webp",
     photoAlt: "Irish Point oysters on the half shell",
     price: 4
   },
@@ -332,7 +332,7 @@ var OYSTERS = [
     shell: "Rough, irregular, grayish-brown (wild); deeper cup in aquaculture specimens",
     tastingNotes: "Mild and sweet with very low brininess; full, plump meats; clean, mild finish with faint Blue Ridge minerality",
     notable: "One of the most historically significant oyster fisheries in the Americas — the James River reefs fed early Jamestown colonists in 1607. One of the last major wild fisheries still operating in the Chesapeake.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/james-river.jpg",
     photoAlt: "James River oysters on the half shell",
     price: null
   },
@@ -353,7 +353,7 @@ var OYSTERS = [
     shell: "Clean, grit-free from repeated tumbling; plump meats",
     tastingNotes: "Bold, maximum brine upfront; crisp, clean finish; subtle sweetness and delicate minerality; full oceanic flavor",
     notable: "$4 from every bag sold is donated to Dana-Farber Cancer Institute for pediatric cancer research. One of the saltiest oysters produced in Maine.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/jimmy-fund-gold.jpg",
     photoAlt: "Jimmy Fund Gold oysters on the half shell",
     price: null
   },
@@ -375,7 +375,7 @@ var OYSTERS = [
     shell: "Deep cup, clean, uniform from aquaculture farming",
     tastingNotes: "A perfect harmony of high-end, clean salinity followed by a sweet, vegetal, or subtle fruity finish",
     notable: "\"Barachois\" refers to a coastal lagoon partially enclosed from the sea — a geography common in the Maritimes that provides nutrient-rich, protected growing conditions.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/le-petite-barachois.jpg",
     photoAlt: "Le Petite Barachois oysters on the half shell",
     price: 4
   },
@@ -396,7 +396,7 @@ var OYSTERS = [
     shell: "Deep cup, well-balanced; dense meat",
     tastingNotes: "Fast tidal exchange in the famous Damariscotta River builds structure, depth, & signature Maine sweetness.",
     notable: "Dodge Cove Marine Farm is Maine's oldest working oyster farm, located near 2,000-year-old Indigenous oyster middens. The Damariscotta River is arguably New England's premier oyster river.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/love-shuck.png",
     photoAlt: "Love Shuck oysters on the half shell",
     price: 4
   },
@@ -417,7 +417,7 @@ var OYSTERS = [
     shell: "Hard-shell PEI profile; clean from surface cage farming",
     tastingNotes: "Medium brine up front, then a crisp, slightly fruity green apple sweetness  - clean and refreshing.",
     notable: "A boutique PEI brand. The winter ice management protocol (sinking cages below the freeze line) is standard for northern PEI producers and ensures year-round availability.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/mama-mia.jpg",
     photoAlt: "Mama Mia oysters on the half shell",
     price: 4
   },
@@ -438,7 +438,7 @@ var OYSTERS = [
     shell: "Deep-cupped, clean; crafted for the half-shell market",
     tastingNotes: "Deep-cupped with a salty, buttery, rich flavor; named for the farmer’s daughter, Pearl.",
     notable: "Named after the farmer's daughter, Pearl. Middle Sound Mariculture is one of North Carolina's more established half-shell producers, farming multiple sound systems.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/masonboro-pearl.jpg",
     photoAlt: "Masonboro Pearl oysters on the half shell",
     price: 4
   },
@@ -460,7 +460,7 @@ var OYSTERS = [
     shell: "Deep-cupped, clean from the hybrid cage/floating bag method",
     tastingNotes: "Soft brine. Plump, silky meat. Sweet melon finish. Clean & spare - ikigai, Japanese for “reason for being”",
     notable: "\"Ikigai\" is a Japanese concept meaning \"reason for being\" — the name reflects the farm's philosophy. Crystal Coast Oysters (est. 2019) is reviving the Newport River's centuries-long oyster heritage.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/nc-ikigai.png",
     photoAlt: "NC Ikigai oysters on the half shell",
     price: 3
   },
@@ -481,7 +481,7 @@ var OYSTERS = [
     shell: "Consistent, clean shells; white to gray exterior, deep cup, springy meats",
     tastingNotes: "The truest taste of the ocean - bold, intense sea-side brininess and a clean, smooth follow through.",
     notable: "Rappahannock Oyster Co. deliberately sited this oyster at the extreme high-salinity end of their portfolio as a counterpoint to their freshwater-influenced Rappahannock River oyster. The 6-month grow-out is among the fastest of any East Coast half-shell oyster.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/olde-salt.jpg",
     photoAlt: "Olde Salt oysters on the half shell",
     price: 3
   },
@@ -502,7 +502,7 @@ var OYSTERS = [
     shell: "Pale to pinkish-colored with wavy or fluted edges; traditional oval to teardrop shape",
     tastingNotes: "Clean brine and bright minerality up front. Creamy texture in the middle. Delicate sweet finish.",
     notable: "New London Bay is one of the most northerly oyster-growing areas on PEI's wild north shore. The 4–6 year grow period is long even by PEI standards.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/pink-moon.jpg",
     photoAlt: "Pink Moon oysters on the half shell",
     price: 4
   },
@@ -544,7 +544,7 @@ var OYSTERS = [
     shell: "Deep-cupped from years of tumbling; well-manicured and consistent",
     tastingNotes: "Silky and plump with a salty sweet taste and an earthy mineral finish.",
     notable: "The two-bay growing method — Rustico Bay grow-out, New London Bay finish — is the oyster's defining feature, functioning like a terroir-shaping finishing stage for the final flavor profile.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/queens-cup.png",
     photoAlt: "Queen's Cup oysters on the half shell",
     price: 3
   },
@@ -565,7 +565,7 @@ var OYSTERS = [
     shell: "Smooth, rippled, predominantly white; round, well-formed, deep cup; fluted edges",
     tastingNotes: "Deep-cupped, mild-mannered oysters - sweet, buttery, low-salinity, and great for beginners",
     notable: "One of America's most awarded and recognized oyster brands. Travis and Ryan Croxton revived a 100-year-old family business and helped spark the modern Virginia oyster renaissance.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/rappahannock.jpg",
     photoAlt: "Rappahannock oysters on the half shell",
     price: 3
   },
@@ -586,7 +586,7 @@ var OYSTERS = [
     shell: "Smooth, blonde (light-colored) shells — the defining visual characteristic; strong construction",
     tastingNotes: "Firm, plump, bright, and crisp; chilled seawater-poached pear.",
     notable: "The distinctive \"blonde\" shell coloration is a natural result of eastern PEI water chemistry combined with the farming method. Named for Savage Harbour Bay, one of PEI's more exposed north shore bays.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/savage-blonde.jpg",
     photoAlt: "Savage Blonde oysters on the half shell",
     price: 4
   },
@@ -607,7 +607,7 @@ var OYSTERS = [
     shell: "Extraordinarily deep, smooth cup; very round and compact from constant tumbling",
     tastingNotes: "Crisp cucumber brine. Ultra-clean and balanced with a mineral finish. Our owner’s favorite West Coast oyster.",
     notable: "\"Shigoku\" means \"ultimate\" in Japanese. Taylor Shellfish invented the specialized suspension tray system specifically for this oyster. Won numerous awards and transformed the premium Pacific oyster market.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/shigoku.jpg",
     photoAlt: "Shigoku oysters on the half shell",
     price: 4.5
   },
@@ -628,7 +628,7 @@ var OYSTERS = [
     shell: "Deep-cupped, clean; grown for the half-shell market",
     tastingNotes: "High salinity, known to have a “dirty martini” flavor profile from the tidal waters of Virginia’s eastern shore",
     notable: "The name directly references the flavor profile. New River Inlet's Atlantic exposure is the defining geographic feature — one of the more open-to-the-ocean inlet systems in NC.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/southern-salt.webp",
     photoAlt: "Southern Salt oysters on the half shell",
     price: 3
   },
@@ -649,7 +649,7 @@ var OYSTERS = [
     shell: "Semi-tumbled method produces a cleaner, rounder shell than wild-grown",
     tastingNotes: "Honeycrisp apple with sea salt. Plump bite, balanced brine, sweet finish - a perfect first oyster.",
     notable: "The wind-powered tumbling system is an environmentally innovative farming method. Designed for ease of eating and approachability, especially for newcomers to raw oysters.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/sweet-petite.avif",
     photoAlt: "Sweet Petite oysters on the half shell",
     price: 4
   },
@@ -670,7 +670,7 @@ var OYSTERS = [
     shell: "Standard half-shell profile",
     tastingNotes: "Mild to moderately briny with a clean, sweet finish",
     notable: "Varnamtown is a small fishing community on the Lockwood Folly River with a deep oyster harvesting tradition — Carson Varnam's Shellfish Market has operated in the community since the early 1970s. T&A carries on this local legacy.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/ta.png",
     photoAlt: "T&A oysters on the half shell",
     price: null
   },
@@ -691,7 +691,7 @@ var OYSTERS = [
     shell: "Pear-shaped; flat top, slightly concave bottom; smoother than Pacific oyster; moderate, well-formed cup",
     tastingNotes: "East coast oysters grown on the west coast. Firm texture, buttery taste, with a hint of sweetness.",
     notable: "Considered one of the rarest and most collectible oysters in North America. Won Best Flavor at the East Coast Shellfish Growers Association — remarkable for a West Coast farm. Supply perpetually falls short of demand.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/taylor-virginica.jpg",
     photoAlt: "Taylor Virginica oysters on the half shell",
     price: 4
   },
@@ -712,14 +712,14 @@ var OYSTERS = [
     shell: "Undocumented",
     tastingNotes: "Plump bite with intense brine. Notes of umami. Sweet mineral finish.",
     notable: "Farm details not publicly documented. Origin confirmed as Cape Cod, MA.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/moonrise.jpg",
     photoAlt: "Moonrise oysters on the half shell",
     price: 4
   },
   {
     id: "mookiemoto",
     name: "Mookiemoto",
-    salinity: "medium",
+    salinity: "high",
     salinityText: "High — Damariscotta River, 27–30 ppt",
     region: "me",
     origin: "Damariscotta River, Maine",
@@ -733,7 +733,7 @@ var OYSTERS = [
     shell: "Undocumented",
     tastingNotes: "A briny kiss gives way to creamy sweetness & cucumber- melon finish - emulates West Coast oysters",
     notable: "The name 'Mookiemoto' playfully combines 'Mook' (the farm) with 'moto' (evoking Kumamoto), but no confirmed C. sikamea cross has been documented. Sister oyster to Moondancer (same farm). Update when direct supplier information is available.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/mookiemoto.webp",
     photoAlt: "Mookiemoto oysters on the half shell",
     price: 4
   },
@@ -754,14 +754,14 @@ var OYSTERS = [
     shell: "Clean, uniform from consistent surf exposure; rack-and-bag produces consistent sizing",
     tastingNotes: "Sweet mushroom, vegetal notes at the forefront that deliver a salty miso finish.",
     notable: "Tom Perry founded White Stone in 2015 as the first operation to grow oysters fully exposed to open Chesapeake Bay conditions. The blend of freshwater from the Rappahannock and Bay salinity creates the unusually low-salinity, umami-forward profile.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/white-stone.webp",
     photoAlt: "White Stone oysters on the half shell",
     price: 3
   },
   {
     id: "bear-tide",
     name: "Bear Tide",
-    salinity: "medium",
+    salinity: "medium-high",
     salinityText: "Medium to high — Plymouth Bay, open Atlantic influence",
     region: "ma",
     origin: "Plymouth Bay, Massachusetts",
@@ -775,14 +775,14 @@ var OYSTERS = [
     shell: "Deep-cupped, thick, sturdy; large unique shells from turbulent water and open tray grow-out",
     tastingNotes: "Rich mineral brine with seaweed notes and a sweet finish, from a small family producer.",
     notable: "Eight-acre family farm founded on passion and precision. Varied tidal locations and grow methods produce oysters with distinctly different characters. Their generous spacing philosophy produces especially plump, full-meated oysters.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/bear-tide.jpg",
     photoAlt: "Bear Tide oysters on the half shell",
     price: 4
   },
   {
     id: "boomamoto",
     name: "Boomamoto",
-    salinity: "medium",
+    salinity: "medium-high",
     salinityText: "Medium to high — Barnstable Harbor",
     region: "ma",
     origin: "Barnstable Harbor, Cape Cod, Massachusetts",
@@ -796,7 +796,7 @@ var OYSTERS = [
     shell: "Exceptionally deep-cupped, round, golf ball profile; full meat content relative to size",
     tastingNotes: "“Boom” for the briny punch up front, “Moto” for the sweet finish akin to the prized Kumamoto oyster",
     notable: "Cape Cod Oyster Company's homage to a West Coast oyster with an East Coast taste — the deep cup and round shape mimic Kumamoto proportions while delivering classic Barnstable Harbor brine. The unusual shape emerged from a happy accident, not selective breeding.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/boomamoto.jpeg",
     photoAlt: "Boomamoto oysters on the half shell",
     price: 4
   },
@@ -817,7 +817,7 @@ var OYSTERS = [
     shell: "Well-formed, clean; strong shells from energetic tidal flushing",
     tastingNotes: "Clean Atlantic brine with a crisp, refreshing cucumber-water finish followed by a mellow earthiness.",
     notable: "Named for the riprap stone breakwater that shelters the farm's Long Neck Cove location. The grower trained under oyster veterinarian Kerian Fennelly.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/breakwater.png",
     photoAlt: "Breakwater oysters on the half shell",
     price: 4
   },
@@ -838,7 +838,7 @@ var OYSTERS = [
     shell: "Smooth edges, white to off-white or brownish coloring; consistent shape",
     tastingNotes: "Extra-plump, deep-cupped, with strong brine; salted honeydew slices.",
     notable: "One of Cape Cod Oyster Company's premium Barnstable Harbor offerings. The 'Great White' name references both the surrounding Cape Cod waters and the oyster's pale shell color. A strong East Coast brine paired with distinctly West-Coast-style fruit notes.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/great-white.webp",
     photoAlt: "Great White oysters on the half shell",
     price: 4
   },
@@ -859,7 +859,7 @@ var OYSTERS = [
     shell: "Narrow teardrop or deep-cupped depending on grade; subtle pea-green tint",
     tastingNotes: "An iconic oyster. Bright, clean brine with cucumber-lime freshness - our Seaglass Martini in oyster form.",
     notable: "Won 'World's Best Oyster' at the 1900 Paris World Fair — one of the most storied oysters in North America. Malpeque is the generic regional name for PEI oysters; 'true' Malpeques come from Malpeque Bay specifically. The name has become nearly synonymous with 'Canadian oyster.'",
-    photoUrl: null,
+    photoUrl: "assets/oysters/Malpeque.jpg",
     photoAlt: "Malpeque oysters on the half shell",
     price: 4
   },
@@ -880,14 +880,14 @@ var OYSTERS = [
     shell: "Clean, well-cupped; smooth from cage tumbling",
     tastingNotes: "Firm, bright, clean, and subtly vegetal; like a fresh, lightly buttered steamed clam.",
     notable: "Bill Mook is one of Maine's most influential oyster pioneers — Mook Sea Farm has been raising oysters on the Damariscotta since 1985, nearly single-handedly reviving Maine's aquaculture industry. Moondancer is their flagship product. Sister oyster to Mookiemoto (same farm).",
-    photoUrl: null,
+    photoUrl: "assets/oysters/moondancer.jpg",
     photoAlt: "Moondancer oysters on the half shell",
     price: 4
   },
   {
     id: "spindrift",
     name: "Spindrift",
-    salinity: "medium",
+    salinity: "medium-high",
     salinityText: "Medium to high — Buzzards Bay with freshwater creek influence",
     region: "ma",
     origin: "Westport, Massachusetts (Westport River, Buzzards Bay)",
@@ -901,14 +901,14 @@ var OYSTERS = [
     shell: "Clean, moderately deep-cupped; high-energy tidal location produces sturdy shells",
     tastingNotes: "Named for the mist sprayed from crashing ocean waves; bright brine with a hint of salted sweet cream.",
     notable: "Neighbor to Beach Plum in the same Westport River watershed, grown by a separate farm using different methods. Salt pond and freshwater creek proximity imparts a layered mineral-cream quality that distinguishes Spindrift from other Buzzards Bay oysters.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/spindrift.png",
     photoAlt: "Spindrift oysters on the half shell",
     price: 4
   },
   {
     id: "tuxedo",
     name: "Tuxedo",
-    salinity: "medium",
+    salinity: "medium-high",
     salinityText: "Medium to high — PEI north coast",
     region: "pei",
     origin: "Cascumpec Bay, Prince Edward Island, Canada",
@@ -922,7 +922,7 @@ var OYSTERS = [
     shell: "Distinctive darker brown shell with alternating black and white banding; strong, uniform, easy to shuck",
     tastingNotes: "A crisp, chilled green apple dipped in sea salt, delivered in a striking striped shell.",
     notable: "One of PEI's most visually striking oysters — the tuxedo-like black-and-white shell banding is natural and makes these instantly recognizable on a raw bar platter. The 3–4 year grow-out in cold Cascumpec Bay water produces a refined, delicate flavor.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/tuxedo.jpg",
     photoAlt: "Tuxedo oysters on the half shell",
     price: 4
   },
@@ -943,7 +943,7 @@ var OYSTERS = [
     shell: "Deep-cupped for its size; brown exterior, green/white interior; well-formed and hand-harvested",
     tastingNotes: "Deep-cupped, firm, and meaty; a mineral-heavy ocean cocktail with a sweet butter-roasted hazelnut finish.",
     notable: "Named for the historic village of Wianno on the south shore of Cape Cod. The dual grow-site approach — bottom-planted in West Bay for depth of flavor plus off-bottom cages in Barnstable Harbor for consistency — produces a remarkably well-rounded oyster. Always three inches — a defining quality standard.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/wianno.jpg",
     photoAlt: "Wianno oysters on the half shell",
     price: 4
   },
@@ -964,7 +964,7 @@ var OYSTERS = [
     shell: "Clean, deep-cupped; brown to grey exterior; classic New England appearance",
     tastingNotes: "New England raw-bar royalty. Sharp brine up front, plump meats, and a rounded seaweed finish.",
     notable: "One of the most famous oyster appellations in North America — 'Wellfleet' on a menu is a signal of quality and terroir. The designation applies to all oysters grown within Wellfleet waters; individual farms within the appellation vary.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/wellfleet.webp",
     photoAlt: "Wellfleet oysters on the half shell",
     price: 4
   },
@@ -1027,7 +1027,7 @@ var OYSTERS = [
     shell: "Elongated with jagged, irregular shell edges resembling a hammerhead shark; deep cup; robust enough for high-volume shucking",
     tastingNotes: "Firm, meaty bite with nutty depth and a long, sweet finish; rye toast with cultured butter.",
     notable: "Originally commissioned by Chef Bob Getchell of the Boathouse restaurant at Disney Springs, who needed an oyster whose shell could survive shucking thousands per night. Cape Cod Oyster Company designed the grow protocol around that spec.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/hammerheads.webp",
     photoAlt: "Hammerheads oysters on the half shell",
     price: 3
   },
@@ -1048,14 +1048,14 @@ var OYSTERS = [
     shell: "Deeply fluted, petite, very deep-cupped; distinctive ruffled appearance; shell roughly round",
     tastingNotes: "Mild brine with a velvety texture. Sweet honeydew melon and cucumber notes with a clean finish.",
     notable: "Introduced to the US after World War II, the Kumamoto has become one of the most beloved oysters in America. Its deep cup, small size, and consistently sweet flavor make it the ideal gateway oyster. The species' slow grow-out and limited range keep supply tight and demand perpetually high.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/kumamoto.jpg",
     photoAlt: "Kumamoto oysters on the half shell",
     price: 5
   },
   {
     id: "royal-miyagi",
     name: "Royal Miyagi",
-    salinity: "medium",
+    salinity: "medium-high",
     salinityText: "Medium to high — 25–32 ppt",
     region: "bc",
     origin: "Sunshine Coast and Baynes Sound, British Columbia, Canada",
@@ -1069,14 +1069,14 @@ var OYSTERS = [
     shell: "Firm, well-shaped from beach finishing; stronger shell than typical suspended-only Pacific oyster",
     tastingNotes: "Light brininess with a tangy cucumber finish; sliced kiwi",
     notable: "The 'Miyagi' name honors Miyagi Prefecture in Japan, the ancestral homeland of C. gigas aquaculture. The two-phase grow-out — suspended then beach — delivers the flavor of a Pacific oyster with the shell durability of an East Coast variety.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/royal-miyagi.jpeg",
     photoAlt: "Royal Miyagi oysters on the half shell",
     price: 4.5
   },
   {
     id: "olympic-view",
     name: "Olympic View",
-    salinity: "medium",
+    salinity: "medium-high",
     salinityText: "Medium to high — Totten Inlet",
     region: "wa",
     origin: "Totten Inlet, Bruceport, Washington State (South Puget Sound)",
@@ -1090,14 +1090,14 @@ var OYSTERS = [
     shell: "Firm, gravelly beach finish; hard, well-formed shells from steep intertidal beach and strong currents",
     tastingNotes: "Medium brine with bright, crisp freshness. Fragrant cucumber and watermelon-rind notes.",
     notable: "Named for the spectacular views of the Olympic Mountains visible from the farm's beach. Located in South Puget Sound receiving glacial nutrients from Nisqually Reach mixed with ocean saltwater, creating exceptional fast-maturing growing conditions.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/olympic-view.png",
     photoAlt: "Olympic View oysters on the half shell",
     price: 3
   },
   {
     id: "barstool",
     name: "Barstool",
-    salinity: "medium",
+    salinity: "medium-high",
     salinityText: "Medium to high — full PEI north coast salinity",
     region: "pei",
     origin: "Rustico Bay, Prince Edward Island, Canada",
@@ -1111,14 +1111,14 @@ var OYSTERS = [
     shell: "Deep-cupped, petite, uniform shape; clean presentation",
     tastingNotes: "Bright sea salt up front. Firm, plump bite with creamy sweetness and a clean mineral finish.",
     notable: "A cocktail-sized PEI oyster from the same celebrated Rustico Bay corridor. When they grow larger they are marketed as Sweet Island Kisses, and at maximum size, Naked Islanders — three stages of the same bloodline.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/barstool.jpg",
     photoAlt: "Barstool oysters on the half shell",
     price: 4
   },
   {
     id: "sex-on-the-bay",
     name: "Sex on the Bay",
-    salinity: "medium",
+    salinity: "medium-high",
     salinityText: "Medium to high",
     region: "nb",
     origin: "New Brunswick, Canada (Northwest Atlantic)",
@@ -1132,7 +1132,7 @@ var OYSTERS = [
     shell: "Undocumented",
     tastingNotes: "Moderate brine with plump, creamy meats. Umami depth & a buttery mineral finish; toasted brioche bun.",
     notable: "A playfully named New Brunswick oyster. Detailed farm profile is not publicly documented. Origin confirmed as New Brunswick, Canada.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/sex-on-the-bay.png",
     photoAlt: "Sex on the Bay oysters on the half shell",
     price: 4
   },
@@ -1153,7 +1153,7 @@ var OYSTERS = [
     shell: "Clean, well-cupped; granitic Westerly bedrock visually tints shells and influences flavor",
     tastingNotes: "Deep-cupped, creamy, and buttery on the finish - like sea salt on sweet cream.",
     notable: "The Gardner family has farmed Winnapaug Pond for over 25 years — one of Rhode Island's most established oyster operations. Water percolates through Westerly's signature granite bedrock, imparting the distinctive minerality the oyster is known for.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/watch-hill.jpg",
     photoAlt: "Watch Hill oysters on the half shell",
     price: 3
   },
@@ -1280,7 +1280,7 @@ var OYSTERS = [
     shell: "Gray with bluish hue; moderate cup",
     tastingNotes: "Fresh, crisp, firm bite with moderately high salinity and a briny punch and a familiar mineral quality.",
     notable: "Authentic Great South Bay oysters from the classic Blue Point appellation; revived by Chris Quartuccio at Blue Island Shellfish Farms since 1995. Distinct from Blue Point CT which comes from Long Island Sound.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/blue-point-ny.jpg",
     photoAlt: "Blue Point NY oysters on the half shell",
     price: 3
   },
@@ -1343,7 +1343,7 @@ var OYSTERS = [
     shell: "Consistent shape; uniform from controlled grow-out",
     tastingNotes: "Smooth, briny with fresh sweetness; hints of butter lettuce and clean finish.",
     notable: "Petite yet plump oysters from P.E.I.'s cold waters. Murphy Oyster Company is a premium cultivator known for consistent quality and reliable production.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/murphs-lucky-charms.webp",
     photoAlt: "Murphy's Lucky Charms oysters on the half shell",
     price: 4
   },
@@ -1385,7 +1385,7 @@ var OYSTERS = [
     shell: "Deep cup; consistent from regular tumbling during grow-out",
     tastingNotes: "Buttery with celery hints; sweet with complex mineral and mossy notes; smooth, crisp finish.",
     notable: "Produced by Hollywood Oyster Company (est. 2010) in St. Mary's County, Maryland. Tumbled six times during grow-out to ensure consistent size and deep cup. NOT the same oyster as Sweet Petite.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/sweet-jesus.jpg",
     photoAlt: "Sweet Jesus oysters on the half shell",
     price: 4
   },
@@ -1511,7 +1511,7 @@ var OYSTERS = [
     shell: "Thick and chip-resistant — a favorite of rookie shuckers and veterans alike",
     tastingNotes: "Mild brine up front with a bright, clean finish, an excellent choice for your first oyster experience.",
     notable: "Grown by Atlantic Aqua Farms, the same producer behind Barstool Cocktails, Irish Points, and Love Shucks. Note: producer lists origin as PEI's North Shore; distributor Fortune Fish lists southeastern New Brunswick.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/fire-lake.jpg",
     photoAlt: "Fire Lake oysters on the half shell",
     price: 4
   }, 
@@ -1533,7 +1533,7 @@ var OYSTERS = [
     shell: "Thick, clean shell from extreme air exposure and tumbling",
     tastingNotes: "A wave of open-ocean salt up front, sweet scallop-like body, and a green, piney finish - like the long-leaf pines and spartina grass around the farm.",
     notable: "Called 'arguably the best damn oyster in the South' - the upstart NC farm proving Topsail Sound belongs among the best growing waters anywhere. Averages ~32 ppt salinity.",
-    photoUrl: null,
+    photoUrl: "assets/oysters/Dukes-of-topsail.jpg",
     photoAlt: "Dukes of Topsail oysters on the half shell",
     price: 4
   }
