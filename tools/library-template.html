@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<!-- @@GENERATED_NOTICE@@ -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3SQ3075FQ1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-3SQ3075FQ1');
+  </script>
+  <meta name="description" content="The Half Shell Library — origin, flavor profile, and special notes for every oyster variety served at Half Shell Raw Bar." />
+  <title>The Half Shell Library</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet"></noscript>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+    body {
+      font-family: 'Playfair Display', Georgia, "Times New Roman", serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #0e2d3a;
+      background: #f3f8f6;
+      overflow-x: hidden;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+    header {
+      grid-column: 1 / -1;
+      background: #0e2d3a;
+      color: #f5f0e8;
+      padding: 1.25rem 2.5rem;
+      border-bottom: 3px solid #e89438;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      position: relative;
+    }
+    .header-logo {
+      height: 52px;
+      width: auto;
+      flex-shrink: 0;
+      filter: drop-shadow(0 1px 4px rgba(0,0,0,0.4));
+    }
+    header h1 { font-size: 1.8rem; letter-spacing: 0.04em; font-weight: normal; }
+    header p  { font-size: 0.9rem; color: #8ab4be; margin-top: 0.25rem; font-style: italic; }
+
+    /* ── Sidebar ── */
+    nav {
+      background: #e8f2ef;
+      border-right: 1px solid #bcd4ce;
+      padding: 1.25rem 1rem;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* Search */
+    .search-wrap { margin-bottom: 1rem; }
+    .search-wrap input {
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid #9ec4bc;
+      border-radius: 4px;
+      background: #fff;
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.82rem;
+      color: #0e2d3a;
+      outline: none;
+    }
+    .search-wrap input:focus { border-color: #e89438; box-shadow: 0 0 0 2px rgba(232,148,56,0.15); }
+    .search-wrap input::placeholder { color: #7aaab5; }
+
+    /* Filter groups */
+    .filter-section { margin-bottom: 0.9rem; }
+    .filter-label {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #e89438;
+      margin-bottom: 0.4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .filter-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .chip {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border: 1px solid #9ec4bc;
+      border-radius: 20px;
+      background: #f3f8f6;
+      color: #3a6070;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .chip:hover { border-color: #e89438; color: #e89438; }
+    .chip.active { background: #e89438; border-color: #e89438; color: #fff; }
+
+    /* Clear filters */
+    .clear-filters {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.7rem;
+      color: #e89438;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-bottom: 0.75rem;
+      display: none;
+    }
+    .clear-filters.visible { display: block; }
+
+    /* Result count */
+    .result-count {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.7rem;
+      color: #6a8f9a;
+      margin-bottom: 0.5rem;
+    }
+
+    .nav-divider { height: 1px; background: #bcd4ce; margin: 0.75rem 0; }
+
+    /* Oyster jump links */
+    .nav-label {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #e89438;
+      margin-bottom: 0.5rem;
+    }
+    .nav-links { list-style: none; }
+    .nav-links li { margin-bottom: 0.15rem; transition: opacity 0.2s; }
+    .nav-links li.hidden-link { opacity: 0.25; pointer-events: none; }
+    .nav-links li a {
+      text-decoration: none;
+      color: #1a3a45;
+      font-size: 0.82rem;
+      display: block;
+      padding: 0.15rem 0.35rem;
+      border-radius: 3px;
+      transition: background 0.15s;
+    }
+    .nav-links li a:hover { background: #d0e8e3; color: #0e2d3a; }
+
+    /* ── Main content ── */
+    main { padding: 2rem 2.5rem; max-width: 860px; }
+
+    /* No-results message */
+    .no-results {
+      display: none;
+      padding: 2rem;
+      text-align: center;
+      color: #6a8f9a;
+      font-style: italic;
+      font-size: 0.95rem;
+    }
+    .no-results.visible { display: block; }
+
+    /* ── Oyster entries ── */
+    .oyster {
+      margin-bottom: 3rem;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid #bcd4ce;
+      transition: opacity 0.2s;
+    }
+    .oyster.hidden { display: none; }
+    .oyster:last-of-type { border-bottom: none; }
+
+    .oyster h2 {
+      font-size: 1.4rem;
+      font-weight: normal;
+      letter-spacing: 0.02em;
+      color: #0e2d3a;
+      margin-bottom: 0.9rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 2px solid #e89438;
+      display: inline-block;
+    }
+
+    /* Bulleted field list */
+    .oyster ul { list-style: none; margin: 0; padding: 0; }
+    .oyster ul li {
+      font-size: 0.92rem;
+      color: #1a3a45;
+      padding: 0.2rem 0 0.2rem 1rem;
+      border-left: 2px solid #bcd4ce;
+      margin-bottom: 0.25rem;
+      position: relative;
+    }
+    .oyster ul li::before {
+      content: "·";
+      position: absolute;
+      left: -0.05rem;
+      color: #e89438;
+      font-size: 1.2rem;
+      line-height: 1.3;
+    }
+    .field-label {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #e89438;
+      margin-right: 0.4rem;
+    }
+    .oyster ul li em { font-style: italic; }
+    .oyster ul li strong { font-weight: bold; }
+
+    /* Notable callout */
+    .notable {
+      margin-top: 0.9rem;
+      padding: 0.75rem 1rem;
+      background: #e8f2ef;
+      border-left: 3px solid #e89438;
+      font-size: 0.88rem;
+      color: #1a3a45;
+    }
+    .notable-label {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #e89438;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    /* ── Currently Serving filter ── */
+    .serving-section { margin-bottom: 0.9rem; }
+    .serving-toggle-btn {
+      width: 100%;
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #0e2d3a;
+      background: #fff;
+      border: 1px solid #9ec4bc;
+      border-radius: 4px;
+      padding: 0.35rem 0.6rem;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .serving-toggle-btn:hover { background: #e8f2ef; }
+    .serving-toggle-btn.active { background: #2a7f94; border-color: #2a7f94; color: #fff; }
+
+    /* Article on-menu badge */
+    .oyster.on-menu h2::after {
+      content: "● on menu";
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #2a7f94;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+
+    /* Search highlight */
+    mark {
+      background: rgba(232,148,56,0.2);
+      color: inherit;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    /* ── Oyster hero panel ── */
+    .oyster-hero {
+      margin: 0.75rem 0 1rem;
+      padding: 0.85rem 1.1rem;
+      background: #0e2d3a;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .salinity-row {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+    .salinity-label-tag {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #e89438;
+      flex-shrink: 0;
+    }
+    .salinity-dots {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .salinity-dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+    }
+    .salinity-dots span.filled { background: #e89438; }
+    .salinity-value-text {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.78rem;
+      color: #a8c8d0;
+    }
+    .tasting-hero {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-style: italic;
+      font-size: 0.98rem;
+      line-height: 1.55;
+      color: #f5f0e8;
+    }
+    .tasting-hero::before { content: '\201C'; color: #e89438; }
+    .tasting-hero::after  { content: '\201D'; color: #e89438; }
+
+    /* ── Table scroll wrapper ── */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* ── Quick Reference Table ── */
+    #quick-reference { margin-top: 1rem; }
+    #quick-reference h2 {
+      font-size: 1.2rem;
+      font-weight: normal;
+      letter-spacing: 0.03em;
+      margin-bottom: 1rem;
+      color: #0e2d3a;
+      border-bottom: 2px solid #e89438;
+      display: inline-block;
+      padding-bottom: 0.3rem;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead tr { background: #0e2d3a; color: #f5f0e8; }
+    thead th {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+    }
+    tbody tr { border-bottom: 1px solid #bcd4ce; }
+    tbody tr:nth-child(even) { background: #e8f2ef; }
+    tbody tr:hover { background: #c2ddd7; }
+    tbody td { padding: 0.5rem 0.75rem; vertical-align: top; }
+    tbody td a { color: #0e2d3a; text-decoration: none; }
+    tbody td a:hover { text-decoration: underline; color: #e89438; }
+    tbody td em { font-style: italic; }
+
+    /* ── Page nav bar ── */
+    .page-nav-bar {
+      grid-column: 1 / -1;
+      background: #112f3d;
+      border-bottom: 1px solid #1a4a5a;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+    }
+    .page-nav-bar > a {
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #6a8f9a;
+      text-decoration: none;
+      padding: 0.65rem 1rem;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s;
+      display: flex;
+      align-items: center;
+    }
+    .page-nav-bar > a:hover { color: #f5f0e8; }
+    .page-nav-bar > a.pnb-active { color: #e89438; border-bottom-color: #e89438; }
+    .pnb-login-link {
+      position: absolute;
+      top: 0.85rem;
+      right: 1rem;
+      z-index: 10;
+      background: rgba(14, 45, 58, 0.55);
+      border: 1px solid rgba(232, 148, 56, 0.35);
+      border-radius: 4px;
+      padding: 0.45rem 0.55rem;
+      color: #f5f0e8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .pnb-login-link:hover { background: rgba(14, 45, 58, 0.88); }
+
+    /* ── Hamburger button (hidden on desktop) ── */
+    .menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.55rem 0.75rem;
+      color: #6a8f9a;
+      flex-shrink: 0;
+      align-items: center;
+      transition: color 0.15s;
+    }
+    .menu-btn:hover { color: #f5f0e8; }
+    .menu-btn svg { display: block; }
+
+    /* ── Nav overlay backdrop (mobile) ── */
+    .nav-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 49;
+    }
+    .nav-overlay.open { display: block; }
+
+    /* ── Back to top button ── */
+    .back-to-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 90;
+      background: #0e2d3a;
+      color: #f5f0e8;
+      border: 1px solid #e89438;
+      border-radius: 4px;
+      padding: 0.5rem 0.85rem;
+      font-family: 'Lato', "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .back-to-top.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .back-to-top:hover {
+      background: #1a4a5a;
+      border-color: #e89438;
+    }
+    .back-to-top svg { flex-shrink: 0; }
+
+    /* ── Mobile breakpoint ── */
+    @media (max-width: 768px) {
+      /* Header row */
+      header {
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .header-logo { height: 36px; }
+      .header-text { flex: 1; min-width: 0; }
+      header h1 { font-size: 1.1rem; }
+      header p  { font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .menu-btn { display: flex; }
+
+      /* Collapse grid to single column */
+      .page-wrapper {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+      }
+
+      /* Sidebar becomes a fixed left drawer */
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100dvh;
+        width: 280px;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        border-right: 2px solid #e89438;
+        padding-top: 1.5rem;
+      }
+      nav.open { transform: translateX(0); }
+
+      /* Clamp header and nav to viewport width */
+      header, .page-nav-bar { max-width: 100vw; overflow: hidden; }
+      header { flex-wrap: nowrap; }
+      .header-text { min-width: 0; overflow: hidden; }
+      header h1 { font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      header p  { font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+      /* Main takes full width */
+      main { padding: 1.25rem 1rem; }
+
+      /* Bigger touch targets for chips */
+      .chip {
+        font-size: 0.8rem;
+        padding: 0.35rem 0.65rem;
+      }
+
+      /* Bigger nav links */
+      .nav-links li a {
+        font-size: 0.9rem;
+        padding: 0.35rem 0.5rem;
+      }
+
+      /* Oyster headings */
+      .oyster h2 { font-size: 1.2rem; }
+
+      /* Prevent field rows from overflowing viewport */
+      .oyster ul li {
+        word-break: break-word;
+        overflow-wrap: break-word;
+      }
+
+      /* Hero card tasting text */
+      .tasting-hero { font-size: 0.88rem; }
+
+      /* Salinity row wraps gracefully */
+      .salinity-value-text { font-size: 0.72rem; }
+
+      /* Main content area */
+      main { max-width: 100vw; overflow-x: hidden; }
+
+      /* Serving toggle button */
+      .serving-toggle-btn { font-size: 0.8rem; padding: 0.5rem 0.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <header>
+    <img src="assets/logo.png" alt="Half Shell Raw Bar" class="header-logo" width="52" height="52" />
+    <div class="header-text">
+      <h1>The Half Shell Library</h1>
+      <p>Origin, Flavor Profile, and Special Notes</p>
+    </div>
+    <a class="pnb-login-link" href="user.html" aria-label="Login">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    </a>
+  </header>
+
+  <!-- Page nav bar -->
+  <div class="page-nav-bar">
+    <button class="menu-btn" id="menu-btn" aria-label="Open menu">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6"  x2="19" y2="6"/>
+        <line x1="3" y1="11" x2="19" y2="11"/>
+        <line x1="3" y1="16" x2="19" y2="16"/>
+      </svg>
+    </button>
+    <a href="index.html">Tonight's Menu</a>
+    <a href="curated-flights.html">Curated Flights</a>
+    <a href="Oyster%20Overview.html" class="pnb-active">Oyster Library</a>
+  </div>
+
+  <!-- Mobile nav overlay -->
+  <div class="nav-overlay" id="nav-overlay"></div>
+
+  <!-- ── Sidebar ── -->
+  <nav id="sidebar">
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <input type="search" id="oyster-search" placeholder="Search oysters…" autocomplete="off" />
+    </div>
+
+    <!-- Sort -->
+    <div class="filter-section">
+      <div class="filter-label">
+        <span style="display:flex;align-items:center;gap:0.4rem;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#e89438;flex-shrink:0;">
+            <line x1="6" y1="4" x2="6" y2="17"/>
+            <polyline points="3,14 6,18 9,14"/>
+            <line x1="12" y1="6" x2="21" y2="6"/>
+            <line x1="12" y1="11" x2="19" y2="11"/>
+            <line x1="12" y1="16" x2="16" y2="16"/>
+            <line x1="12" y1="21" x2="14" y2="21"/>
+          </svg>
+          Sort By
+        </span>
+      </div>
+      <div class="filter-chips" id="sort-chips">
+        <span class="chip sort-chip active" data-sort="az">A → Z</span>
+        <span class="chip sort-chip" data-sort="za">Z → A</span>
+        <span class="chip sort-chip" data-sort="salinity">Salinity</span>
+        <span class="chip sort-chip" data-sort="size">Size</span>
+      </div>
+    </div>
+
+    <!-- Salinity filter -->
+    <div class="filter-section">
+      <div class="filter-label">Salinity</div>
+      <div class="filter-chips" data-group="salinity">
+        <span class="chip" data-value="low">Low</span>
+        <span class="chip" data-value="medium">Medium</span>
+        <span class="chip" data-value="medium-high">Med-High</span>
+        <span class="chip" data-value="high">High</span>
+        <span class="chip" data-value="very-high">Very High</span>
+      </div>
+    </div>
+
+    <!-- Size filter -->
+    <div class="filter-section">
+      <div class="filter-label">Size</div>
+      <div class="filter-chips" data-group="size">
+        <span class="chip" data-value="small">Small</span>
+        <span class="chip" data-value="small-medium">Sm–Med</span>
+        <span class="chip" data-value="medium">Medium</span>
+        <span class="chip" data-value="large">Large</span>
+      </div>
+    </div>
+
+    <!-- Region filter -->
+    <div class="filter-section">
+      <div class="filter-label">State / Province</div>
+      <div class="filter-chips" data-group="region">
+        <!-- @@REGION_CHIPS@@ -->
+      </div>
+    </div>
+
+    <!-- Currently Serving filter -->
+    <div class="serving-section">
+      <button class="serving-toggle-btn" id="serving-toggle">Currently Serving</button>
+    </div>
+
+    <span class="clear-filters" id="clear-filters">Clear all filters</span>
+    <div class="result-count" id="result-count"></div>
+
+    <div class="nav-divider"></div>
+
+    <!-- Jump links -->
+    <div class="nav-label">Varieties</div>
+    <ul class="nav-links" id="nav-links">
+      <!-- @@NAV_LINKS@@ -->
+    </ul>
+
+    <div class="nav-divider"></div>
+    <ul class="nav-links">
+      <li><a href="#quick-reference">Quick Reference</a></li>
+    </ul>
+
+  </nav>
+
+  <!-- ── Main content ── -->
+  <main>
+
+    <div class="no-results" id="no-results">No oysters match your search or filters.</div>
+
+    <!-- Articles are generated from data/oysters.js by tools/build-library.js.
+         data-salinity: low | medium | medium-high | high | very-high (omitted when unknown)
+         data-size:     small | small-medium | medium | large (empty when unknown)
+         data-region:   region code from data/regions.js -->
+
+    <!-- @@ARTICLES@@ -->
+
+    <!-- ── Quick Reference Table ── -->
+    <section id="quick-reference">
+      <h2>Quick Reference Summary</h2>
+      <div class="table-wrap"><table>
+        <thead>
+          <tr>
+            <th>Oyster</th><th>Region</th><th>Species</th><th>Salinity</th><th>Size</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- @@QUICK_REF_ROWS@@ -->
+        </tbody>
+      </table></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ── Back to top ── -->
+<button class="back-to-top" id="back-to-top" aria-label="Back to top">
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="2,8 6,4 10,8"/>
+  </svg>
+  Top
+</button>
+
+<script>
+(function () {
+  // ── State ──────────────────────────────────────────
+  const activeFilters = { salinity: new Set(), size: new Set(), region: new Set() };
+  let searchTerm      = '';
+  let filterServing   = false;          // is "on menu" filter active?
+  let currentSort     = 'az';           // current sort mode
+
+  // Populated from Firebase on load
+  let servingIds = new Set();
+
+  // ── Sort helpers ───────────────────────────────────
+  const SAL_SORT  = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
+  const SIZE_SORT = { 'small':1, 'small-medium':2, 'medium':3, 'large':4 };
+  const TOTAL = document.querySelectorAll('article.oyster').length;
+
+  // ── DOM refs ───────────────────────────────────────
+  const articles      = Array.from(document.querySelectorAll('article.oyster'));
+  const navItems      = Array.from(document.querySelectorAll('#nav-links li[data-target]'));
+  const searchInput   = document.getElementById('oyster-search');
+  const clearBtn      = document.getElementById('clear-filters');
+  const countEl       = document.getElementById('result-count');
+  const noResults     = document.getElementById('no-results');
+  const chipGroups    = document.querySelectorAll('.filter-chips[data-group]');
+  const servingToggle = document.getElementById('serving-toggle');
+
+  // Oyster names keyed by id (built from articles)
+  const oysterNames = {};
+  articles.forEach(a => {
+    oysterNames[a.id] = a.querySelector('h2').textContent.trim();
+  });
+
+  function syncOnMenuClass() {
+    articles.forEach(a => a.classList.toggle('on-menu', servingIds.has(a.id)));
+  }
+
+  // ── Core filter function ───────────────────────────
+  function applyFilters() {
+    const hasFilters = activeFilters.salinity.size || activeFilters.size.size ||
+                       activeFilters.region.size   || searchTerm || filterServing;
+    clearBtn.classList.toggle('visible', !!hasFilters);
+
+    let visible = 0;
+
+    articles.forEach(article => {
+      const id = article.id;
+
+      const matchSalinity = !activeFilters.salinity.size || activeFilters.salinity.has(article.dataset.salinity);
+      const matchSize     = !activeFilters.size.size     || activeFilters.size.has(article.dataset.size);
+      const matchRegion   = !activeFilters.region.size   || activeFilters.region.has(article.dataset.region);
+      const matchSearch   = !searchTerm || (article.dataset.search + ' ' + article.textContent).toLowerCase().includes(searchTerm);
+      const matchServing  = !filterServing || servingIds.has(id);
+
+      const show = matchSalinity && matchSize && matchRegion && matchSearch && matchServing;
+      article.classList.toggle('hidden', !show);
+      if (show) visible++;
+
+      const navItem = navItems.find(li => li.dataset.target === id);
+      if (navItem) navItem.classList.toggle('hidden-link', !show);
+    });
+
+    countEl.textContent = hasFilters ? `Showing ${visible} of ${TOTAL}` : '';
+    noResults.classList.toggle('visible', visible === 0);
+    sortArticles();
+  }
+
+  // ── Sort articles in the DOM ───────────────────────
+  function sortArticles() {
+    const mainEl  = document.querySelector('main');
+    const quickRef = document.getElementById('quick-reference');
+    const visible  = articles.filter(a => !a.classList.contains('hidden'));
+    const hidden   = articles.filter(a =>  a.classList.contains('hidden'));
+
+    if (currentSort === 'az') {
+      visible.sort((a, b) => a.querySelector('h2').textContent.trim().localeCompare(b.querySelector('h2').textContent.trim()));
+    } else if (currentSort === 'za') {
+      visible.sort((a, b) => b.querySelector('h2').textContent.trim().localeCompare(a.querySelector('h2').textContent.trim()));
+    } else if (currentSort === 'salinity') {
+      visible.sort((a, b) => (SAL_SORT[a.dataset.salinity] || 2) - (SAL_SORT[b.dataset.salinity] || 2));
+    } else if (currentSort === 'size') {
+      visible.sort((a, b) => (SIZE_SORT[a.dataset.size] || 3) - (SIZE_SORT[b.dataset.size] || 3));
+    }
+
+    // Re-insert: visible (sorted) first, then hidden, all before quick-reference
+    [...visible, ...hidden].forEach(a => mainEl.insertBefore(a, quickRef));
+  }
+
+  // ── Chip toggles (salinity / size / region) ────────
+  chipGroups.forEach(group => {
+    const groupName = group.dataset.group;
+    group.addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      const val = chip.dataset.value;
+      if (activeFilters[groupName].has(val)) {
+        activeFilters[groupName].delete(val);
+        chip.classList.remove('active');
+      } else {
+        activeFilters[groupName].add(val);
+        chip.classList.add('active');
+      }
+      applyFilters();
+    });
+  });
+
+  // ── Sort chips (mutually exclusive) ───────────────
+  const sortChipsEl = document.getElementById('sort-chips');
+  if (sortChipsEl) {
+    sortChipsEl.addEventListener('click', e => {
+      const chip = e.target.closest('.sort-chip');
+      if (!chip) return;
+      currentSort = chip.dataset.sort;
+      sortChipsEl.querySelectorAll('.sort-chip').forEach(c => c.classList.toggle('active', c === chip));
+      applyFilters();
+    });
+  }
+
+  // ── Search ─────────────────────────────────────────
+  searchInput.addEventListener('input', e => {
+    searchTerm = e.target.value.trim().toLowerCase();
+    applyFilters();
+  });
+
+  // ── Clear all ──────────────────────────────────────
+  clearBtn.addEventListener('click', () => {
+    activeFilters.salinity.clear();
+    activeFilters.size.clear();
+    activeFilters.region.clear();
+    searchTerm    = '';
+    filterServing = false;
+    searchInput.value = '';
+    document.querySelectorAll('.chip.active').forEach(c => c.classList.remove('active'));
+    filterServing = false;
+    servingToggle.classList.remove('active');
+    // Reset sort to A→Z and re-activate its chip
+    currentSort = 'az';
+    if (sortChipsEl) {
+      sortChipsEl.querySelectorAll('.sort-chip').forEach(c => c.classList.toggle('active', c.dataset.sort === 'az'));
+    }
+    applyFilters();
+  });
+
+  // ── Currently Serving toggle ───────────────────────
+  servingToggle.addEventListener('click', () => {
+    if (servingIds.size === 0) return; // nothing to filter if not loaded
+    filterServing = !filterServing;
+    servingToggle.classList.toggle('active', filterServing);
+    applyFilters();
+  });
+
+  // ── Mobile sidebar toggle ──────────────────────────
+  const sidebar    = document.getElementById('sidebar');
+  const navOverlay = document.getElementById('nav-overlay');
+  const menuBtn    = document.getElementById('menu-btn');
+
+  function openSidebar()  { sidebar.classList.add('open'); navOverlay.classList.add('open'); }
+  function closeSidebar() { sidebar.classList.remove('open'); navOverlay.classList.remove('open'); }
+
+  menuBtn.addEventListener('click', openSidebar);
+  navOverlay.addEventListener('click', closeSidebar);
+
+  // Close sidebar when a jump link is tapped on mobile
+  document.querySelectorAll('#nav-links a').forEach(a => {
+    a.addEventListener('click', () => { if (window.innerWidth <= 768) closeSidebar(); });
+  });
+
+  // ── Smooth scroll ──────────────────────────────────
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', e => {
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  });
+
+  // ── Make oyster names link to detail pages ─────────────────────────
+  document.querySelectorAll('article.oyster h2').forEach(h2 => {
+    const id   = h2.closest('article').id;
+    const link = document.createElement('a');
+    link.href  = `oyster.html?id=${id}`;
+    link.style.cssText = 'color:inherit;text-decoration:none;';
+    link.addEventListener('mouseenter', () => link.style.textDecoration = 'underline');
+    link.addEventListener('mouseleave', () => link.style.textDecoration = 'none');
+    // Move h2 text content (but not the ::after badge) into the link
+    const text = h2.childNodes[0];
+    if (text && text.nodeType === Node.TEXT_NODE) {
+      link.appendChild(text.cloneNode());
+      text.remove();
+      h2.prepend(link);
+    }
+  });
+
+  // ── Build hero panels: salinity dots + tasting notes ──────────────
+  (function buildHeroPanels() {
+    const DOTS = { 'low': 1, 'medium': 2, 'medium-high': 3, 'high': 4, 'very-high': 5 };
+    document.querySelectorAll('article.oyster').forEach(art => {
+      const h2 = art.querySelector('h2');
+      const ul = art.querySelector('ul');
+      if (!h2 || !ul) return;
+      let salinityLi = null, tastingLi = null;
+      ul.querySelectorAll('li').forEach(li => {
+        const lbl = li.querySelector('.field-label');
+        if (!lbl) return;
+        const key = lbl.textContent.replace(':','').trim().toLowerCase();
+        if (key === 'salinity')      salinityLi = li;
+        if (key === 'tasting notes') tastingLi  = li;
+      });
+      const hasSalinity = art.hasAttribute('data-salinity');
+      if (!hasSalinity && !tastingLi) return;
+      const hero = document.createElement('div');
+      hero.className = 'oyster-hero';
+      if (hasSalinity) {
+        const level  = art.dataset.salinity || 'medium';
+        const filled = DOTS[level] || 2;
+        const dotsHtml = Array.from({length:5},(_,i) => `<span class="${i<filled?'filled':''}"></span>`).join('');
+        const row = document.createElement('div');
+        row.className = 'salinity-row';
+        row.innerHTML = `<span class="salinity-label-tag">Salinity</span><div class="salinity-dots">${dotsHtml}</div>`;
+        hero.appendChild(row);
+        if (salinityLi) salinityLi.remove();
+      }
+      if (tastingLi) {
+        const text = tastingLi.textContent.replace(tastingLi.querySelector('.field-label').textContent,'').trim();
+        const p = document.createElement('p');
+        p.className = 'tasting-hero';
+        p.textContent = text;
+        hero.appendChild(p);
+        tastingLi.remove();
+      }
+      h2.insertAdjacentElement('afterend', hero);
+    });
+  })();
+
+  // ── Back to top ────────────────────────────────────
+  (function() {
+    const btn = document.getElementById('back-to-top');
+    window.addEventListener('scroll', () => {
+      btn.classList.toggle('visible', window.scrollY > 300);
+    }, { passive: true });
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  })();
+
+  // ── Init ───────────────────────────────────────────
+  applyFilters(); // initial render with empty servingIds
+
+  // ── Firebase: load currently-serving IDs ───────────
+  (function () {
+    const firebaseConfig = {
+      apiKey: "AIzaSyDNuyGuzAmow0YehKlztihYn3l57--82L8",
+      authDomain: "half-shell-oyster-menu.firebaseapp.com",
+      databaseURL: "https://half-shell-oyster-menu-default-rtdb.firebaseio.com",
+      projectId: "half-shell-oyster-menu",
+      storageBucket: "half-shell-oyster-menu.firebasestorage.app",
+      messagingSenderId: "784452175310",
+      appId: "1:784452175310:web:2d56ed01d06bb39886179f"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    firebase.database().ref('menu/serving').once('value').then(snapshot => {
+      // menu/serving is an object keyed by oyster id: { id: {addedAt, lastUpdated, source} }
+      const ids = Object.keys(snapshot.val() || {});
+      servingIds = new Set(ids);
+      syncOnMenuClass();
+      if (ids.length === 0) servingToggle.style.opacity = '0.5';
+    }).catch(() => {});
+  })();
+
+})();
+</script>
+</body>
+</html>
