@@ -5,6 +5,9 @@
  * tools/flights-preview.js (via require). One file, so the page and the
  * tests can never drift apart.
  *
+ * Needs data/regions.js: pages load it first (global HS_REGIONS); Node
+ * requires it from this folder.
+ *
  * Usage:
  *   HS_FLIGHTS.selectFlights(servedOysters, HS_FLIGHTS.rotationDate(new Date()))
  *     -> [{ name, description, oysters: [catalogEntry, ...] }, ...]   (0–2 flights)
@@ -25,10 +28,22 @@
   var MAX_FLIGHTS = 2;
 
   // ── Regions ────────────────────────────────────────────────────────────────
-  var ATLANTIC_NORTH = ['me', 'ma', 'nh', 'ri', 'ct', 'ny', 'nb', 'pei', 'ns'];
-  var ATLANTIC_SOUTH = ['nc', 'va', 'sc', 'md'];
-  var ATLANTIC_ALL   = ATLANTIC_NORTH.concat(ATLANTIC_SOUTH, ['nj']);
-  var WEST_COAST     = ['wa', 'bc'];
+  // Coast lists come from data/regions.js. HOMETOWN is a flight rule, not a
+  // region property, so it stays here.
+  var REGIONS = root.HS_REGIONS, loadError = '';
+  if (!REGIONS && typeof require === 'function') {
+    try { REGIONS = require('./regions.js'); } catch (e) { loadError = ' (' + e.message + ')'; }
+  }
+  if (!Array.isArray(REGIONS) || !REGIONS.length) {
+    throw new Error('data/flights.js: HS_REGIONS is missing. Load data/regions.js before data/flights.js.' + loadError);
+  }
+  function codesWhere(test) {
+    return REGIONS.filter(test).map(function (r) { return r.code; });
+  }
+  var ATLANTIC_NORTH = codesWhere(function (r) { return r.group === 'atlantic-north'; });
+  var ATLANTIC_SOUTH = codesWhere(function (r) { return r.group === 'atlantic-south'; });
+  var ATLANTIC_ALL   = codesWhere(function (r) { return r.coast === 'east'; });
+  var WEST_COAST     = codesWhere(function (r) { return r.coast === 'west'; });
   var HOMETOWN       = ['nc', 'va'];
 
   function region(o) { return String(o.region || '').toLowerCase(); }

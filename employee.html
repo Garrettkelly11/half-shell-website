@@ -560,6 +560,7 @@
 </div>
 
 <script src="./data/oysters.js?v=2"></script>
+<script src="./data/regions.js"></script>
 <script src="src/firebase-config.js"></script>
 <script src="src/menu-manager.js"></script>
 <script>
@@ -702,7 +703,8 @@ function syncCounter() {
 
 function renderChecklist(filter = '') {
   const checklist = document.getElementById('serving-checklist');
-  const regionLabel = { ct:'CT', ma:'MA', md:'MD', me:'ME', nc:'NC', nj:'NJ', ny:'NY', ri:'RI', va:'VA', wa:'WA', bc:'BC', nb:'NB', pei:'PEI' };
+  // Region abbreviations come from data/regions.js.
+  const regionShort = code => { const r = HS_REGIONS.find(x => x.code === code); return r ? r.short : code; };
 
   const filtered = OYSTERS.filter(o =>
     !filter || o.name.toLowerCase().includes(filter) || o.origin.toLowerCase().includes(filter)
@@ -712,7 +714,7 @@ function renderChecklist(filter = '') {
     <div class="serving-item${pendingServing.has(o.id) ? ' checked' : ''}" data-id="${o.id}">
       <input type="checkbox" ${pendingServing.has(o.id) ? 'checked' : ''} />
       <span class="serving-item-name">${o.name}</span>
-      <span class="serving-item-region">${regionLabel[o.region] || o.region}</span>
+      <span class="serving-item-region">${regionShort(o.region)}</span>
     </div>
   `).join('');
 
