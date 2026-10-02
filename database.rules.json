@@ -1,0 +1,29 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "menu": {
+      "serving": {
+        ".read": true,
+        ".write": "auth != null && root.child('staff').child(auth.uid).exists()"
+      }
+    },
+    "audit-log": {
+      ".read": "auth != null && root.child('staff').child(auth.uid).exists()",
+      "$entry": {
+        ".write": "auth != null && root.child('staff').child(auth.uid).exists() && !data.exists()"
+      }
+    },
+    "config": {
+      "ghToken": {
+        ".read": "auth != null && root.child('staff').child(auth.uid).exists()"
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    }
+  }
+}
