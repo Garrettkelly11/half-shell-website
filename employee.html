@@ -12,6 +12,7 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"></noscript>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
@@ -563,12 +564,25 @@
 <script src="src/menu-manager.js"></script>
 <script>
 // ── Auth ──────────────────────────────────────────────────────────────────
-const AUTH_KEY  = 'halfshell-employee-auth';
-const PASSWORD  = '86Golds';
-const gate      = document.getElementById('gate');
+// The password is checked by Firebase Authentication, not by this page.
+// Staff type only the password; the shared account's email is filled in here.
+// Database rules decide what a signed-in account may change, so nothing on
+// this page is a secret.
+const STAFF_EMAIL = 'staff@hsoysters.com';
+
+// The SDKs are loaded by the <script> tags in <head>. Initialize once here
+// instead of calling initializeFirebase(), which reloads firebase-app and
+// would drop the auth module.
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+// Sign-in lasts until the tab closes, matching the old behavior.
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+
+const gate        = document.getElementById('gate');
 const pageContent = document.getElementById('page-content');
-const gatePwd   = document.getElementById('gate-pwd');
-const gateError = document.getElementById('gate-error');
+const gatePwd     = document.getElementById('gate-pwd');
+const gateError   = document.getElementById('gate-error');
+const gateSubmit  = document.getElementById('gate-submit');
 
 function unlock() {
   gate.style.display = 'none';
@@ -576,24 +590,48 @@ function unlock() {
   // initPage() is called by the Firebase fetch below once data is ready
 }
 
-if (sessionStorage.getItem(AUTH_KEY) === 'true') {
-  unlock();
+function lock() {
+  pageContent.style.display = 'none';
+  gate.style.display = '';
 }
 
-document.getElementById('gate-submit').addEventListener('click', () => {
-  if (gatePwd.value === PASSWORD) {
-    sessionStorage.setItem(AUTH_KEY, 'true');
-    gateError.textContent = '';
-    unlock();
-  } else {
-    gateError.textContent = 'Incorrect password. Please try again.';
+// Name recorded in the audit log for changes made on this page.
+function staffActor() {
+  const u = auth.currentUser;
+  return u ? (u.email || u.uid) : 'Unknown';
+}
+
+// Passport customers sign in by phone and have no email, so they never unlock
+// this page. The database rules are the real gate; this only keeps the UI honest.
+auth.onAuthStateChanged(user => {
+  if (user && user.email) unlock();
+  else lock();
+});
+
+gateSubmit.addEventListener('click', async () => {
+  const pwd = gatePwd.value;
+  if (!pwd) return;
+  gateSubmit.disabled = true;
+  gateError.textContent = '';
+  try {
+    await auth.signInWithEmailAndPassword(STAFF_EMAIL, pwd);
+    gatePwd.value = '';
+  } catch (err) {
+    console.warn('Staff sign-in failed:', err.code, err.message);
+    gateError.textContent = err.code === 'auth/too-many-requests'
+      ? 'Too many attempts. Wait a few minutes and try again.'
+      : (err.code === 'auth/network-request-failed'
+          ? 'No connection. Check the network and try again.'
+          : 'Incorrect password. Please try again.');
     gatePwd.value = '';
     gatePwd.focus();
+  } finally {
+    gateSubmit.disabled = false;
   }
 });
 
 gatePwd.addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('gate-submit').click();
+  if (e.key === 'Enter') gateSubmit.click();
 });
 
 
@@ -609,7 +647,7 @@ let isSyncing = false;
 
 // Initialize Firebase and MenuManager
 (async function initFirebase() {
-  db = await initializeFirebase();
+  db = firebase.database();
   if (!db) {
     console.error('Failed to connect to Firebase');
     return;
@@ -743,7 +781,7 @@ function initPage() {
     // Add oysters that are in pendingServing but not in serving
     for (const id of newIds) {
       if (!currentIds.has(id)) {
-        const result = await menuManager.toggleOyster(id, true, 'Staff');
+        const result = await menuManager.toggleOyster(id, true, staffActor());
         if (result.success) updateCount++;
         else errorCount++;
       }
@@ -752,7 +790,7 @@ function initPage() {
     // Remove oysters that are in serving but not in pendingServing
     for (const id of currentIds) {
       if (!newIds.has(id)) {
-        const result = await menuManager.toggleOyster(id, false, 'Staff');
+        const result = await menuManager.toggleOyster(id, false, staffActor());
         if (result.success) updateCount++;
         else errorCount++;
       }
