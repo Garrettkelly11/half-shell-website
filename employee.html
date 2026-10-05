@@ -13,6 +13,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
@@ -815,10 +816,11 @@ function initPage() {
     }
   });
 
-  // Toast sync button — triggers GitHub Actions workflow dispatch.
-  // The PAT is stored in Firebase config (never in source code).
-  const GH_REPO     = 'Garrettkelly11/half-shell-website';
-  const GH_WORKFLOW = 'sync-oysters.yml';
+  // Toast sync button — asks the server function startToastSync (cloud/,
+  // step S4) to start the GitHub Actions sync. The GitHub token stays on
+  // the server; the function checks this is a staff sign-in, allows one
+  // sync every 2 minutes, and writes the audit-log entry itself.
+  const startToastSync = firebase.app().functions('us-east1').httpsCallable('startToastSync');
 
   document.getElementById('sync-toast-btn').addEventListener('click', async () => {
     if (isSyncing) return;
@@ -830,48 +832,22 @@ function initPage() {
     btn.textContent = '⏳ Syncing…';
 
     try {
-      // Fetch PAT from Firebase config
-      const tokenSnap = await db.ref('config/ghToken').once('value');
-      const ghToken = tokenSnap.val();
-      if (!ghToken) {
-        status.textContent = '⚠ Sync not configured — contact your manager.';
-        status.className = 'error-message';
-        setTimeout(() => { status.textContent = ''; status.className = 'save-status'; }, 6000);
-        return;
-      }
-
-      const url = `https://api.github.com/repos/${GH_REPO}/actions/workflows/${GH_WORKFLOW}/dispatches`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Accept':               'application/vnd.github+json',
-          'Authorization':        `Bearer ${ghToken}`,
-          'Content-Type':         'application/json',
-          'X-GitHub-Api-Version': '2022-11-28',
-        },
-        body: JSON.stringify({ ref: 'main' }),
-      });
-
-      if (res.status === 204) {
-        status.textContent = '✓ Synced from Toast — menu will refresh in about 30 seconds.';
-        status.className = 'error-message success';
-        lastSyncTime = Date.now();
-        localStorage.setItem('lastToastSync', lastSyncTime);
-        updateSyncTimeDisplay();
-        setTimeout(() => { status.textContent = ''; status.className = 'save-status'; }, 8000);
-      } else if (res.status === 401) {
-        status.textContent = '⚠ Sync failed: token expired — ask your manager to update it.';
-        status.className = 'error-message';
-        setTimeout(() => { status.textContent = ''; status.className = 'save-status'; }, 8000);
-      } else {
-        status.textContent = `⚠ Sync failed (HTTP ${res.status}) — try again or contact your manager.`;
-        status.className = 'error-message';
-        setTimeout(() => { status.textContent = ''; status.className = 'save-status'; }, 8000);
-      }
+      await startToastSync();
+      status.textContent = '✓ Synced from Toast — menu will refresh in about 30 seconds.';
+      status.className = 'error-message success';
+      lastSyncTime = Date.now();
+      localStorage.setItem('lastToastSync', lastSyncTime);
+      updateSyncTimeDisplay();
+      setTimeout(() => { status.textContent = ''; status.className = 'save-status'; }, 8000);
     } catch (error) {
-      status.textContent = `Network error: ${error.message}`;
+      // Callable errors arrive as code 'functions/<code>' with the server's message.
+      const code = String(error.code || '').replace('functions/', '');
+      const known = ['unauthenticated', 'permission-denied', 'resource-exhausted',
+                     'failed-precondition', 'unavailable'];
+      status.textContent = '⚠ ' + (known.includes(code) ? error.message
+        : 'Sync failed — try again or contact your manager.');
       status.className = 'error-message';
-      setTimeout(() => { status.textContent = ''; status.className = 'save-status'; }, 5000);
+      setTimeout(() => { status.textContent = ''; status.className = 'save-status'; }, 8000);
     } finally {
       isSyncing    = false;
       btn.disabled = false;

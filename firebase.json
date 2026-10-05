@@ -48,6 +48,21 @@
         ".env",
         ".env.*"
       ]
+    },
+    {
+      "source": "cloud",
+      "codebase": "cloud",
+      "runtime": "nodejs22",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "test.js",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        ".env",
+        ".env.*",
+        ".secret.local"
+      ]
     }
   ]
 }
