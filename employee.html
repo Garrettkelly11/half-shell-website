@@ -800,7 +800,14 @@ function watchOverrides() {
   overridesRef.on('value', snap => {
     overrides = snap.val() || {};
     renderOverrideTags();
-  }, err => console.warn('Overrides not readable:', err && err.code));
+  }, err => {
+    // Refused (e.g. rules not yet published, or the staff entry not yet
+    // written): try again in 30 seconds while still signed in, instead of
+    // waiting for a reload.
+    console.warn('Overrides not readable:', err && err.code);
+    overridesRef = null;
+    setTimeout(() => { if (auth.currentUser) watchOverrides(); }, 30000);
+  });
 }
 
 function activeOverride(id) {
