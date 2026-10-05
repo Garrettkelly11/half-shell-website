@@ -59,8 +59,10 @@
 
   // petite/cocktail/small = 1, medium = 2, large/jumbo = 3. The largest word wins
   // ("Medium to large" = 3). Unknown or undocumented = NaN.
+  // Only the words before the first " — " or ";" count, so a note like
+  // "Very small — ... large meat" stays small (same rule as tools/build-library.js).
   function sizeRank(o) {
-    var s = String(o.size || '').toLowerCase();
+    var s = String(o.size || '').toLowerCase().split(/\s+—\s+|;/)[0];
     if (!s || /unknown|not documented|undocumented/.test(s)) return NaN;
     if (/large|jumbo/.test(s)) return 3;
     if (/medium/.test(s)) return 2;
