@@ -1514,7 +1514,7 @@ var OYSTERS = [
     photoUrl: "assets/oysters/fire-lake.jpg",
     photoAlt: "Fire Lake oysters on the half shell",
     price: 4
-  }, 
+  },
   {
     id: "dukes-of-topsail",
     name: "Dukes of Topsail",
