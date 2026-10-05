@@ -156,6 +156,13 @@ async function rejects(promise, code) {
     assert.deepStrictEqual(e.details, { status: 500 });
   });
 
+  await check('a Merroir sign-in is named from its staff entry ("Garrett K.")', async () => {
+    const db5 = fakeDb({ staff: { 'merroir:1': { name: 'Garrett K.', rank: 40, location: null } } });
+    await lib.startToastSync({ uid: 'merroir:1', token: {} }, deps(db5, fakeGitHub(204), T0));
+    assert.strictEqual(Object.values(db5.data['audit-log'])[0].actor, 'Garrett K.');
+    assert.strictEqual(db5.data.server.lastSyncTrigger.by, 'Garrett K.');
+  });
+
   await check('index.js exports startToastSync as a callable in us-east1 using the GH_DISPATCH_TOKEN secret', async () => {
     process.env.GCLOUD_PROJECT = process.env.GCLOUD_PROJECT || 'half-shell-oyster-menu';
     const fns = require('./index.js');

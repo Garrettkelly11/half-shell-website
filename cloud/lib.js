@@ -10,8 +10,9 @@
  *      server/; the root rule denies it).
  *   3. Asks GitHub to run .github/workflows/sync-oysters.yml on main, with
  *      a token only this function can read (secret GH_DISPATCH_TOKEN).
- *   4. Writes an audit-log entry with the caller's email, from the verified
- *      sign-in, not from anything the page sends.
+ *   4. Writes an audit-log entry naming the caller: the name in their
+ *      staff/{uid} entry (Merroir sign-ins, M5), else the verified email.
+ *      Never anything the page sends.
  */
 
 'use strict';
@@ -66,7 +67,10 @@ async function startToastSync(auth, deps) {
   if (!staff.exists()) {
     throw new SyncError('permission-denied', 'Only staff accounts can start a Toast sync.');
   }
-  const actor = (auth.token && auth.token.email) || auth.uid;
+  // Merroir sign-ins (M5) carry their name in their staff entry ("Garrett K.").
+  const entry = staff.val();
+  const actor = (entry && typeof entry === 'object' && entry.name)
+    || (auth.token && auth.token.email) || auth.uid;
   if (!token) {
     throw new SyncError('failed-precondition', 'Sync is not set up (no GitHub token on the server).');
   }

@@ -72,7 +72,8 @@
       margin-bottom: 0.4rem;
       text-align: left;
     }
-    .gate-box input[type="password"] {
+    .gate-box input[type="password"],
+    .gate-box input[type="text"] {
       width: 100%;
       padding: 0.55rem 0.75rem;
       border: 1px solid #9ec4bc;
@@ -85,9 +86,17 @@
       margin-bottom: 0.75rem;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .gate-box input[type="password"]:focus {
+    .gate-box input[type="password"]:focus,
+    .gate-box input[type="text"]:focus {
       border-color: #e89438;
       box-shadow: 0 0 0 2px rgba(232,148,56,0.18);
+    }
+    .gate-note {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.78rem;
+      line-height: 1.4;
+      color: #3f6470;
+      margin: -0.75rem 0 1.25rem;
     }
     .gate-error {
       font-family: 'Lato', sans-serif;
@@ -165,6 +174,26 @@
       transition: color 0.15s;
     }
     .nav-login-link:hover { color: #f5f0e8; }
+
+    /* Sign out (Merroir sign-in, M5): shows who is signed in on this device */
+    .nav-signout {
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+      padding: 0.65rem 1rem;
+      color: #6a8f9a;
+      background: none;
+      border: none;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .nav-signout:hover { color: #f5f0e8; }
+    .nav-signout[hidden] { display: none; }
 
     /* ── Header ── */
     header {
@@ -454,14 +483,17 @@
 </head>
 <body>
 
-<!-- ── Password gate ── -->
+<!-- ── Sign-in gate: Merroir username and password (M5) ── -->
 <div class="gate" id="gate">
   <div class="gate-box">
     <div class="gate-eyebrow">Half Shell Raw Bar</div>
-    <h2>Employee Portal</h2>
+    <h2>Sign in with your Merroir login</h2>
+    <p class="gate-note">This is the same username and password you use for Merroir (Half Shell Training).</p>
+    <label for="gate-user">Username</label>
+    <input type="text" id="gate-user" placeholder="e.g. Garrett.K" autocomplete="username" autocapitalize="none" spellcheck="false" />
     <label for="gate-pwd">Password</label>
-    <input type="password" id="gate-pwd" placeholder="Enter password" autocomplete="current-password" />
-    <div class="gate-error" id="gate-error"></div>
+    <input type="password" id="gate-pwd" placeholder="Password" autocomplete="current-password" />
+    <div class="gate-error" id="gate-error" role="alert"></div>
     <button class="gate-btn" id="gate-submit">Sign In</button>
     <button class="gate-back" id="gate-back" onclick="history.back()">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -493,6 +525,7 @@
         <circle cx="12" cy="7" r="4"/>
       </svg>
     </a>
+    <button class="nav-signout" id="nav-signout" type="button" hidden>Sign out <span id="nav-signout-name"></span></button>
   </nav>
 
   <main>
@@ -564,13 +597,15 @@
 <script src="./data/regions.js"></script>
 <script src="src/firebase-config.js"></script>
 <script src="src/menu-manager.js"></script>
+<script src="src/merroir-signin.js"></script>
 <script>
 // ── Auth ──────────────────────────────────────────────────────────────────
-// The password is checked by Firebase Authentication, not by this page.
-// Staff type only the password; the shared account's email is filled in here.
-// Database rules decide what a signed-in account may change, so nothing on
-// this page is a secret.
-const STAFF_EMAIL = 'staff@hsoysters.com';
+// Staff sign in with their Merroir username and password (M5). Merroir
+// checks them (active staff only) and answers with a Firebase sign-in
+// token; the first time someone logs in, Merroir has them set their own
+// password and sends them back here (src/merroir-signin.js). Database
+// rules decide what a signed-in account may change: an account is staff
+// while Merroir keeps its staff/<uid> entry, so nothing here is a secret.
 
 // The SDKs are loaded by the <script> tags in <head>. Initialize once here
 // instead of calling initializeFirebase(), which reloads firebase-app and
@@ -582,9 +617,14 @@ auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
 const gate        = document.getElementById('gate');
 const pageContent = document.getElementById('page-content');
+const gateUser    = document.getElementById('gate-user');
 const gatePwd     = document.getElementById('gate-pwd');
 const gateError   = document.getElementById('gate-error');
 const gateSubmit  = document.getElementById('gate-submit');
+const signOutBtn  = document.getElementById('nav-signout');
+const signOutName = document.getElementById('nav-signout-name');
+
+let staffName = null;   // "Garrett K.", from the sign-in token (claim staff_name)
 
 function unlock() {
   gate.style.display = 'none';
@@ -600,41 +640,87 @@ function lock() {
 // Name recorded in the audit log for changes made on this page.
 function staffActor() {
   const u = auth.currentUser;
-  return u ? (u.email || u.uid) : 'Unknown';
+  return staffName || (u ? (u.email || u.uid) : 'Unknown');
 }
 
-// Passport customers sign in by phone and have no email, so they never unlock
-// this page. The database rules are the real gate; this only keeps the UI honest.
-auth.onAuthStateChanged(user => {
-  if (user && user.email) unlock();
-  else lock();
+// Only Merroir sign-ins (uid "merroir:<id>") unlock this page. Passport
+// customers sign in by phone and never do. The database rules are the
+// real gate; this only keeps the UI honest.
+auth.onAuthStateChanged(async user => {
+  if (user && user.uid.indexOf('merroir:') === 0) {
+    try {
+      const t = await user.getIdTokenResult();
+      staffName = t.claims.staff_name || null;
+    } catch (e) { staffName = null; }
+    signOutName.textContent = staffName ? '(' + staffName + ')' : '';
+    signOutBtn.hidden = false;
+    unlock();
+  } else {
+    staffName = null;
+    signOutBtn.hidden = true;
+    lock();
+  }
 });
 
+signOutBtn.addEventListener('click', () => auth.signOut());
+
+function showGateError(message) {
+  gateError.textContent = message;
+  gatePwd.value = '';
+  gatePwd.focus();
+}
+
+// Back from a first login on Merroir: employee.html#token=...&state=...
+(function finishFirstLogin() {
+  let saved = null;
+  try { saved = sessionStorage.getItem(HS_SIGNIN.STATE_KEY); } catch (e) {}
+  const back = HS_SIGNIN.readReturn(location.hash, saved);
+  if (!back) return;
+  // Take the token out of the address bar and history straight away.
+  history.replaceState(null, '', location.pathname + location.search);
+  try { sessionStorage.removeItem(HS_SIGNIN.STATE_KEY); } catch (e) {}
+  if (back.error) { gateError.textContent = back.error; return; }
+  auth.signInWithCustomToken(back.token).catch(err => {
+    console.warn('Merroir sign-in failed:', err.code, err.message);
+    gateError.textContent = HS_SIGNIN.MESSAGES.badReturn;
+  });
+})();
+
 gateSubmit.addEventListener('click', async () => {
-  const pwd = gatePwd.value;
-  if (!pwd) return;
+  const username = gateUser.value.trim();
+  const password = gatePwd.value;
+  if (!username || !password) return;
   gateSubmit.disabled = true;
   gateError.textContent = '';
+  // A one-time code, kept in this tab, in case this is a first login and
+  // Merroir sends the person back here (see finishFirstLogin above).
+  const state = HS_SIGNIN.makeState(n => crypto.getRandomValues(new Uint8Array(n)));
+  try { sessionStorage.setItem(HS_SIGNIN.STATE_KEY, state); } catch (e) {}
   try {
-    await auth.signInWithEmailAndPassword(STAFF_EMAIL, pwd);
+    const res = await fetch(HS_SIGNIN.SIGN_IN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, state }),
+      credentials: 'omit',
+    });
+    let body = null;
+    try { body = await res.json(); } catch (e) {}
+    const next = HS_SIGNIN.interpret(res.status, body);
+    if (next.redirect) { location.href = next.redirect; return; }
+    if (next.error) { showGateError(next.error); return; }
+    await auth.signInWithCustomToken(next.token);
     gatePwd.value = '';
   } catch (err) {
-    console.warn('Staff sign-in failed:', err.code, err.message);
-    gateError.textContent = err.code === 'auth/too-many-requests'
-      ? 'Too many attempts. Wait a few minutes and try again.'
-      : (err.code === 'auth/network-request-failed'
-          ? 'No connection. Check the network and try again.'
-          : 'Incorrect password. Please try again.');
-    gatePwd.value = '';
-    gatePwd.focus();
+    console.warn('Merroir sign-in failed:', err && (err.code || err.message));
+    showGateError(HS_SIGNIN.MESSAGES.network);
   } finally {
     gateSubmit.disabled = false;
   }
 });
 
-gatePwd.addEventListener('keydown', e => {
+[gateUser, gatePwd].forEach(el => el.addEventListener('keydown', e => {
   if (e.key === 'Enter') gateSubmit.click();
-});
+}));
 
 
 const DOTS_MAP = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
