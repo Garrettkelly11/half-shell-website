@@ -1314,6 +1314,16 @@ window.hsOystersTab = (function () {
     node.appendChild(document.createTextNode(line.text + ' '));
     if (line.link) node.appendChild(make('a', { href: line.link, target: '_blank', rel: 'noopener' }, 'See the change on GitHub'));
     if (line.extra) node.appendChild(make('div', { style: 'margin-top:0.35rem' }, line.extra));
+    if (line.list) {
+      const ul = make('ul', { style: 'margin:0.35rem 0 0 1.2rem' });
+      line.list.forEach(t => ul.appendChild(make('li', {}, t)));
+      node.appendChild(ul);
+    }
+    if (line.action) {
+      const b = make('button', { class: 'save-btn', type: 'button', style: 'margin:0.5rem 0 0' }, line.action.label);
+      b.addEventListener('click', line.action.fn);
+      node.appendChild(b);
+    }
     if (line.publishNow && data && data.editing_open) {
       const b = make('button', { class: 'save-btn', type: 'button' }, 'Publish now');
       b.addEventListener('click', publishNow);
@@ -1523,10 +1533,26 @@ window.hsOystersTab = (function () {
   addBtn.addEventListener('click', () => openForm(null));
 
   // ── Retire and restore ──
-  async function retireOyster(o) {
-    if (retireArmed !== o.id) { retireArmed = o.id; drawList(); return; }
+  // Merroir first lists any training modules that use the oyster and asks
+  // to confirm (M3 phase 3); "Retire anyway" sends confirm_modules.
+  async function retireOyster(o, confirmModules) {
+    if (!confirmModules && retireArmed !== o.id) { retireArmed = o.id; drawList(); return; }
     retireArmed = null;
-    await simple('POST', 'oysters/' + o.id + '/retire/');
+    if (busy) return;
+    busy = true;
+    note(result, null);
+    const r = await call('POST', 'oysters/' + o.id + '/retire/', confirmModules ? { confirm_modules: true } : null);
+    busy = false;
+    if (r.confirm) {
+      drawList();
+      note(result, { text: r.message, kind: 'warn', list: r.confirm,
+        action: { label: 'Retire anyway', fn: () => retireOyster(o, true) } });
+      result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (!r.ok) { note(result, { text: r.error, kind: 'error' }); drawList(); return; }
+    await load();
+    note(result, C.describePublish(r.data.publish));
   }
   async function restoreOyster(o) { await simple('POST', 'oysters/' + o.id + '/restore/'); }
 
