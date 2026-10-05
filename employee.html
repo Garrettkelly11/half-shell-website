@@ -496,11 +496,82 @@
       font-style: italic;
     }
 
+    /* ── Tabs (Oysters tab: managers, spec v1.8) ── */
+    .page-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid #bcd4ce; }
+    .page-tabs[hidden] { display: none; }
+    .page-tab {
+      font-family: 'Lato', sans-serif; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      padding: 0.55rem 0.9rem; background: none; border: none;
+      border-bottom: 2px solid transparent; color: #6a8f9a; cursor: pointer;
+    }
+    .page-tab.active { color: #0e2d3a; border-bottom-color: #e89438; }
+    .tab-panel[hidden] { display: none; }
+
+    /* ── Oysters tab ── */
+    .cat-note {
+      font-family: 'Lato', sans-serif; font-size: 0.8rem; line-height: 1.45;
+      padding: 0.65rem 0.9rem; border-radius: 4px; margin-bottom: 0.9rem;
+      background: #e8f2ef; color: #0e2d3a;
+    }
+    .cat-note[hidden] { display: none; }
+    .cat-note.ok { background: #e3f3ec; color: #1d6b4f; }
+    .cat-note.warn { background: #fbf0e1; color: #7a4a12; }
+    .cat-note.error { background: #f8e4e1; color: #8a3b2e; }
+    .cat-note a { color: inherit; font-weight: 700; }
+    .cat-note .save-btn { margin-left: 0.6rem; padding: 0.3rem 0.8rem; }
+    .cat-toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-bottom: 0.85rem; }
+    .cat-toolbar input[type="text"] {
+      padding: 0.4rem 0.75rem; border: 1px solid #bcd4ce; border-radius: 4px;
+      font-size: 0.85rem; width: 250px; max-width: 100%;
+    }
+    .cat-toolbar .spacer { flex: 1; }
+    .save-btn.secondary { background: #f3f8f6; color: #0e2d3a; border: 1.5px solid #bcd4ce; }
+    .save-btn.secondary:hover { background: #e8f2ef; }
+    .save-btn:disabled { opacity: 0.45; cursor: default; }
+    .cat-list { background: #fff; border: 1px solid #bcd4ce; border-radius: 6px; margin-bottom: 1.5rem; }
+    .cat-row {
+      display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+      padding: 0.6rem 0.9rem; border-bottom: 1px solid #e1ece9;
+    }
+    .cat-row:last-child { border-bottom: none; }
+    .cat-row-name { font-family: 'Roboto Mono', monospace; font-size: 0.88rem; flex: 1; min-width: 10rem; }
+    .cat-row-meta { font-family: 'Lato', sans-serif; font-size: 0.75rem; color: #6a8f9a; }
+    .cat-row .save-btn { padding: 0.3rem 0.8rem; font-size: 0.65rem; }
+    .cat-empty { font-family: 'Lato', sans-serif; font-size: 0.8rem; color: #6a8f9a; padding: 0.9rem; }
+    .cat-form {
+      background: #fff; border: 1px solid #bcd4ce; border-radius: 6px;
+      padding: 1rem 1.1rem; margin-bottom: 1.5rem;
+    }
+    .cat-form[hidden] { display: none; }
+    .cat-form h3 { font-weight: 400; font-size: 1.2rem; margin-bottom: 0.4rem; }
+    .cat-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.2rem 1rem; }
+    .cat-field { display: flex; flex-direction: column; margin-bottom: 0.6rem; }
+    .cat-field.long { grid-column: 1 / -1; }
+    .cat-field label {
+      font-family: 'Lato', sans-serif; font-size: 0.66rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em; color: #6a8f9a; margin-bottom: 0.25rem;
+    }
+    .cat-field input, .cat-field select, .cat-field textarea {
+      padding: 0.45rem 0.6rem; border: 1px solid #bcd4ce; border-radius: 4px;
+      font-family: 'Lato', sans-serif; font-size: 0.88rem; color: #0e2d3a; background: #fff;
+    }
+    .cat-field textarea { min-height: 4.2rem; resize: vertical; }
+    .cat-field input[readonly] { background: #f3f8f6; color: #6a8f9a; }
+    .cat-field .hint { font-family: 'Lato', sans-serif; font-size: 0.7rem; color: #8aa9b1; margin-top: 0.2rem; }
+    .cat-field .err { font-family: 'Lato', sans-serif; font-size: 0.74rem; color: #c0392b; margin-top: 0.2rem; }
+    .cat-field.has-err input, .cat-field.has-err select, .cat-field.has-err textarea { border-color: #c0392b; }
+    .cat-confirm { font-family: 'Lato', sans-serif; font-size: 0.8rem; margin: 0.4rem 0 0.8rem; }
+    .cat-confirm[hidden] { display: none; }
+    .cat-confirm ul { margin: 0.3rem 0 0.5rem 1.2rem; }
+    .cat-form-foot { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+
     /* ── Mobile ── */
     @media (max-width: 600px) {
       header { padding: 1.25rem 1rem 1rem; }
       main { padding: 1.25rem 1rem 2rem; }
       .serving-checklist { grid-template-columns: 1fr 1fr; }
+      .cat-form-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 400px) {
       .serving-checklist { grid-template-columns: 1fr; }
@@ -556,6 +627,13 @@
 
   <main>
 
+    <!-- Tabs: the Oysters tab is for managers and up (staff_rank claim, v1.8) -->
+    <div class="page-tabs" id="page-tabs" role="tablist" hidden>
+      <button class="page-tab active" type="button" role="tab" data-tab="menu" aria-selected="true">Tonight's Menu</button>
+      <button class="page-tab" type="button" role="tab" data-tab="oysters" aria-selected="false">Oysters</button>
+    </div>
+
+    <div class="tab-panel" id="tab-menu">
     <!-- Currently Serving -->
     <div class="section-title">
       Tonight's Menu
@@ -610,6 +688,38 @@
         <tbody id="table-body"></tbody>
       </table>
     </div>
+    </div><!-- /tab-menu -->
+
+    <!-- Oysters tab: add and edit the catalog in Merroir, which publishes
+         data/oysters.js and data/regions.js (src/catalog-editor.js). -->
+    <div class="tab-panel" id="tab-oysters" hidden>
+      <div class="section-title">
+        Oyster Catalog
+        <span class="badge" id="cat-count"></span>
+      </div>
+      <div class="cat-note" id="cat-banner" hidden></div>
+      <div class="cat-note" id="cat-result" role="status" hidden></div>
+      <div class="cat-toolbar">
+        <input type="text" id="cat-search" placeholder="Search by name, other name or origin…" />
+        <button class="toggle-btn active" type="button" id="cat-show-active">Active</button>
+        <button class="toggle-btn" type="button" id="cat-show-retired">Retired</button>
+        <span class="spacer"></span>
+        <button class="save-btn" type="button" id="cat-add">Add oyster</button>
+      </div>
+      <form class="cat-form" id="cat-form" hidden novalidate></form>
+      <div class="cat-list" id="cat-list"><div class="cat-empty">Loading…</div></div>
+
+      <div class="section-title">
+        Regions
+        <span class="badge" id="region-count"></span>
+      </div>
+      <div class="cat-toolbar">
+        <span class="spacer"></span>
+        <button class="save-btn secondary" type="button" id="region-add">Add region</button>
+      </div>
+      <form class="cat-form" id="region-form" hidden novalidate></form>
+      <div class="cat-list" id="region-list"></div>
+    </div>
 
   </main>
 
@@ -624,6 +734,7 @@
 <script src="src/firebase-config.js"></script>
 <script src="src/menu-manager.js"></script>
 <script src="src/merroir-signin.js"></script>
+<script src="src/catalog-editor.js"></script>
 <script>
 // ── Auth ──────────────────────────────────────────────────────────────────
 // Staff sign in with their Merroir username and password (M5). Merroir
@@ -651,6 +762,7 @@ const signOutBtn  = document.getElementById('nav-signout');
 const signOutName = document.getElementById('nav-signout-name');
 
 let staffName = null;   // "Garrett K.", from the sign-in token (claim staff_name)
+let staffClaims = null; // the sign-in token's claims (staff_rank: the Oysters tab, v1.8)
 
 function unlock() {
   gate.style.display = 'none';
@@ -677,13 +789,17 @@ auth.onAuthStateChanged(async user => {
     try {
       const t = await user.getIdTokenResult();
       staffName = t.claims.staff_name || null;
-    } catch (e) { staffName = null; }
+      staffClaims = t.claims;
+    } catch (e) { staffName = null; staffClaims = null; }
     signOutName.textContent = staffName ? '(' + staffName + ')' : '';
     signOutBtn.hidden = false;
     watchOverrides();
     unlock();
+    if (window.hsOystersTab) window.hsOystersTab.signedIn(staffClaims);
   } else {
     staffName = null;
+    staffClaims = null;
+    if (window.hsOystersTab) window.hsOystersTab.signedOut();
     signOutBtn.hidden = true;
     if (overridesRef) { overridesRef.off(); overridesRef = null; overrides = {}; }
     lock();
@@ -1121,6 +1237,410 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 100);
 })();
 
+</script>
+<script>
+// ── Oysters tab (Merroir spec v1.8: M3 phase 2 + M4) ───────────────────────
+// Managers and up add and edit oysters and regions here. Each save goes to
+// Merroir (HS_CATALOG.API) with this person's sign-in; Merroir checks it,
+// saves, and publishes data/oysters.js or data/regions.js to the site repo.
+// Nothing here is trusted: Merroir decides who may change what.
+window.hsOystersTab = (function () {
+  const C = HS_CATALOG;
+  const tabs = document.getElementById('page-tabs');
+  const panels = { menu: document.getElementById('tab-menu'), oysters: document.getElementById('tab-oysters') };
+  const el = id => document.getElementById(id);
+  const banner = el('cat-banner'), result = el('cat-result'), list = el('cat-list');
+  const form = el('cat-form'), regionForm = el('region-form'), regionList = el('region-list');
+  const search = el('cat-search'), addBtn = el('cat-add'), regionAddBtn = el('region-add');
+  const showActive = el('cat-show-active'), showRetired = el('cat-show-retired');
+
+  let data = null;          // GET /api/catalog/
+  let loaded = false, busy = false;
+  let showing = 'ACTIVE';
+  let editing = null;       // the oyster being edited (null = adding)
+  let editingRegion = null;
+  let retireArmed = null;   // id whose Retire was pressed once
+
+  function make(tag, attrs, text) {
+    const n = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(k => {
+      if (k === 'class') n.className = attrs[k];
+      else if (k in n && typeof attrs[k] !== 'string') n[k] = attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    });
+    if (text !== undefined && text !== null) n.textContent = text;
+    return n;
+  }
+
+  // ── Talking to Merroir ──
+  async function call(method, path, body) {
+    const user = auth.currentUser;
+    if (!user) return { error: C.MESSAGES.signIn, signIn: true };
+    let token;
+    try { token = await user.getIdToken(); } catch (e) { return { error: C.MESSAGES.signIn, signIn: true }; }
+    const headers = { 'Authorization': 'Bearer ' + token };
+    if (body) headers['Content-Type'] = 'application/json';
+    let res;
+    try {
+      res = await fetch(C.API + path, { method, headers, body: body ? JSON.stringify(body) : undefined, credentials: 'omit' });
+    } catch (e) {
+      return { error: C.MESSAGES.network };
+    }
+    let b = null;
+    try { b = await res.json(); } catch (e) {}
+    return C.interpret(res.status, b);
+  }
+
+  // ── Tabs ──
+  function selectTab(name) {
+    tabs.querySelectorAll('.page-tab').forEach(t => {
+      const on = t.dataset.tab === name;
+      t.classList.toggle('active', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    Object.keys(panels).forEach(k => { panels[k].hidden = k !== name; });
+    if (name === 'oysters' && !loaded) load();
+  }
+  tabs.addEventListener('click', e => {
+    const t = e.target.closest('.page-tab');
+    if (t) selectTab(t.dataset.tab);
+  });
+
+  // ── Notes at the top ──
+  function note(node, line) {
+    node.textContent = '';
+    if (!line) { node.hidden = true; return; }
+    node.className = 'cat-note' + (line.kind ? ' ' + line.kind : '');
+    node.appendChild(document.createTextNode(line.text + ' '));
+    if (line.link) node.appendChild(make('a', { href: line.link, target: '_blank', rel: 'noopener' }, 'See the change on GitHub'));
+    if (line.extra) node.appendChild(make('div', { style: 'margin-top:0.35rem' }, line.extra));
+    if (line.publishNow && data && data.editing_open) {
+      const b = make('button', { class: 'save-btn', type: 'button' }, 'Publish now');
+      b.addEventListener('click', publishNow);
+      node.appendChild(b);
+    }
+    node.hidden = false;
+  }
+
+  function drawBanner() {
+    if (!data) return;
+    if (!data.editing_open) note(banner, { text: C.MESSAGES.closed, kind: 'warn' });
+    else if (data.pending) note(banner, { text: 'The site is behind Merroir: the last publish didn’t go through.', kind: 'warn', publishNow: true });
+    else note(banner, null);
+    addBtn.disabled = regionAddBtn.disabled = !data.editing_open;
+  }
+
+  // ── Loading ──
+  async function load() {
+    loaded = true;
+    const r = await call('GET', '');
+    if (!r.ok) {
+      loaded = false;
+      list.textContent = '';
+      list.appendChild(make('div', { class: 'cat-empty' }, r.error));
+      return;
+    }
+    data = r.data;
+    drawBanner();
+    drawList();
+    drawRegions();
+  }
+
+  // ── The oyster list ──
+  function drawList() {
+    const rows = C.filterOysters(data.oysters, search.value, showing);
+    const active = data.oysters.filter(o => o.status === 'ACTIVE').length;
+    el('cat-count').textContent = active + ' active, ' + (data.oysters.length - active) + ' retired';
+    list.textContent = '';
+    if (!rows.length) {
+      list.appendChild(make('div', { class: 'cat-empty' }, search.value ? 'No oysters match.' : 'None.'));
+      return;
+    }
+    rows.forEach(o => {
+      const row = make('div', { class: 'cat-row' });
+      row.appendChild(make('div', { class: 'cat-row-name' }, o.name));
+      row.appendChild(make('div', { class: 'cat-row-meta' }, C.regionName(data.regions, o.region) +
+        (o.aliases.length ? ' · also ' + o.aliases.join(', ') : '')));
+      if (data.editing_open) {
+        if (o.status === 'ACTIVE') {
+          const edit = make('button', { class: 'save-btn secondary', type: 'button' }, 'Edit');
+          edit.addEventListener('click', () => openForm(o));
+          const retire = make('button', { class: 'save-btn secondary', type: 'button' },
+            retireArmed === o.id ? 'Retire? Tap again' : 'Retire');
+          retire.addEventListener('click', () => retireOyster(o));
+          row.appendChild(edit);
+          row.appendChild(retire);
+        } else {
+          const restore = make('button', { class: 'save-btn secondary', type: 'button' }, 'Restore');
+          restore.addEventListener('click', () => restoreOyster(o));
+          row.appendChild(restore);
+        }
+      }
+      list.appendChild(row);
+    });
+  }
+  search.addEventListener('input', () => data && drawList());
+  function show(status) {
+    showing = status;
+    showActive.classList.toggle('active', status === 'ACTIVE');
+    showRetired.classList.toggle('active', status === 'RETIRED');
+    if (data) drawList();
+  }
+  showActive.addEventListener('click', () => show('ACTIVE'));
+  showRetired.addEventListener('click', () => show('RETIRED'));
+
+  // ── The oyster form ──
+  function field(f, value) {
+    const wrap = make('div', { class: 'cat-field' + (f.long ? ' long' : '') });
+    wrap.dataset.key = f.key;
+    const id = 'cat-f-' + f.key;
+    wrap.appendChild(make('label', { for: id }, f.label + (f.required ? '' : ' (optional)')));
+    let input;
+    if (f.select) {
+      input = make('select', { id });
+      const opts = f.select === 'regions'
+        ? data.regions.map(r => [r.code, r.name])
+        : data.salinities.map(s => [s.value, s.label]);
+      if (f.unknown) input.appendChild(make('option', { value: '—' }, '— (unknown)'));
+      else input.appendChild(make('option', { value: '' }, 'Pick one'));
+      opts.forEach(([v, l]) => input.appendChild(make('option', { value: v }, l)));
+      input.value = value || (f.unknown ? '—' : '');
+    } else if (f.long) {
+      input = make('textarea', { id });
+      input.value = value;
+    } else {
+      input = make('input', { id, type: 'text' });
+      input.value = value;
+      if (f.unknown) input.placeholder = '— for unknown';
+    }
+    wrap.appendChild(input);
+    if (f.hint) wrap.appendChild(make('div', { class: 'hint' }, f.hint));
+    return wrap;
+  }
+
+  function openForm(oyster) {
+    editing = oyster || null;
+    note(result, null);
+    form.textContent = '';
+    form.appendChild(make('h3', {}, oyster ? 'Edit ' + oyster.name : 'Add oyster'));
+    form.appendChild(make('p', { class: 'cat-row-meta', style: 'margin-bottom:0.8rem' }, C.TOAST_REMINDER));
+    const grid = make('div', { class: 'cat-form-grid' });
+    const values = C.formValues(oyster);
+    C.FIELDS.forEach(f => grid.appendChild(field(f, values[f.key])));
+    if (oyster) {
+      const price = make('div', { class: 'cat-field' });
+      price.appendChild(make('label', {}, 'Price (from the site; not edited here)'));
+      price.appendChild(make('input', { type: 'text', readonly: 'readonly',
+        value: oyster.price === null ? '—' : '$' + oyster.price.toFixed(2) }));
+      grid.appendChild(price);
+    }
+    form.appendChild(grid);
+    const confirm = make('div', { class: 'cat-confirm', id: 'cat-confirm' });
+    confirm.hidden = true;
+    form.appendChild(confirm);
+    const foot = make('div', { class: 'cat-form-foot' });
+    const save = make('button', { class: 'save-btn', type: 'submit', id: 'cat-save' }, oyster ? 'Save changes' : 'Add oyster');
+    const cancel = make('button', { class: 'save-btn secondary', type: 'button' }, 'Cancel');
+    cancel.addEventListener('click', closeForm);
+    foot.appendChild(save);
+    foot.appendChild(cancel);
+    form.appendChild(foot);
+    form.hidden = false;
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function closeForm() {
+    form.hidden = true;
+    form.textContent = '';
+    editing = null;
+  }
+
+  function readForm(node, fields) {
+    const v = {};
+    fields.forEach(f => {
+      const input = node.querySelector('[data-key="' + f.key + '"] input, [data-key="' + f.key + '"] select, [data-key="' + f.key + '"] textarea');
+      if (input) v[f.key] = input.value;
+    });
+    return v;
+  }
+
+  function showErrors(node, errors) {
+    node.querySelectorAll('.cat-field').forEach(w => {
+      w.classList.remove('has-err');
+      const old = w.querySelector('.err');
+      if (old) old.remove();
+      const msg = errors && errors[w.dataset.key];
+      if (msg) {
+        w.classList.add('has-err');
+        w.appendChild(make('div', { class: 'err' }, msg));
+      }
+    });
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (busy) return;
+    const confirmBox = form.querySelector('#cat-confirm-different');
+    const body = C.payload(readForm(form, C.FIELDS), confirmBox && confirmBox.checked);
+    busy = true;
+    note(result, null);
+    const save = form.querySelector('#cat-save');
+    save.disabled = true;
+    const r = await call('POST', editing ? 'oysters/' + editing.id + '/' : 'oysters/', body);
+    busy = false;
+    save.disabled = false;
+    if (r.confirm) {
+      showErrors(form, null);
+      const box = form.querySelector('#cat-confirm');
+      box.textContent = '';
+      box.appendChild(make('div', {}, r.message));
+      const ul = make('ul');
+      r.confirm.forEach(w => ul.appendChild(make('li', {}, w)));
+      box.appendChild(ul);
+      const lab = make('label');
+      const cb = make('input', { type: 'checkbox', id: 'cat-confirm-different' });
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(' These are different oysters'));
+      box.appendChild(lab);
+      box.hidden = false;
+      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (!r.ok) {
+      showErrors(form, r.errors);
+      note(result, { text: r.error, kind: 'error' });
+      result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    const line = C.describePublish(r.data.publish);
+    if (r.data.photo_note) line.extra = r.data.photo_note;
+    closeForm();
+    await load();
+    note(result, line);
+    result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
+  addBtn.addEventListener('click', () => openForm(null));
+
+  // ── Retire and restore ──
+  async function retireOyster(o) {
+    if (retireArmed !== o.id) { retireArmed = o.id; drawList(); return; }
+    retireArmed = null;
+    await simple('POST', 'oysters/' + o.id + '/retire/');
+  }
+  async function restoreOyster(o) { await simple('POST', 'oysters/' + o.id + '/restore/'); }
+
+  async function simple(method, path) {
+    if (busy) return;
+    busy = true;
+    const r = await call(method, path);
+    busy = false;
+    if (!r.ok) { note(result, { text: r.error, kind: 'error' }); drawList(); return; }
+    await load();
+    note(result, r.data.publish && r.data.publish.length !== undefined
+      ? C.describePublishes(r.data.publish) : C.describePublish(r.data.publish));
+  }
+
+  async function publishNow() { await simple('POST', 'publish/'); }
+
+  // ── Regions ──
+  function drawRegions() {
+    el('region-count').textContent = data.regions.length;
+    regionList.textContent = '';
+    data.regions.forEach(rg => {
+      const row = make('div', { class: 'cat-row' });
+      row.appendChild(make('div', { class: 'cat-row-name' }, rg.name));
+      row.appendChild(make('div', { class: 'cat-row-meta' }, rg.code + ' · ' + rg.short + ' · ' + rg.country + ' · ' + rg.coast + ' coast'));
+      if (data.editing_open) {
+        const edit = make('button', { class: 'save-btn secondary', type: 'button' }, 'Edit');
+        edit.addEventListener('click', () => openRegionForm(rg));
+        row.appendChild(edit);
+      }
+      regionList.appendChild(row);
+    });
+  }
+
+  function openRegionForm(region) {
+    editingRegion = region || null;
+    note(result, null);
+    regionForm.textContent = '';
+    regionForm.appendChild(make('h3', {}, region ? 'Edit ' + region.name : 'Add region'));
+    const grid = make('div', { class: 'cat-form-grid' });
+    C.REGION_FIELDS.forEach(f => {
+      if (f.createOnly && region) return;
+      const wrap = make('div', { class: 'cat-field' });
+      wrap.dataset.key = f.key;
+      wrap.appendChild(make('label', { for: 'rg-' + f.key }, f.label));
+      let input;
+      const value = region ? (region[f.key] || '') : '';
+      if (f.options || f.select) {
+        input = make('select', { id: 'rg-' + f.key });
+        if (f.none) input.appendChild(make('option', { value: '' }, 'None'));
+        (f.options || data.groups.map(g => [g.value, g.label])).forEach(([v, l]) => input.appendChild(make('option', { value: v }, l)));
+        if (value || f.none) input.value = value;   // a new region starts on the first choice (US, East)
+      } else {
+        input = make('input', { id: 'rg-' + f.key, type: 'text' });
+        input.value = value;
+      }
+      wrap.appendChild(input);
+      if (f.hint) wrap.appendChild(make('div', { class: 'hint' }, f.hint));
+      grid.appendChild(wrap);
+    });
+    regionForm.appendChild(grid);
+    const foot = make('div', { class: 'cat-form-foot' });
+    foot.appendChild(make('button', { class: 'save-btn', type: 'submit', id: 'region-save' }, region ? 'Save changes' : 'Add region'));
+    const cancel = make('button', { class: 'save-btn secondary', type: 'button' }, 'Cancel');
+    cancel.addEventListener('click', closeRegionForm);
+    foot.appendChild(cancel);
+    regionForm.appendChild(foot);
+    regionForm.hidden = false;
+    regionForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function closeRegionForm() {
+    regionForm.hidden = true;
+    regionForm.textContent = '';
+    editingRegion = null;
+  }
+
+  regionForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (busy) return;
+    const v = readForm(regionForm, C.REGION_FIELDS);
+    busy = true;
+    note(result, null);
+    const r = await call('POST', editingRegion ? 'regions/' + editingRegion.code + '/' : 'regions/', v);
+    busy = false;
+    if (!r.ok) {
+      showErrors(regionForm, r.errors);
+      note(result, { text: r.error, kind: 'error' });
+      return;
+    }
+    closeRegionForm();
+    await load();
+    note(result, C.describePublish(r.data.publish));
+    result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
+  regionAddBtn.addEventListener('click', () => openRegionForm(null));
+
+  // ── Sign-in ──
+  function signedIn(claims) {
+    const mgr = C.isManager(claims);
+    tabs.hidden = !mgr;
+    if (!mgr) selectTab('menu');
+  }
+  function signedOut() {
+    tabs.hidden = true;
+    selectTab('menu');
+    data = null; loaded = false;
+    closeForm(); closeRegionForm();
+    note(banner, null); note(result, null);
+  }
+
+  return { signedIn, signedOut };
+})();
+if (typeof staffClaims !== 'undefined' && staffClaims) window.hsOystersTab.signedIn(staffClaims);
 </script>
 </body>
 </html>

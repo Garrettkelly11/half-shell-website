@@ -1,0 +1,71 @@
+name: Rebuild Oyster Library page
+
+# Keeps "Oyster Overview.html" (the Half Shell Library) in step with the
+# catalog. From the Merroir switch-over (spec v1.8) data/oysters.js and
+# data/regions.js are committed by Merroir, not from a computer, so
+# nobody is at a terminal to run tools/build-library.js. This runs it
+# whenever the catalog or the page's template changes on main, and
+# commits the page only if it changed.
+#
+# Its own commit doesn't start it again: pushes made with the built-in
+# GITHUB_TOKEN never trigger workflows.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/oysters.js'
+      - 'data/regions.js'
+      - 'tools/build-library.js'
+      - 'tools/library-template.html'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+# Two catalog saves close together: the second run waits for the first.
+concurrency:
+  group: build-library
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Build the library page
+        run: node tools/build-library.js
+
+      - name: Check the page
+        run: node tools/library-test.js
+
+      - name: Commit the page if it changed
+        run: |
+          if git diff --quiet -- "Oyster Overview.html"; then
+            echo "Oyster Overview.html already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add "Oyster Overview.html"
+          git commit -m "Library: rebuild Oyster Overview.html from the catalog"
+          # Merroir may have committed again meanwhile; take that first.
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+        id: commit
+
+      # A push made with GITHUB_TOKEN may not start a Pages build on its
+      # own, so ask for one. Harmless if Pages already started one.
+      - name: Ask GitHub Pages to publish
+        if: steps.commit.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" || echo "Pages build request failed; the page goes live with the next push."
