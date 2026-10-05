@@ -311,6 +311,32 @@
       font-size: 0.9rem;
       color: #0e2d3a;
     }
+    /* Override tag under an oyster (step S6) */
+    .serving-item.has-ov { flex-wrap: wrap; }
+    .ov-tag {
+      flex-basis: 100%;
+      padding-left: 1.6rem;
+      margin-top: -0.2rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #b5651d;
+    }
+    .ov-tag.off { color: #8a3b2e; }
+    .ov-back {
+      font: inherit;
+      color: #2a7f94;
+      background: none;
+      border: none;
+      padding: 0;
+      text-decoration: underline;
+      cursor: pointer;
+    }
     .serving-item-region {
       font-family: 'Lato', sans-serif;
       font-size: 0.65rem;
@@ -654,10 +680,12 @@ auth.onAuthStateChanged(async user => {
     } catch (e) { staffName = null; }
     signOutName.textContent = staffName ? '(' + staffName + ')' : '';
     signOutBtn.hidden = false;
+    watchOverrides();
     unlock();
   } else {
     staffName = null;
     signOutBtn.hidden = true;
+    if (overridesRef) { overridesRef.off(); overridesRef = null; overrides = {}; }
     lock();
   }
 });
@@ -730,6 +758,8 @@ let db = null;
 let menuManager = null;
 let serving = new Set();
 let pendingServing = new Set();
+let overrides = {};        // menu/overrides: {id: {state, until, by, at}} (staff can read)
+let overridesRef = null;
 let lastSyncTime = null;
 let isSyncing = false;
 
@@ -760,6 +790,71 @@ let isSyncing = false;
   lastSyncTime = localStorage.getItem('lastToastSync');
   updateSyncTimeDisplay();
 })();
+
+// Employee-page overrides (step S6): an oyster forced on or off stays that
+// way until 4 AM, then the menu follows Toast again. Staff can read them;
+// only the server (setMenuOverride) writes them.
+function watchOverrides() {
+  if (overridesRef) return;
+  overridesRef = firebase.database().ref('menu/overrides');
+  overridesRef.on('value', snap => {
+    overrides = snap.val() || {};
+    renderOverrideTags();
+  }, err => console.warn('Overrides not readable:', err && err.code));
+}
+
+function activeOverride(id) {
+  const o = overrides[id];
+  return o && o.until > Date.now() ? o : null;
+}
+
+function renderOverrideTags() {
+  document.querySelectorAll('.serving-item').forEach(el => {
+    const id = el.dataset.id;
+    const o = activeOverride(id);
+    let tag = el.querySelector('.ov-tag');
+    el.classList.toggle('has-ov', !!o);
+    if (!o) { if (tag) tag.remove(); return; }
+    if (!tag) {
+      tag = document.createElement('span');
+      el.appendChild(tag);
+    }
+    tag.className = 'ov-tag' + (o.state === 'off' ? ' off' : '');
+    tag.innerHTML = '';
+    const label = document.createElement('span');
+    label.textContent = (o.state === 'on' ? 'On' : 'Off') + ' until 4 AM' + (o.by ? ' · ' + o.by : '');
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'ov-back';
+    back.textContent = 'Back to Toast';
+    back.addEventListener('click', ev => { ev.stopPropagation(); backToToast(id); });
+    tag.append(label, back);
+  });
+}
+
+const setMenuOverride = firebase.app().functions('us-east1').httpsCallable('setMenuOverride');
+
+function showStatus(text, kind) {
+  const status = document.getElementById('save-status');
+  status.textContent = text;
+  status.className = 'save-status' + (kind ? ' ' + kind : '');
+}
+
+function overrideError(error) {
+  const code = String(error.code || '').replace('functions/', '');
+  const known = ['unauthenticated', 'permission-denied', 'invalid-argument'];
+  return known.includes(code) ? error.message : 'Save failed — check the connection and try again.';
+}
+
+async function backToToast(id) {
+  showStatus('Saving...');
+  try {
+    await setMenuOverride({ changes: [{ id, state: null }] });
+    showStatus('Back to Toast — the menu follows Toast for this oyster again.', 'saved');
+  } catch (error) {
+    showStatus(overrideError(error), 'error');
+  }
+}
 
 function buildDotsSm(level) {
   const filled = DOTS_MAP[level] || 2;
@@ -818,6 +913,7 @@ function renderChecklist(filter = '') {
       syncCounter();
     });
   });
+  renderOverrideTags();
 }
 
 function initPage() {
@@ -849,56 +945,31 @@ function initPage() {
 
   syncCounter();
 
-  // Save button — updates menu via MenuManager
+  // Save Menu — sends what changed to the server function setMenuOverride
+  // (step S6). Each oyster turned on or off stays that way until 4 AM; the
+  // server updates the menu at once and writes the change log.
   document.getElementById('save-btn').addEventListener('click', async () => {
-    if (!menuManager) {
-      alert('Menu system not ready. Please refresh the page.');
-      return;
-    }
+    const changes = [];
+    for (const id of pendingServing) if (!serving.has(id)) changes.push({ id, state: 'on' });
+    for (const id of serving) if (!pendingServing.has(id)) changes.push({ id, state: 'off' });
+    if (!changes.length) { showStatus('No changes to save.'); return; }
 
-    const status = document.getElementById('save-status');
-    status.textContent = 'Saving...';
-    status.className = 'save-status';
-
-    // Determine which oysters to add/remove
-    const currentIds = serving;
-    const newIds = pendingServing;
-
-    let updateCount = 0;
-    let errorCount = 0;
-
-    // Add oysters that are in pendingServing but not in serving
-    for (const id of newIds) {
-      if (!currentIds.has(id)) {
-        const result = await menuManager.toggleOyster(id, true, staffActor());
-        if (result.success) updateCount++;
-        else errorCount++;
-      }
-    }
-
-    // Remove oysters that are in serving but not in pendingServing
-    for (const id of currentIds) {
-      if (!newIds.has(id)) {
-        const result = await menuManager.toggleOyster(id, false, staffActor());
-        if (result.success) updateCount++;
-        else errorCount++;
-      }
-    }
-
-    serving = new Set(pendingServing);
-
-    if (errorCount === 0) {
-      status.textContent = `Saved — ${newIds.size} oyster${newIds.size !== 1 ? 's' : ''} on the menu`;
-      status.className = 'save-status saved';
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    showStatus('Saving...');
+    try {
+      await setMenuOverride({ changes });
+      serving = new Set(pendingServing);   // the live listener confirms shortly
+      const n = pendingServing.size;
+      showStatus(`Saved — ${n} oyster${n !== 1 ? 's' : ''} on the menu. Changes last until 4 AM.`, 'saved');
       setTimeout(() => {
-        if (status.className.includes('saved')) {
-          status.textContent = '';
-          status.className = 'save-status';
-        }
-      }, 4000);
-    } else {
-      status.textContent = `Save had ${errorCount} error${errorCount !== 1 ? 's' : ''} — check connection`;
-      status.className = 'save-status error';
+        const status = document.getElementById('save-status');
+        if (status.className.includes('saved')) showStatus('');
+      }, 6000);
+    } catch (error) {
+      showStatus(overrideError(error), 'error');
+    } finally {
+      btn.disabled = false;
     }
   });
 

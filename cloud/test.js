@@ -23,7 +23,7 @@ function fakeDb(initial) {
   const put = (path, val) => {
     const keys = path.split('/'); const last = keys.pop();
     let o = data; for (const k of keys) { o[k] = o[k] || {}; o = o[k]; }
-    if (val === null || val === undefined) delete o[last]; else o[last] = val;
+    if (val === null || val === undefined) delete o[last]; else o[last] = JSON.parse(JSON.stringify(val));
   };
   const snap = (v) => ({ exists: () => v !== undefined && v !== null, val: () => (v === undefined ? null : v) });
   let pushes = 0;
@@ -34,6 +34,9 @@ function fakeDb(initial) {
         once: async () => snap(get(path)),
         set: async (v) => put(path, v),
         push: async (v) => { put(`${path}/k${++pushes}`, v); },
+        update: async (obj) => {
+          for (const [k, v] of Object.entries(obj)) put(`${path}/${k}`, v === undefined ? null : v);
+        },
         transaction: async (fn) => {
           const out = fn(get(path) === undefined ? null : get(path));
           if (out === undefined) return { committed: false, snapshot: snap(get(path)) };
@@ -163,6 +166,193 @@ async function rejects(promise, code) {
     assert.strictEqual(db5.data.server.lastSyncTrigger.by, 'Garrett K.');
   });
 
+  // ─── Step S6: menu overrides ──────────────────────────────────────────────
+  const M = require('./menu-logic');
+  const ny = (iso) => Date.parse(iso);   // ISO with offset, e.g. -04:00 (EDT) / -05:00 (EST)
+
+  await check('4 AM: an evening override ends at 4 AM the next morning (EDT)', async () => {
+    assert.strictEqual(M.next4am(ny('2026-10-05T18:00:00-04:00')), ny('2026-10-06T04:00:00-04:00'));
+  });
+  await check('4 AM: set at 2 AM, it ends at 4 AM the same morning', async () => {
+    assert.strictEqual(M.next4am(ny('2026-10-06T02:00:00-04:00')), ny('2026-10-06T04:00:00-04:00'));
+  });
+  await check('4 AM: at 3:59:59 it is that 4 AM; at exactly 4:00 it is the next day', async () => {
+    assert.strictEqual(M.next4am(ny('2026-10-06T03:59:59-04:00')), ny('2026-10-06T04:00:00-04:00'));
+    assert.strictEqual(M.next4am(ny('2026-10-06T04:00:00-04:00')), ny('2026-10-07T04:00:00-04:00'));
+  });
+  await check('4 AM across the end of daylight saving (Nov 1 2026): 4 AM EST', async () => {
+    assert.strictEqual(M.next4am(ny('2026-10-31T23:00:00-04:00')), ny('2026-11-01T04:00:00-05:00'));
+  });
+  await check('4 AM across the start of daylight saving (Mar 8 2026): 4 AM EDT', async () => {
+    assert.strictEqual(M.next4am(ny('2026-03-07T23:00:00-05:00')), ny('2026-03-08T04:00:00-04:00'));
+  });
+  await check('4 AM in winter (EST)', async () => {
+    assert.strictEqual(M.next4am(ny('2026-01-15T21:30:00-05:00')), ny('2026-01-16T04:00:00-05:00'));
+  });
+  await check('menu = Toast in stock + forced on − forced off', async () => {
+    const out = M.compose(['a', 'b', 'c'], { b: { state: 'off' }, d: { state: 'on' } });
+    assert.deepStrictEqual([...out].sort(), ['a', 'c', 'd']);
+  });
+  await check('an override counts only until its 4 AM', async () => {
+    const now = ny('2026-10-06T04:00:00-04:00');
+    const { active, expired } = M.splitOverrides({
+      x: { state: 'on', until: now }, y: { state: 'off', until: now + 1 }, z: { state: 'maybe', until: now + 1 },
+    }, now);
+    assert.deepStrictEqual(Object.keys(active), ['y']);
+    assert.deepStrictEqual(expired.sort(), ['x', 'z']);
+  });
+
+  const EVE = ny('2026-10-05T19:00:00-04:00');
+  const UNTIL = ny('2026-10-06T04:00:00-04:00');
+  await check('sync: Toast list only, no overrides → the menu is exactly Toast\'s list', async () => {
+    const p = M.planSync(['a', 'b'], { a: { addedAt: 5, source: 'toast' }, old: { source: 'toast' } }, null, EVE);
+    assert.deepStrictEqual(p.updates['serving/a'], { addedAt: 5, lastUpdated: EVE, source: 'toast' });
+    assert.deepStrictEqual(p.updates['serving/b'], { addedAt: EVE, lastUpdated: EVE, source: 'toast' });
+    assert.strictEqual(p.updates['serving/old'], null);
+    assert.deepStrictEqual(p.updates.toastInStock, { a: true, b: true });
+    assert.deepStrictEqual([p.added, p.refreshed, p.removed], [1, 1, 1]);
+  });
+  await check('sync: a forced-on oyster stays though Toast has it 86\'d; a forced-off one stays off', async () => {
+    const ov = { kumamoto: { state: 'on', until: UNTIL }, a: { state: 'off', until: UNTIL } };
+    const p = M.planSync(['a', 'b'], { a: { source: 'toast' } }, ov, EVE);
+    assert.strictEqual(p.updates['serving/kumamoto'].source, 'override');
+    assert.strictEqual(p.updates['serving/a'], null);
+    assert.ok(p.updates['serving/b']);
+    assert.ok(!('overrides/kumamoto' in p.updates) && !('overrides/a' in p.updates));
+  });
+  await check('sync after 4 AM: expired overrides are deleted and the menu follows Toast again', async () => {
+    const ov = { kumamoto: { state: 'on', until: UNTIL }, a: { state: 'off', until: UNTIL } };
+    const p = M.planSync(['a'], { kumamoto: { source: 'override' } }, ov, UNTIL + 7 * 3600e3);
+    assert.strictEqual(p.updates['overrides/kumamoto'], null);
+    assert.strictEqual(p.updates['overrides/a'], null);
+    assert.strictEqual(p.updates['serving/kumamoto'], null);
+    assert.ok(p.updates['serving/a']);
+    assert.strictEqual(p.expired, 2);
+  });
+  await check('sync: anything else on the menu (stale, or from an old page) is removed', async () => {
+    const p = M.planSync([], { ghost: { source: 'override' } }, null, EVE);
+    assert.strictEqual(p.updates['serving/ghost'], null);
+  });
+  await check('deploy day: an oyster added on the old page stays on, as an override until 4 AM', async () => {
+    const p = M.planSync([], { fatbellies: { addedAt: 111, source: 'staff' } }, null, EVE);
+    assert.deepStrictEqual(p.updates['overrides/fatbellies'],
+      { state: 'on', until: UNTIL, by: 'Employee page (before overrides)', at: 111 });
+    assert.strictEqual(p.updates['serving/fatbellies'].source, 'override');
+    assert.deepStrictEqual(p.migrated, ['fatbellies']);
+  });
+
+  const CATALOG_TEXT = require('fs').readFileSync(require('path').join(__dirname, '..', 'data', 'oysters.js'), 'utf8');
+  function catalogFetch(state) {
+    const fn = async (url) => {
+      fn.calls.push(url);
+      if (state.down) throw new Error('offline');
+      return { status: 200, text: async () => CATALOG_TEXT };
+    };
+    fn.calls = [];
+    return fn;
+  }
+  const garrett = { uid: 'merroir:g', token: {} };
+  function menuDb(extra) {
+    return fakeDb({ staff: { 'merroir:g': { name: 'Garrett K.', rank: 40 } },
+      menu: { toastInStock: { 'beach-plum': true, 'kumamoto': true },
+        serving: { 'beach-plum': { addedAt: 1, source: 'toast' }, 'kumamoto': { addedAt: 2, source: 'toast' } } },
+      ...(extra || {}) });
+  }
+  const set = (db, changes, f, now) =>
+    lib.setMenuOverride(garrett, { changes }, { db, fetch: f || catalogFetch({}), now: () => now || EVE });
+
+  await check('setMenuOverride: signed out or not staff is refused', async () => {
+    lib._resetCatalogCache();
+    const db = menuDb();
+    await rejects(lib.setMenuOverride(null, { changes: [{ id: 'kumamoto', state: 'off' }] },
+      { db, fetch: catalogFetch({}), now: () => EVE }), 'unauthenticated');
+    await rejects(lib.setMenuOverride({ uid: 'phone' }, { changes: [{ id: 'kumamoto', state: 'off' }] },
+      { db, fetch: catalogFetch({}), now: () => EVE }), 'permission-denied');
+  });
+  await check('setMenuOverride: bad requests are refused (nothing, bad id, bad state, twice, too many)', async () => {
+    const db = menuDb();
+    await rejects(set(db, []), 'invalid-argument');
+    await rejects(set(db, [{ id: 'Bad Id', state: 'on' }]), 'invalid-argument');
+    await rejects(set(db, [{ id: 'kumamoto', state: 'maybe' }]), 'invalid-argument');
+    await rejects(set(db, [{ id: 'kumamoto', state: 'on' }, { id: 'kumamoto', state: 'off' }]), 'invalid-argument');
+    await rejects(set(db, Array.from({ length: 101 }, (_, i) => ({ id: `o${i}`, state: 'on' }))), 'invalid-argument');
+    assert.strictEqual(db.data.menu.overrides, undefined);
+  });
+  await check('setMenuOverride: an oyster that isn\'t in the catalog is refused', async () => {
+    const db = menuDb();
+    const e = await rejects(set(db, [{ id: 'not-an-oyster', state: 'on' }]), 'invalid-argument');
+    assert.ok(/not-an-oyster/.test(e.message));
+  });
+  await check('force on: override until 4 AM by "Garrett K.", on the menu at once (source override), logged', async () => {
+    const db = menuDb();
+    const out = await set(db, [{ id: 'fat-bellies', state: 'on' }]);
+    assert.deepStrictEqual(out, { ok: true, until: UNTIL });
+    assert.deepStrictEqual(db.data.menu.overrides['fat-bellies'], { state: 'on', until: UNTIL, by: 'Garrett K.', at: EVE });
+    assert.deepStrictEqual(db.data.menu.serving['fat-bellies'], { addedAt: EVE, lastUpdated: EVE, source: 'override' });
+    const log = Object.values(db.data['audit-log']);
+    assert.strictEqual(log[0].action, 'menu_override_on');
+    assert.strictEqual(log[0].oysterId, 'fat-bellies');
+    assert.strictEqual(log[0].actor, 'Garrett K.');
+  });
+  await check('force off: a Toast oyster leaves the menu at once', async () => {
+    const db = menuDb();
+    await set(db, [{ id: 'kumamoto', state: 'off' }]);
+    assert.strictEqual(db.data.menu.serving.kumamoto, undefined);
+    assert.strictEqual(db.data.menu.overrides.kumamoto.state, 'off');
+    assert.ok(db.data.menu.serving['beach-plum']);
+  });
+  await check('several changes in one save, one update', async () => {
+    const db = menuDb();
+    await set(db, [{ id: 'kumamoto', state: 'off' }, { id: 'fat-bellies', state: 'on' }]);
+    assert.deepStrictEqual(Object.keys(db.data.menu.serving).sort(), ['beach-plum', 'fat-bellies']);
+    assert.strictEqual(Object.values(db.data['audit-log']).length, 2);
+  });
+  await check('Back to Toast: a forced-on oyster Toast has 86\'d leaves the menu at once', async () => {
+    const db = menuDb();
+    await set(db, [{ id: 'fat-bellies', state: 'on' }]);
+    await set(db, [{ id: 'fat-bellies', state: null }], null, EVE + 60e3);
+    assert.strictEqual((db.data.menu.overrides || {})['fat-bellies'], undefined);
+    assert.strictEqual(db.data.menu.serving['fat-bellies'], undefined);
+    assert.strictEqual(Object.values(db.data['audit-log']).pop().action, 'menu_override_cleared');
+  });
+  await check('Back to Toast: a forced-off oyster Toast has in stock comes back at once', async () => {
+    const db = menuDb();
+    await set(db, [{ id: 'kumamoto', state: 'off' }]);
+    await set(db, [{ id: 'kumamoto', state: null }], null, EVE + 60e3);
+    assert.strictEqual(db.data.menu.serving.kumamoto.source, 'toast');
+  });
+  await check('any save clears overrides that already ran out, and fixes their oysters', async () => {
+    const db = menuDb({});
+    db.data.menu.overrides = { 'fat-bellies': { state: 'on', until: EVE - 1, by: 'x', at: 0 } };
+    db.data.menu.serving['fat-bellies'] = { addedAt: 0, source: 'override' };
+    await set(db, [{ id: 'kumamoto', state: 'off' }]);
+    assert.strictEqual(db.data.menu.overrides['fat-bellies'], undefined);
+    assert.strictEqual(db.data.menu.serving['fat-bellies'], undefined);
+  });
+  await check('turning a forced-off Toast oyster back on just ends the override (no needless override)', async () => {
+    const db = menuDb();
+    await set(db, [{ id: 'kumamoto', state: 'off' }]);
+    await set(db, [{ id: 'kumamoto', state: 'on' }], null, EVE + 60e3);
+    assert.strictEqual((db.data.menu.overrides || {}).kumamoto, undefined);
+    assert.strictEqual(db.data.menu.serving.kumamoto.source, 'toast');
+    assert.strictEqual(Object.values(db.data['audit-log']).pop().action, 'menu_override_cleared');
+  });
+  await check('the catalog is read once per 10 minutes', async () => {
+    lib._resetCatalogCache();
+    const f = catalogFetch({});
+    const db = menuDb();
+    await set(db, [{ id: 'kumamoto', state: 'off' }], f, EVE);
+    await set(db, [{ id: 'kumamoto', state: null }], f, EVE + 5 * 60e3);
+    assert.strictEqual(f.calls.length, 1);
+    assert.strictEqual(f.calls[0], 'https://hsoysters.com/data/oysters.js');
+  });
+  await check('catalog unreachable: the id format check stands and the save goes through', async () => {
+    lib._resetCatalogCache();
+    const db = menuDb();
+    await set(db, [{ id: 'kumamoto', state: 'off' }], catalogFetch({ down: true }));
+    assert.strictEqual(db.data.menu.overrides.kumamoto.state, 'off');
+  });
+
   await check('index.js exports startToastSync as a callable in us-east1 using the GH_DISPATCH_TOKEN secret', async () => {
     process.env.GCLOUD_PROJECT = process.env.GCLOUD_PROJECT || 'half-shell-oyster-menu';
     const fns = require('./index.js');
@@ -170,6 +360,10 @@ async function rejects(promise, code) {
     assert.ok(ep.callableTrigger, 'not a callable');
     assert.deepStrictEqual(ep.region, ['us-east1']);
     assert.ok((ep.secretEnvironmentVariables || []).some((s) => s.key === 'GH_DISPATCH_TOKEN'));
+  });
+  await check('index.js exports setMenuOverride as a callable in us-east1 (no secrets)', async () => {
+    const ep = require('./index.js').setMenuOverride.__endpoint;
+    assert.ok(ep.callableTrigger && ep.region[0] === 'us-east1' && !(ep.secretEnvironmentVariables || []).length);
   });
 
   console.log('\n' + (failed ? `${failed} of ${passed + failed} checks failed.` : `All ${passed} checks passed.`));

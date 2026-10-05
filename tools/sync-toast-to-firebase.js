@@ -8,7 +8,9 @@
  *   2. Fetches /menus/v2/menus to get the full Raw Bar item list
  *   3. Fetches /stock/v1/inventory to get which items are currently 86'd
  *   4. Name-matches non-86'd items against the Half Shell oyster catalog
- *   5. Writes the resulting slug list to Firebase Realtime Database /menu/serving
+ *   5. Writes tonight's menu to /menu/serving: Toast's in-stock oysters plus
+ *      employee-page overrides (until 4 AM), and Toast's list to
+ *      /menu/toastInStock (step S6; cloud/menu-logic.js)
  *
  * Required environment variables (set as GitHub Secrets):
  *   TOAST_CLIENT_ID        — OAuth client ID
@@ -65,6 +67,11 @@ try {
   console.error(`Failed to load catalog from ${catalogPath}: ${err.message}`);
   process.exit(1);
 }
+
+// ─── Menu composition (step S6) ─────────────────────────────────────────────
+// Shared with the setMenuOverride server function so both build tonight's
+// menu the same way.
+const menuLogic = require(path.join(__dirname, '..', 'cloud', 'menu-logic.js'));
 
 // ─── Load GUID override table ───────────────────────────────────────────────
 let guidToSlug = {};
@@ -209,39 +216,25 @@ const db = getDatabase();
     }
 
     // ── Write to Firebase ──────────────────────────────────────────────────
-    const snapshot    = await db.ref('menu/serving').once('value');
-    const currentMenu = snapshot.val() || {};
-    const updates     = {};
-    let added = 0, updated = 0, removed = 0;
-
-    for (const id of matched) {
-      if (currentMenu[id]) {
-        updates[id] = { addedAt: currentMenu[id].addedAt, lastUpdated: now, source: 'toast' };
-        updated++;
-      } else {
-        updates[id] = { addedAt: now, lastUpdated: now, source: 'toast' };
-        added++;
-      }
-    }
-
-    // Remove toast-sourced oysters no longer in the serving list (86'd or pulled)
-    const matchedSet2 = new Set(matched);
-    for (const [id, entry] of Object.entries(currentMenu)) {
-      if (entry?.source === 'toast' && !matchedSet2.has(id)) { updates[id] = null; removed++; }
-    }
-
-    if (Object.keys(updates).length > 0) {
-      await db.ref('menu/serving').update(updates);
-      console.log(`Firebase updated: +${added} added, ~${updated} refreshed, -${removed} removed.`);
-    } else {
-      console.log('Firebase: no changes needed.');
-    }
+    // Tonight's menu = Toast's in-stock oysters, plus employee-page overrides
+    // forced on, minus ones forced off, until 4 AM (step S6; the rules are
+    // in cloud/menu-logic.js, shared with the setMenuOverride function).
+    const [servingSnap, overridesSnap] = await Promise.all([
+      db.ref('menu/serving').once('value'),
+      db.ref('menu/overrides').once('value'),
+    ]);
+    const plan = menuLogic.planSync(matched, servingSnap.val(), overridesSnap.val(), now);
+    const { added, refreshed: updated, removed } = plan;
+    await db.ref('menu').update(plan.updates);
+    console.log(`Firebase updated: +${added} added, ~${updated} refreshed, -${removed} removed. ` +
+      `Overrides: ${plan.forcedOn} on, ${plan.forcedOff} off, ${plan.expired} expired cleared` +
+      (plan.migrated.length ? `, carried over from the old page: ${plan.migrated.join(', ')}` : '') + '.');
 
     // Audit log
     await db.ref('audit-log').push({
       timestamp: now,
       action: 'toast_sync',
-      details: `added:${added} updated:${updated} removed:${removed} unmatched:${unmatched.length} skipped_86d:${skipped}`,
+      details: `added:${added} updated:${updated} removed:${removed} unmatched:${unmatched.length} skipped_86d:${skipped} overrides_on:${plan.forcedOn} overrides_off:${plan.forcedOff} expired:${plan.expired}`,
       actor: 'GitHub Actions (scheduled)',
       readable_timestamp: new Date(now).toISOString(),
     });

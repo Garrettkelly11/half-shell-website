@@ -60,17 +60,8 @@ async function startToastSync(auth, deps) {
   const { db, fetch, token } = deps;
   const now = (deps.now || Date.now)();
 
-  if (!auth || !auth.uid) {
-    throw new SyncError('unauthenticated', 'Sign in on the employee page first.');
-  }
-  const staff = await db.ref(`staff/${auth.uid}`).once('value');
-  if (!staff.exists()) {
-    throw new SyncError('permission-denied', 'Only staff accounts can start a Toast sync.');
-  }
   // Merroir sign-ins (M5) carry their name in their staff entry ("Garrett K.").
-  const entry = staff.val();
-  const actor = (entry && typeof entry === 'object' && entry.name)
-    || (auth.token && auth.token.email) || auth.uid;
+  const actor = await staffName(auth, db, 'start a Toast sync');
   if (!token) {
     throw new SyncError('failed-precondition', 'Sync is not set up (no GitHub token on the server).');
   }
@@ -130,4 +121,138 @@ async function startToastSync(auth, deps) {
   return { ok: true, nextAllowedAt: now + MIN_GAP_MS };
 }
 
-module.exports = { startToastSync, SyncError, DISPATCH_URL, MIN_GAP_MS, LAST_TRIGGER_PATH };
+// ─── Menu overrides (step S6) ───────────────────────────────────────────────
+
+const menu = require('./menu-logic');
+
+const CATALOG_URL = 'https://hsoysters.com/data/oysters.js';
+const CATALOG_TTL_MS = 10 * 60 * 1000;
+const MAX_CHANGES = 100;
+let catalogCache = { at: 0, ids: null };
+
+/** Catalog ids from the live site's data/oysters.js, kept for 10 minutes. */
+async function liveCatalogIds(fetchFn, now) {
+  if (catalogCache.ids && now - catalogCache.at < CATALOG_TTL_MS) return catalogCache.ids;
+  const res = await fetchFn(CATALOG_URL);
+  if (!res || res.status !== 200) throw new Error(`catalog answered ${res && res.status}`);
+  // Read the ids as text (each entry's `    id: "slug",` line); the
+  // fetched file is never run.
+  const text = await res.text();
+  const ids = [...text.matchAll(/^\s*id:\s*"([a-z0-9-]+)",?\s*$/gm)].map((m) => m[1]);
+  if (ids.length < 10) throw new Error(`catalog has only ${ids.length} ids`);
+  catalogCache = { at: now, ids: new Set(ids) };
+  return catalogCache.ids;
+}
+
+/** Who is asking, and are they staff? Returns their name for the change log. */
+async function staffName(auth, db, what) {
+  if (!auth || !auth.uid) {
+    throw new SyncError('unauthenticated', 'Sign in on the employee page first.');
+  }
+  const staff = await db.ref(`staff/${auth.uid}`).once('value');
+  if (!staff.exists()) {
+    throw new SyncError('permission-denied', `Only staff accounts can ${what}.`);
+  }
+  const entry = staff.val();
+  return (entry && typeof entry === 'object' && entry.name)
+    || (auth.token && auth.token.email) || auth.uid;
+}
+
+/**
+ * setMenuOverride — the employee page's Save Menu and "Back to Toast".
+ * data: { changes: [{ id, state: 'on' | 'off' | null }] }
+ *   'on'  — on tonight's menu until 4 AM whatever Toast says
+ *   'off' — off tonight's menu until 4 AM whatever Toast says
+ *   null  — back to Toast: the override is removed and the oyster follows
+ *           Toast's last in-stock list at once
+ * Asking for what Toast already says ('on' for an oyster Toast has in
+ * stock, 'off' for one it has 86'd) is treated as Back to Toast, so
+ * undoing a change never leaves a needless override behind.
+ * Writes overrides and menu/serving in one update, clears any expired
+ * overrides it finds, and writes one audit-log entry per change.
+ * deps: { db, fetch, now }. Returns { ok, until }. Throws SyncError.
+ */
+async function setMenuOverride(auth, data, deps) {
+  const { db } = deps;
+  const now = (deps.now || Date.now)();
+  const actor = await staffName(auth, db, 'change tonight\'s menu');
+
+  const changes = data && Array.isArray(data.changes) ? data.changes : null;
+  if (!changes || changes.length === 0 || changes.length > MAX_CHANGES) {
+    throw new SyncError('invalid-argument', 'Nothing to change.');
+  }
+  const seen = new Set();
+  for (const c of changes) {
+    if (!c || typeof c.id !== 'string' || !menu.SLUG.test(c.id) || c.id.length > 80
+        || !(c.state === 'on' || c.state === 'off' || c.state === null)) {
+      throw new SyncError('invalid-argument', 'One of the changes isn\'t valid. Reload the page.');
+    }
+    if (seen.has(c.id)) throw new SyncError('invalid-argument', 'An oyster is listed twice.');
+    seen.add(c.id);
+  }
+  // Oysters being put on (or forced off) must be in the published catalog.
+  // If the catalog can't be read, the id format check above stands.
+  try {
+    const ids = await liveCatalogIds(deps.fetch, now);
+    const unknown = changes.filter((c) => c.state !== null && !ids.has(c.id)).map((c) => c.id);
+    if (unknown.length) {
+      throw new SyncError('invalid-argument', `Not in the oyster catalog: ${unknown.join(', ')}.`);
+    }
+  } catch (e) {
+    if (e instanceof SyncError) throw e;
+    console.warn('Catalog check skipped:', e.message);
+  }
+
+  const [ovSnap, toastSnap, servingSnap] = await Promise.all([
+    db.ref('menu/overrides').once('value'),
+    db.ref('menu/toastInStock').once('value'),
+    db.ref('menu/serving').once('value'),
+  ]);
+  const { active, expired } = menu.splitOverrides(ovSnap.val(), now);
+  const toast = Object.keys(toastSnap.val() || {});
+  const current = servingSnap.val() || {};
+  const until = menu.next4am(now);
+
+  // Asking for what Toast already says (turning back on a Toast oyster that
+  // was forced off, or off one Toast has 86'd) just ends the override.
+  const inToast = new Set(toast);
+  for (const c of changes) {
+    if ((c.state === 'on' && inToast.has(c.id)) || (c.state === 'off' && !inToast.has(c.id))) {
+      c.state = null;
+    }
+  }
+
+  const updates = {};
+  for (const id of expired) {
+    updates[`overrides/${id}`] = null;
+    delete active[id];
+  }
+  for (const c of changes) {
+    if (c.state === null) {
+      delete active[c.id];
+      updates[`overrides/${c.id}`] = null;
+    } else {
+      active[c.id] = { state: c.state, until, by: actor, at: now };
+      updates[`overrides/${c.id}`] = active[c.id];
+    }
+  }
+  Object.assign(updates, menu.servingUpdates(
+    [...new Set([...expired, ...changes.map((c) => c.id)])], toast, active, current, now));
+  await db.ref('menu').update(updates);
+
+  const words = { on: 'On the menu until 4 AM', off: 'Off the menu until 4 AM' };
+  const actions = { on: 'menu_override_on', off: 'menu_override_off' };
+  for (const c of changes) {
+    await db.ref('audit-log').push({
+      ...auditEntry(c.state ? actions[c.state] : 'menu_override_cleared',
+        c.state ? words[c.state] : 'Back to Toast', actor, now),
+      oysterId: c.id,
+    });
+  }
+  return { ok: true, until };
+}
+
+module.exports = {
+  startToastSync, setMenuOverride, SyncError, DISPATCH_URL, MIN_GAP_MS, LAST_TRIGGER_PATH,
+  CATALOG_URL, _resetCatalogCache: () => { catalogCache = { at: 0, ids: null }; },
+};

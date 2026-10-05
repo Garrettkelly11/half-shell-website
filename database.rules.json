@@ -5,14 +5,16 @@
     "menu": {
       "serving": {
         ".read": true,
-        ".write": "auth != null && root.child('staff').child(auth.uid).exists()"
+        ".write": false
+      },
+      "overrides": {
+        ".read": "auth != null && root.child('staff').child(auth.uid).exists()",
+        ".write": false
       }
     },
     "audit-log": {
       ".read": "auth != null && root.child('staff').child(auth.uid).exists()",
-      "$entry": {
-        ".write": "auth != null && root.child('staff').child(auth.uid).exists() && !data.exists()"
-      }
+      ".write": false
     },
     "users": {
       "$uid": {
