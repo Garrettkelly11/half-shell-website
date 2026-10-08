@@ -10,8 +10,9 @@
  * Garrettkelly11/half-shell-website only, Actions: read and write.
  * Set with:  firebase functions:secrets:set GH_DISPATCH_TOKEN
  *
- * Functions: startToastSync (S4), setMenuOverride (S6).
- * The logic lives in lib.js and menu-logic.js (tested by `node test.js`).
+ * Functions: startToastSync (S4), setMenuOverride (S6), setHappyHour (S5).
+ * The logic lives in lib.js, menu-logic.js and price-logic.js (tested by
+ * `node test.js`).
  */
 
 'use strict';
@@ -57,6 +58,21 @@ exports.setMenuOverride = onCall(
       if (e instanceof lib.SyncError) throw new HttpsError(e.code, e.message, e.details);
       console.error('setMenuOverride failed', e);
       throw new HttpsError('internal', 'Something went wrong saving the menu.');
+    }
+  },
+);
+
+// Step S5: the employee page's Happy hour section (managers and above).
+// Writes menu/happyHour/schedule or menu/happyHour/today and logs it.
+exports.setHappyHour = onCall(
+  { region: 'us-east1', maxInstances: 2 },
+  async (request) => {
+    try {
+      return await lib.setHappyHour(request.auth, request.data, { db: getDatabase() });
+    } catch (e) {
+      if (e instanceof lib.SyncError) throw new HttpsError(e.code, e.message, e.details);
+      console.error('setHappyHour failed', e);
+      throw new HttpsError('internal', 'Something went wrong saving happy hour.');
     }
   },
 );

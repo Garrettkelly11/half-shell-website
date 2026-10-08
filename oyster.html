@@ -350,6 +350,9 @@
       /* Farmer link */
       .farmer-link { font-size: 0.7rem; padding: 0.5rem 0.9rem; }
     }
+      /* ── Price (S5) ── */
+    .detail-price { font-family: 'Lato', sans-serif; font-size: 1.1rem; font-weight: 700; color: #e89438; white-space: nowrap; padding-top: 0.35rem; }
+    .hh-price s { opacity: 0.6; font-weight: 400; margin-right: 0.2rem; }
   </style>
 </head>
 <body>
@@ -389,6 +392,7 @@
 </footer>
 
 <script src="./data/oysters.js?v=3"></script>
+<script src="src/price-display.js"></script>
 <script>
 // ── Salinity dots ──────────────────────────────────────────────────────────
 const DOTS_MAP = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
@@ -398,6 +402,34 @@ function buildDots(level) {
     `<span class="${i < filled ? 'filled' : ''}"></span>`
   ).join('');
 }
+
+// ── Price (S5) ─────────────────────────────────────────────────────────────
+// Toast's price and the happy hour rule, read once from the public database
+// (no Firebase library needed), rechecked every 5 minutes. The happy hour
+// price is worked out here, in New York time (src/price-display.js).
+const DB_URL = 'https://half-shell-oyster-menu-default-rtdb.firebaseio.com';
+let priceEntry = null, happyHour = null;
+
+function drawPrice() {
+  const el = document.getElementById('oyster-price');
+  if (el) el.innerHTML = HS_PRICE.priceHtml(HS_PRICE.priceFor(priceEntry, happyHour, Date.now()), 'detail-price');
+}
+
+async function loadPrice() {
+  const id = new URLSearchParams(window.location.search).get('id');
+  if (!id || !/^[a-z0-9-]+$/.test(id)) return;
+  try {
+    const [p, h] = await Promise.all([
+      fetch(`${DB_URL}/menu/prices/${id}.json`).then(r => r.ok ? r.json() : null),
+      fetch(`${DB_URL}/menu/happyHour.json`).then(r => r.ok ? r.json() : null),
+    ]);
+    priceEntry = p; happyHour = h;
+  } catch (e) { /* offline: no price shown */ }
+  drawPrice();
+}
+loadPrice();
+setInterval(loadPrice, 5 * 60 * 1000);
+setInterval(drawPrice, 30000);
 
 // ── Render page ────────────────────────────────────────────────────────────
 function render() {
@@ -452,7 +484,7 @@ function render() {
       <div class="oyster-hero-body">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;">
           <div class="oyster-hero-name" style="flex:1">${oyster.name}</div>
-          ${oyster.price != null ? `<div style="font-family:'Lato',sans-serif;font-size:1.1rem;font-weight:700;color:#e89438;white-space:nowrap;padding-top:0.35rem;">$${oyster.price % 1 === 0 ? oyster.price : oyster.price.toFixed(2)}</div>` : ''}
+          <div id="oyster-price">${HS_PRICE.priceHtml(HS_PRICE.priceFor(priceEntry, happyHour, Date.now()), 'detail-price')}</div>
         </div>
         <div class="oyster-hero-origin">${oyster.origin}</div>
         <div class="salinity-row">

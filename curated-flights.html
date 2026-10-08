@@ -225,6 +225,16 @@
       transition: color 0.15s, border-color 0.15s;
     }
     .flight-oysters a:hover { color: #e89438; border-bottom-color: #e89438; }
+    /* Price per oyster (S5); no flight total. */
+    .flight-price {
+      margin-left: auto;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #e89438;
+      white-space: nowrap;
+    }
+    .hh-price s { opacity: 0.6; font-weight: 400; margin-right: 0.2rem; }
     .flight-desc {
       padding: 1.25rem 1.5rem 1.5rem;
       font-size: 0.95rem;
@@ -350,12 +360,17 @@
 <script src="data/oysters.js"></script>
 <script src="data/regions.js"></script>
 <script src="data/flights.js"></script>
+<script src="src/price-display.js"></script>
 <script>
 // OYSTERS (data/oysters.js) is the catalog; HS_FLIGHTS (data/flights.js) holds the flight
 // pool and selection rules. This page only renders what they return.
 
 let lastServingIds = null;   // Set of ids from Firebase, or null until the first reply
 let lastRenderedDate = null;
+// Prices (S5): Toast's price per oyster and the happy hour rule, from Firebase.
+let prices = {};
+let happyHour = null;
+let hhKey = '';
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -394,7 +409,7 @@ function render(servingIds) {
         <div class="flight-count">${f.oysters.length} oysters</div>
       </div>
       <ul class="flight-oysters">
-        ${f.oysters.map(o => `<li><a href="oyster.html?id=${encodeURIComponent(o.id)}">${esc(o.name)}</a></li>`).join('')}
+        ${f.oysters.map(o => `<li><a href="oyster.html?id=${encodeURIComponent(o.id)}">${esc(o.name)}</a>${HS_PRICE.priceHtml(HS_PRICE.priceFor(prices[o.id], happyHour, Date.now()), 'flight-price')}</li>`).join('')}
       </ul>
       <p class="flight-desc">${esc(f.description)}</p>
     </article>
@@ -408,6 +423,12 @@ setTimeout(() => { if (lastServingIds === null) render(new Set()); }, 8000);
 setInterval(() => {
   if (lastServingIds && HS_FLIGHTS.rotationDate(new Date()) !== lastRenderedDate) render(lastServingIds);
 }, 60000);
+
+// Happy hour starts and ends on time without a reload.
+setInterval(() => {
+  const key = String(HS_PRICE.isHappyHour(happyHour, Date.now()));
+  if (key !== hhKey) { hhKey = key; if (lastServingIds) render(lastServingIds); }
+}, 30000);
 
 // ── Firebase real-time menu sync (same as index.html) ───────────────────────
 (function () {
@@ -434,12 +455,19 @@ setInterval(() => {
       firebase.initializeApp(firebaseConfig);
       const db  = firebase.database();
       const ref = db.ref('menu/serving');
+      const pricesRef = db.ref('menu/prices');
+      const hhRef = db.ref('menu/happyHour');
+      const again = () => { if (lastServingIds) render(lastServingIds); };
 
       function startListener() {
         ref.on('value', snapshot => {
           // Object with oyster ids as keys: {id: {addedAt, lastUpdated, source}, ...}
           render(new Set(Object.keys(snapshot.val() || {})));
         });
+        pricesRef.on('value', snap => { prices = snap.val() || {}; again(); }, () => {});
+        hhRef.on('value', snap => {
+          happyHour = snap.val(); hhKey = String(HS_PRICE.isHappyHour(happyHour, Date.now())); again();
+        }, () => {});
       }
 
       startListener();
@@ -448,7 +476,7 @@ setInterval(() => {
       // reconnect and re-fetch when it becomes visible again.
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
-          ref.off();
+          ref.off(); pricesRef.off(); hhRef.off();
         } else {
           startListener();
         }

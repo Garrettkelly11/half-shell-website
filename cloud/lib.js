@@ -252,7 +252,62 @@ async function setMenuOverride(auth, data, deps) {
   return { ok: true, until };
 }
 
+// ─── Happy hour (S5) ────────────────────────────────────────────────────────
+
+const prices = require('./price-logic');
+const MANAGER_RANK = 20;
+
+/**
+ * setHappyHour — the employee page's Happy hour section (S5; "Price and
+ * Happy Hour Plan", 06/10/2026). MANAGER and above: the rank Merroir puts in
+ * the sign-in (claim staff_rank), and a staff/{uid} entry.
+ * data: { schedule: {days, start, end, percentOff} }   the standing rule
+ *    or { today: 'on' | 'off' | null }                  today's switch, until
+ *                                                        4 AM; null = back to
+ *                                                        the schedule
+ * Writes menu/happyHour/... and one audit-log entry. Returns { ok, ... }.
+ * This changes only what the site shows; Toast charges what Toast charges.
+ */
+async function setHappyHour(auth, data, deps) {
+  const { db } = deps;
+  const now = (deps.now || Date.now)();
+  const actor = await staffName(auth, db, 'change happy hour');
+  const rank = Number(auth.token && auth.token.staff_rank);
+  if (!(rank >= MANAGER_RANK)) {
+    throw new SyncError('permission-denied', 'Only managers can change happy hour. Sign out and in again if you were just promoted.');
+  }
+  const log = (action, details) => db.ref('audit-log').push(auditEntry(action, details, actor, now));
+
+  if (data && 'schedule' in data) {
+    let schedule;
+    try { schedule = prices.validateSchedule(data.schedule); } catch (e) {
+      throw new SyncError('invalid-argument', e.message);
+    }
+    await db.ref('menu/happyHour/schedule').set({ ...schedule, by: actor, at: now });
+    await log('happy_hour_schedule_set', prices.describeSchedule(schedule));
+    return { ok: true, schedule };
+  }
+  if (data && 'today' in data) {
+    const state = data.today;
+    if (!(state === 'on' || state === 'off' || state === null)) {
+      throw new SyncError('invalid-argument', 'Today is on, off, or back to the schedule.');
+    }
+    if (state === null) {
+      await db.ref('menu/happyHour/today').set(null);
+      await log('happy_hour_today_cleared', 'Happy hour today: back to the schedule');
+      return { ok: true, today: null };
+    }
+    const until = menu.next4am(now);
+    await db.ref('menu/happyHour/today').set({ state, until, by: actor, at: now });
+    await log(state === 'on' ? 'happy_hour_today_on' : 'happy_hour_today_off',
+      `Happy hour ${state} today, until 4 AM`);
+    return { ok: true, today: { state, until } };
+  }
+  throw new SyncError('invalid-argument', 'Nothing to save.');
+}
+
 module.exports = {
+  setHappyHour, MANAGER_RANK,
   startToastSync, setMenuOverride, SyncError, DISPATCH_URL, MIN_GAP_MS, LAST_TRIGGER_PATH,
   CATALOG_URL, _resetCatalogCache: () => { catalogCache = { at: 0, ids: null }; },
 };

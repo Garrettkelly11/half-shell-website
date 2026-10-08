@@ -7,10 +7,13 @@
  *   1. Authenticates with Toast (OAuth client-credentials flow)
  *   2. Fetches /menus/v2/menus to get the full Raw Bar item list
  *   3. Fetches /stock/v1/inventory to get which items are currently 86'd
- *   4. Name-matches non-86'd items against the Half Shell oyster catalog
+ *   4. Name-matches every item against the Half Shell oyster catalog
  *   5. Writes tonight's menu to /menu/serving: Toast's in-stock oysters plus
  *      employee-page overrides (until 4 AM), and Toast's list to
  *      /menu/toastInStock (step S6; cloud/menu-logic.js)
+ *   6. Writes Toast's regular price for every matched oyster, 86'd or not,
+ *      to /menu/prices (step S5; cloud/price-logic.js). Only changes are
+ *      written; entries are never deleted.
  *
  * Required environment variables (set as GitHub Secrets):
  *   TOAST_CLIENT_ID        — OAuth client ID
@@ -23,6 +26,8 @@
  *
  * Usage:
  *   node tools/sync-toast-to-firebase.js
+ *   node tools/sync-toast-to-firebase.js --dry-run   # reads Toast and Firebase,
+ *                                                     # prints the writes, writes nothing
  *
  * Exit codes:
  *   0 — sync succeeded (or was skipped cleanly)
@@ -48,6 +53,7 @@ for (const [k, v] of Object.entries({ TOAST_CLIENT_ID: CLIENT_ID, TOAST_CLIENT_S
   if (!v) { console.error(`ERROR: ${k} env var missing.`); process.exit(1); }
 }
 
+const DRY_RUN = process.argv.includes('--dry-run');
 const TOAST_RATE_LIMIT_MS = 1100; // Toast allows ~1 req/sec
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -72,6 +78,7 @@ try {
 // Shared with the setMenuOverride server function so both build tonight's
 // menu the same way.
 const menuLogic = require(path.join(__dirname, '..', 'cloud', 'menu-logic.js'));
+const priceLogic = require(path.join(__dirname, '..', 'cloud', 'price-logic.js'));
 
 // ─── Load GUID override table ───────────────────────────────────────────────
 let guidToSlug = {};
@@ -156,20 +163,6 @@ async function fetchOutOfStockGuids(token) {
   return outOfStock;
 }
 
-// ─── Menu walk ───────────────────────────────────────────────────────────────
-function* iterateGroups(groups) {
-  for (const group of groups || []) {
-    for (const item of (group.menuItems || [])) yield item;
-    yield* iterateGroups(group.menuGroups || []);
-  }
-}
-
-function* iterateAllItems(data) {
-  for (const menu of (data?.menus || [])) {
-    yield* iterateGroups(menu.menuGroups || []);
-  }
-}
-
 // ─── Firebase init ───────────────────────────────────────────────────────────
 if (!getApps().length) {
   initializeApp({ credential: applicationDefault(), databaseURL: DATABASE_URL });
@@ -186,27 +179,12 @@ const db = getDatabase();
     const outOfStockGuids = await fetchOutOfStockGuids(token);
     const menuData        = await fetchMenu(token);
 
-    const matched    = [];
-    const matchedSet = new Set();
-    const unmatched  = [];
-    let   skipped    = 0;
-
-    for (const item of iterateAllItems(menuData)) {
-      if (!item?.name) continue;
-
-      // Skip 86'd items
-      if (item.guid && outOfStockGuids.has(item.guid)) { skipped++; continue; }
-
-      // GUID override table (toast-mapping.js)
-      const slugOverride = item.guid && guidToSlug[item.guid];
-      const slug = slugOverride || matchIndex.get(normalize(item.name)) || null;
-
-      if (slug) {
-        if (!matchedSet.has(slug)) { matched.push(slug); matchedSet.add(slug); }
-      } else {
-        unmatched.push({ name: item.name, guid: item.guid, price: item.price ?? null });
-      }
-    }
+    // One pass: tonight's menu from in-stock items, prices from every
+    // matched item (86'd or not). GUID override table first, then names.
+    const matchSlug = item =>
+      (item.guid && guidToSlug[item.guid]) || matchIndex.get(normalize(item.name)) || null;
+    const { matched, unmatched, skipped, appearances } =
+      priceLogic.scanMenu(menuData, matchSlug, outOfStockGuids);
 
     console.log(`Matched: ${matched.length} | Unmatched: ${unmatched.length} | 86'd (skipped): ${skipped}`);
     if (matched.length) console.log(`Serving: ${matched.join(', ')}`);
@@ -219,13 +197,31 @@ const db = getDatabase();
     // Tonight's menu = Toast's in-stock oysters, plus employee-page overrides
     // forced on, minus ones forced off, until 4 AM (step S6; the rules are
     // in cloud/menu-logic.js, shared with the setMenuOverride function).
-    const [servingSnap, overridesSnap] = await Promise.all([
+    const [servingSnap, overridesSnap, pricesSnap] = await Promise.all([
       db.ref('menu/serving').once('value'),
       db.ref('menu/overrides').once('value'),
+      db.ref('menu/prices').once('value'),
     ]);
     const plan = menuLogic.planSync(matched, servingSnap.val(), overridesSnap.val(), now);
     const { added, refreshed: updated, removed } = plan;
-    await db.ref('menu').update(plan.updates);
+
+    // Prices (S5): Toast's regular price for every matched oyster.
+    const { prices, conflicts } = priceLogic.collectPrices(appearances);
+    const priced = priceLogic.priceUpdates(prices, pricesSnap.val(), now);
+    for (const c of conflicts) console.log(`Price differs between Toast menus: ${c}`);
+    console.log(`Prices: ${Object.keys(prices).length} oysters, ${priced.changed.length} changed` +
+      (priced.changed.length ? ': ' + priced.changed.map(c =>
+        `${c.id} ${c.from === undefined ? 'new' : c.from === null ? 'MP' : '$' + c.from.toFixed(2)} → ` +
+        `${c.to === null ? 'MP' : '$' + c.to.toFixed(2)}`).join(', ') : '') + '.');
+
+    if (DRY_RUN) {
+      console.log('\nDRY RUN — nothing written. These writes under menu/ would be made:');
+      for (const [k, v] of Object.entries({ ...plan.updates, ...priced.updates })) {
+        console.log(`  ${k} = ${JSON.stringify(v)}`);
+      }
+      process.exit(0);
+    }
+    await db.ref('menu').update({ ...plan.updates, ...priced.updates });
     console.log(`Firebase updated: +${added} added, ~${updated} refreshed, -${removed} removed. ` +
       `Overrides: ${plan.forcedOn} on, ${plan.forcedOff} off, ${plan.expired} expired cleared` +
       (plan.migrated.length ? `, carried over from the old page: ${plan.migrated.join(', ')}` : '') + '.');
@@ -234,7 +230,7 @@ const db = getDatabase();
     await db.ref('audit-log').push({
       timestamp: now,
       action: 'toast_sync',
-      details: `added:${added} updated:${updated} removed:${removed} unmatched:${unmatched.length} skipped_86d:${skipped} overrides_on:${plan.forcedOn} overrides_off:${plan.forcedOff} expired:${plan.expired}`,
+      details: `added:${added} updated:${updated} removed:${removed} unmatched:${unmatched.length} skipped_86d:${skipped} overrides_on:${plan.forcedOn} overrides_off:${plan.forcedOff} expired:${plan.expired} prices_changed:${priced.changed.length}`,
       actor: 'GitHub Actions (scheduled)',
       readable_timestamp: new Date(now).toISOString(),
     });
@@ -244,6 +240,7 @@ const db = getDatabase();
 
   } catch (err) {
     console.error(`\nSync failed: ${err.message}`);
+    if (DRY_RUN) process.exit(1);
     try {
       await db.ref('audit-log').push({
         timestamp: now,

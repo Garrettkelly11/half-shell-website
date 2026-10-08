@@ -496,6 +496,23 @@
       font-style: italic;
     }
 
+    /* ── Happy hour (S5) ── */
+    .hh-panel { background: #fff; border: 1px solid #bcd4ce; border-radius: 6px; padding: 1rem 1.1rem; margin-bottom: 2.5rem; font-family: 'Lato', sans-serif; }
+    .hh-now { font-size: 0.9rem; color: #0e2d3a; margin-bottom: 0.4rem; }
+    .hh-now.live { font-weight: 700; color: #b5651d; }
+    .hh-sched { font-size: 0.8rem; color: #3f6470; margin-bottom: 0.8rem; }
+    .hh-row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-bottom: 0.8rem; }
+    .hh-row label { font-size: 0.78rem; color: #3f6470; display: inline-flex; align-items: center; gap: 0.25rem; }
+    .hh-row input[type="time"], .hh-row input[type="number"] { padding: 0.35rem 0.5rem; border: 1px solid #bcd4ce; border-radius: 4px; font-size: 0.85rem; }
+    .hh-row input[type="number"] { width: 4.5rem; }
+    .hh-label { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #6a8f9a; min-width: 5.5rem; }
+    .hh-preview { font-size: 0.8rem; color: #3f6470; }
+    .hh-note { font-size: 0.75rem; color: #6a8f9a; margin-top: 0.6rem; line-height: 1.4; }
+    .hh-msg { font-size: 0.8rem; min-height: 1.1em; }
+    .hh-msg.error { color: #c0392b; }
+    .hh-msg.ok { color: #1d6b4f; }
+    .save-btn.secondary.on { background: #e89438; color: #0e2d3a; border-color: #e89438; }
+
     /* ── Tabs (Oysters tab: managers, spec v1.8) ── */
     .page-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid #bcd4ce; }
     .page-tabs[hidden] { display: none; }
@@ -659,6 +676,42 @@
       </div>
     </div>
 
+    <!-- Happy hour (S5): managers set the rule and today's on/off;
+         everyone sees it. src/price-display.js does the arithmetic. -->
+    <div class="section-title">
+      Happy hour
+      <span class="badge amber" id="hh-badge"></span>
+    </div>
+    <div class="hh-panel" id="hh-panel">
+      <div class="hh-now" id="hh-now">Loading…</div>
+      <div class="hh-sched" id="hh-sched"></div>
+      <div id="hh-controls" hidden>
+        <div class="hh-row">
+          <span class="hh-label">Today</span>
+          <button class="save-btn secondary" type="button" data-today="on">On today</button>
+          <button class="save-btn secondary" type="button" data-today="off">Off today</button>
+          <button class="save-btn secondary" type="button" data-today="clear">Back to schedule</button>
+        </div>
+        <div class="hh-row" id="hh-days">
+          <span class="hh-label">Days</span>
+        </div>
+        <div class="hh-row">
+          <span class="hh-label">Time</span>
+          <label>From <input type="time" id="hh-start" step="900"></label>
+          <label>to <input type="time" id="hh-end" step="900"></label>
+          <label><input type="number" id="hh-pct" min="1" max="99" step="1"> % off</label>
+        </div>
+        <div class="hh-row">
+          <span class="hh-label"></span>
+          <button class="save-btn" type="button" id="hh-save">Save happy hour</button>
+          <span class="hh-preview" id="hh-preview"></span>
+        </div>
+        <div class="hh-msg" id="hh-msg" role="status"></div>
+        <p class="hh-note">This changes only what the website shows. Guests are charged whatever Toast rings up,
+          so keep Toast's happy hour discount the same. "On today" and "Off today" last until 4 AM.</p>
+      </div>
+    </div>
+
     <!-- Full reference table -->
     <div class="filter-bar">
       <button class="toggle-btn active" id="menu-only-btn" aria-pressed="true">
@@ -735,6 +788,7 @@
 <script src="src/menu-manager.js"></script>
 <script src="src/merroir-signin.js"></script>
 <script src="src/catalog-editor.js"></script>
+<script src="src/price-display.js"></script>
 <script>
 // ── Auth ──────────────────────────────────────────────────────────────────
 // Staff sign in with their Merroir username and password (M5). Merroir
@@ -763,6 +817,18 @@ const signOutName = document.getElementById('nav-signout-name');
 
 let staffName = null;   // "Garrett K.", from the sign-in token (claim staff_name)
 let staffClaims = null; // the sign-in token's claims (staff_rank: the Oysters tab, v1.8)
+// Prices (S5): Toast's regular price per oyster (menu/prices) and the
+// happy hour rule (menu/happyHour); both public, read by the Happy hour
+// section below. The table shows Toast's regular price.
+let toastPrices = {};
+let happyHour = null;
+function tablePrice(id) {
+  const p = HS_PRICE.priceFor(toastPrices[id], null, Date.now(), false);
+  return p ? p.text : '—';
+}
+function drawTablePrices() {
+  document.querySelectorAll('#table-body td.td-price').forEach(td => { td.textContent = tablePrice(td.dataset.id); });
+}
 
 function unlock() {
   gate.style.display = 'none';
@@ -796,10 +862,12 @@ auth.onAuthStateChanged(async user => {
     watchOverrides();
     unlock();
     if (window.hsOystersTab) window.hsOystersTab.signedIn(staffClaims);
+    if (window.hsHappyHour) window.hsHappyHour.signedIn(staffClaims);
   } else {
     staffName = null;
     staffClaims = null;
     if (window.hsOystersTab) window.hsOystersTab.signedOut();
+    if (window.hsHappyHour) window.hsHappyHour.signedIn(null);
     signOutBtn.hidden = true;
     if (overridesRef) { overridesRef.off(); overridesRef = null; overrides = {}; }
     lock();
@@ -1057,7 +1125,7 @@ function initPage() {
     <tr data-id="${o.id}" class="${pendingServing.has(o.id) ? 'on-menu' : ''}">
       <td class="td-name">${o.name}</td>
       <td class="td-serving">${pendingServing.has(o.id) ? '● On Menu' : ''}</td>
-      <td style="font-family:'Lato',sans-serif;font-size:0.85rem;font-weight:700;color:#e89438;white-space:nowrap">${o.price != null ? '$' + (o.price % 1 === 0 ? o.price : o.price.toFixed(2)) : '—'}</td>
+      <td class="td-price" data-id="${o.id}" style="font-family:'Lato',sans-serif;font-size:0.85rem;font-weight:700;color:#e89438;white-space:nowrap">${tablePrice(o.id)}</td>
       <td>${o.origin}</td>
       <td>${buildDotsSm(o.salinity)}<span style="font-family:'Lato',sans-serif;font-size:0.72rem;color:#3a6070">${o.salinityText}</span></td>
       <td style="font-family:'Lato',sans-serif;font-size:0.8rem">${o.size}</td>
@@ -1439,9 +1507,9 @@ window.hsOystersTab = (function () {
     C.FIELDS.forEach(f => grid.appendChild(field(f, values[f.key])));
     if (oyster) {
       const price = make('div', { class: 'cat-field' });
-      price.appendChild(make('label', {}, 'Price (from the site; not edited here)'));
-      price.appendChild(make('input', { type: 'text', readonly: 'readonly',
-        value: oyster.price === null ? '—' : '$' + oyster.price.toFixed(2) }));
+      price.appendChild(make('label', {}, 'Price (from Toast; change it in Toast)'));
+      const tp = HS_PRICE.priceFor(toastPrices[oyster.id], null, Date.now(), false);
+      price.appendChild(make('input', { type: 'text', readonly: 'readonly', value: tp ? tp.text : '—' }));
       grid.appendChild(price);
     }
     form.appendChild(grid);
@@ -1667,6 +1735,122 @@ window.hsOystersTab = (function () {
   return { signedIn, signedOut };
 })();
 if (typeof staffClaims !== 'undefined' && staffClaims) window.hsOystersTab.signedIn(staffClaims);
+</script>
+<script>
+// ── Happy hour section (S5; "Price and Happy Hour Plan", 06/10/2026) ──────
+// Everyone signed in sees the rule and whether it's happy hour now. Managers
+// and above (staff_rank ≥ 20) set the rule and switch today on or off
+// (until 4 AM) through the setHappyHour server function, which checks the
+// rank again and logs the change. Prices come from Toast (menu/prices).
+window.hsHappyHour = (function () {
+  const P = HS_PRICE;
+  const el = id => document.getElementById(id);
+  const controls = el('hh-controls'), msg = el('hh-msg');
+  const daysRow = el('hh-days');
+  const call = firebase.app().functions('us-east1').httpsCallable('setHappyHour');
+  let manager = false, busy = false, formDirty = false;
+
+  P.DAYS.forEach(d => {
+    const lab = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.value = d; cb.className = 'hh-day';
+    lab.appendChild(cb);
+    lab.appendChild(document.createTextNode(' ' + d.charAt(0) + d.slice(1).toLowerCase()));
+    daysRow.appendChild(lab);
+  });
+
+  function readForm() {
+    return {
+      days: [...document.querySelectorAll('.hh-day')].filter(c => c.checked).map(c => c.value),
+      start: el('hh-start').value, end: el('hh-end').value,
+      percentOff: Number(el('hh-pct').value),
+    };
+  }
+
+  function fillForm(s) {
+    document.querySelectorAll('.hh-day').forEach(c => { c.checked = !!(s && s.days.includes(c.value)); });
+    el('hh-start').value = s ? s.start : '15:00';
+    el('hh-end').value = s ? s.end : '18:00';
+    el('hh-pct').value = s ? s.percentOff : 50;
+  }
+
+  function preview() {
+    const s = readForm();
+    // An oyster on tonight's menu with a Toast price, else any priced oyster.
+    const ids = [...(typeof serving !== 'undefined' ? serving : [])].concat(Object.keys(toastPrices));
+    const id = ids.find(i => toastPrices[i] && typeof toastPrices[i].price === 'number');
+    const pct = s.percentOff;
+    if (!id || !(pct >= 1 && pct <= 99)) { el('hh-preview').textContent = ''; return; }
+    const cents = Math.round(toastPrices[id].price * 100);
+    const o = OYSTERS.find(x => x.id === id);
+    el('hh-preview').textContent = `${o ? o.name : id} ${P.money(cents)} → ${P.money(P.discountCents(cents, pct))}`;
+  }
+
+  function draw() {
+    const now = Date.now();
+    const s = happyHour && happyHour.schedule;
+    const today = P.todayState(happyHour, now);
+    const live = P.isHappyHour(happyHour, now);
+    const nowEl = el('hh-now');
+    nowEl.classList.toggle('live', live);
+    if (!s) nowEl.textContent = 'No happy hour set.';
+    else if (live) nowEl.textContent = `Happy hour now, until ${P.clock(s.end)}: oysters ${s.percentOff}% off.`;
+    else if (today === 'off') nowEl.textContent = 'Happy hour is off today (until 4 AM).';
+    else nowEl.textContent = 'Not happy hour right now.';
+    el('hh-badge').textContent = live ? 'on now' : today === 'off' ? 'off today' : today === 'on' ? 'on today' : '';
+    const b = P.banner(happyHour, now);
+    el('hh-sched').textContent = s ? `Schedule: ${P.dayRange(s.days)} ${P.clockRange(s.start, s.end)}, ${s.percentOff}% off` +
+      (s.by ? ` (set by ${s.by})` : '') + (b && !b.live ? `. Customers see: “${b.text}”` : '') : '';
+    controls.querySelectorAll('[data-today]').forEach(btn => {
+      btn.classList.toggle('on', btn.dataset.today === (today || 'clear'));
+    });
+    if (!formDirty) fillForm(s);
+    preview();
+    drawTablePrices();
+  }
+
+  function say(text, kind) { msg.textContent = text; msg.className = 'hh-msg' + (kind ? ' ' + kind : ''); }
+
+  async function save(payload, done) {
+    if (busy) return;
+    busy = true; say('Saving…');
+    try {
+      await call(payload);
+      say(done, 'ok');
+      return true;
+    } catch (e) {
+      say(e.message || 'Not saved. Try again.', 'error');
+      return false;
+    } finally { busy = false; }
+  }
+
+  el('hh-save').addEventListener('click', async () => {
+    if (await save({ schedule: readForm() }, 'Saved. The website shows it within a minute.')) formDirty = false;
+  });
+  controls.querySelectorAll('[data-today]').forEach(btn => btn.addEventListener('click', () => {
+    const v = btn.dataset.today;
+    save({ today: v === 'clear' ? null : v },
+      v === 'on' ? 'Happy hour is on today, until 4 AM.' : v === 'off' ? 'Happy hour is off today, until 4 AM.' : 'Back to the schedule.');
+  }));
+  controls.addEventListener('input', e => {
+    if (e.target.matches('.hh-day, #hh-start, #hh-end, #hh-pct')) { formDirty = true; preview(); }
+  });
+
+  // Both are public, so they load whether or not someone is signed in.
+  const db = firebase.database();
+  db.ref('menu/happyHour').on('value', snap => { happyHour = snap.val(); draw(); }, () => {});
+  db.ref('menu/prices').on('value', snap => { toastPrices = snap.val() || {}; draw(); }, () => {});
+  setInterval(draw, 30000);
+
+  function signedIn(claims) {
+    manager = HS_CATALOG.isManager(claims);
+    controls.hidden = !manager;
+    if (!manager) say('');
+  }
+
+  return { signedIn };
+})();
+if (typeof staffClaims !== 'undefined' && staffClaims) window.hsHappyHour.signedIn(staffClaims);
 </script>
 </body>
 </html>

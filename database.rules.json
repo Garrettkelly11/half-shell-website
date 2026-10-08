@@ -10,6 +10,14 @@
       "overrides": {
         ".read": "auth != null && root.child('staff').child(auth.uid).exists()",
         ".write": false
+      },
+      "prices": {
+        ".read": true,
+        ".write": false
+      },
+      "happyHour": {
+        ".read": true,
+        ".write": false
       }
     },
     "audit-log": {

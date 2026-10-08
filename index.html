@@ -134,6 +134,24 @@
       color: #29525f;
     }
 
+    /* ── Happy hour (S5) ── */
+    .hh-banner {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.8rem;
+      color: #29525f;
+      margin-bottom: 1rem;
+    }
+    .hh-banner[hidden] { display: none; }
+    .hh-banner.live {
+      background: #e89438;
+      color: #0e2d3a;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: 6px;
+      padding: 0.7rem 1.1rem;
+    }
+    .hh-price s { opacity: 0.6; font-weight: 400; margin-right: 0.2rem; }
+
     /* ── Card grid ── */
     .card-grid {
       display: grid;
@@ -447,6 +465,8 @@
     CONSUMER ADVISORY — Eating raw, or undercooked oysters, clams or mussels may cause severe illness. People with the following conditions are at especially high risk: liver disease, alcoholism, diabetes, cancer, stomach or blood disorder, or weakened immune system. Ask your doctor if you are unsure of your risk. If you eat raw, or undercooked shellfish and become sick, see a doctor immediately.
   </div>
 
+  <div class="hh-banner" id="hh-banner" role="status" hidden></div>
+
   <div class="section-header">
     <h2>Tonight's Oysters</h2>
     <span class="serving-count" id="count-label"></span>
@@ -489,6 +509,7 @@
 </footer>
 
 <script src="data/oysters.js?v=3"></script>
+<script src="src/price-display.js"></script>
 <script>
 // OYSTERS catalog is loaded from data/oysters.js as a global `var`.
 // Edit data/oysters.js to change the catalog; this file just consumes it.
@@ -498,6 +519,28 @@ const DOTS_MAP  = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':
 // ── Sort state ────────────────────────────────────────────────────────────────
 let currentSort   = 'az';
 let lastServingIds = new Set();
+
+// Prices (S5): Toast's regular price per oyster, and the happy hour rule
+// managers set on the employee page. Both come from Firebase; the price
+// shown is worked out here, in New York time (src/price-display.js).
+let prices = {};
+let happyHour = null;
+let hhKey = '';
+
+function drawBanner() {
+  const el = document.getElementById('hh-banner');
+  const b = HS_PRICE.banner(happyHour, Date.now());
+  el.hidden = !b;
+  el.textContent = b ? b.text : '';
+  el.classList.toggle('live', !!(b && b.live));
+  hhKey = b ? b.text : '';
+}
+
+// Happy hour starts and ends on time without a reload.
+setInterval(() => {
+  const b = HS_PRICE.banner(happyHour, Date.now());
+  if ((b ? b.text : '') !== hhKey) { drawBanner(); render(lastServingIds); }
+}, 30000);
 
 const SAL_ORDER  = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
 const SIZE_ORDER = { 'small':1, 'small-medium':2, 'medium':3, 'large':4 };
@@ -568,7 +611,7 @@ function render(servingIds) {
           <div class="card-name">${o.name}</div>
           <div class="card-origin">${o.origin}</div>
         </div>
-        ${o.price != null ? `<div class="card-price">$${o.price % 1 === 0 ? o.price : o.price.toFixed(2)}</div>` : ''}
+        ${HS_PRICE.priceHtml(HS_PRICE.priceFor(prices[o.id], happyHour, Date.now()))}
       </div>
       <div class="card-salinity">
         <span class="sal-label" data-tip="Salinity (measured in ppt) describes the amount of salt in the water in which the oyster was grown.&#10;&#10;● - Low salinity (Least salty)&#10;|&#10;●●●●● - Very High Salinity (Most Salty)">Salinity</span>
@@ -615,6 +658,8 @@ function render(servingIds) {
       firebase.initializeApp(firebaseConfig);
       const db  = firebase.database();
       const ref = db.ref('menu/serving');
+      const pricesRef = db.ref('menu/prices');
+      const hhRef = db.ref('menu/happyHour');
 
       function startListener() {
         ref.on('value', snapshot => {
@@ -623,6 +668,10 @@ function render(servingIds) {
           const ids = Object.keys(servingObj);
           render(new Set(ids));
         });
+        pricesRef.on('value', snap => { prices = snap.val() || {}; render(lastServingIds); },
+          () => {});
+        hhRef.on('value', snap => { happyHour = snap.val(); drawBanner(); render(lastServingIds); },
+          () => {});
       }
 
       startListener();
@@ -631,7 +680,7 @@ function render(servingIds) {
       // reconnect and re-fetch when page becomes visible again.
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
-          ref.off();
+          ref.off(); pricesRef.off(); hhRef.off();
         } else {
           startListener();
         }

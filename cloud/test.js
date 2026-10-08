@@ -353,6 +353,123 @@ async function rejects(promise, code) {
     assert.strictEqual(db.data.menu.overrides.kumamoto.state, 'off');
   });
 
+  // ─── S5: prices and happy hour ───────────────────────────────────────────
+  const P = require('./price-logic');
+  const menuJson = {
+    menus: [
+      { name: 'Food Menu', menuGroups: [{ name: 'Raw Bar', menuItems: [
+        { name: 'Kumamoto', guid: 'g-kuma', price: 5, pricingStrategy: 'BASE_PRICE' },
+        { name: 'Blackberries', guid: 'g-bb', price: 4, pricingStrategy: 'BASE_PRICE' },
+        { name: 'Market Oyster', guid: 'g-mp', price: null, pricingStrategy: 'OPEN_PRICE' },
+        { name: 'Crab Claws', guid: 'g-crab', price: 32, pricingStrategy: 'BASE_PRICE' },
+      ], menuGroups: [{ name: 'Sub', menuItems: [{ name: 'Malpeque', guid: 'g-mal', price: 3, pricingStrategy: 'BASE_PRICE' }] }] }] },
+      { name: 'Online Ordering', menuGroups: [{ name: 'Raw Bar', menuItems: [
+        { name: 'Kumamoto', guid: 'g-kuma2', price: 5.5, pricingStrategy: 'BASE_PRICE' },
+        { name: 'Blackberries', guid: 'g-bb2', price: 4, pricingStrategy: 'BASE_PRICE' },
+      ] }] },
+    ],
+  };
+  const slugOf = { Kumamoto: 'kumamoto', Blackberries: 'blackberry', 'Market Oyster': 'market', Malpeque: 'malpeque' };
+  const scan = P.scanMenu(menuJson, (it) => slugOf[it.name] || null, new Set(['g-bb', 'g-bb2', 'g-mal']));
+
+  await check('S5 scan: tonight\'s menu is in-stock matches only, as before; 86\'d items are counted', async () => {
+    assert.deepStrictEqual(scan.matched.sort(), ['kumamoto', 'market']);
+    assert.strictEqual(scan.skipped, 3);
+    assert.deepStrictEqual(scan.unmatched.map((u) => u.name), ['Crab Claws']);
+  });
+  await check('S5 scan: prices come from every matched item, 86\'d or not, including sub-groups', async () => {
+    assert.deepStrictEqual([...new Set(scan.appearances.map((a) => a.id))].sort(), ['blackberry', 'kumamoto', 'malpeque', 'market']);
+  });
+  const col = P.collectPrices(scan.appearances);
+  await check('S5 prices: one per oyster; a different price on another menu → the Food Menu\'s, reported', async () => {
+    assert.deepStrictEqual(col.prices.kumamoto, { price: 5, strategy: 'BASE_PRICE' });
+    assert.strictEqual(col.conflicts.length, 1);
+    assert.ok(/kumamoto: Food Menu \$5\.00, Online Ordering \$5\.50 — using Food Menu/.test(col.conflicts[0]), col.conflicts[0]);
+  });
+  await check('S5 prices: an open (market) price keeps its type, price null', async () => {
+    assert.deepStrictEqual(col.prices.market, { price: null, strategy: 'OPEN_PRICE' });
+  });
+  await check('S5 prices: only new or changed prices are written; nothing is deleted', async () => {
+    const current = {
+      kumamoto: { price: 5, strategy: 'BASE_PRICE', updatedAt: 1 },
+      blackberry: { price: 3, strategy: 'BASE_PRICE', updatedAt: 1 },
+      gone: { price: 4, strategy: 'BASE_PRICE', updatedAt: 1 },
+    };
+    const u = P.priceUpdates(col.prices, current, T0);
+    assert.deepStrictEqual(Object.keys(u.updates).sort(), ['prices/blackberry', 'prices/malpeque', 'prices/market']);
+    assert.deepStrictEqual(u.updates['prices/blackberry'], { price: 4, strategy: 'BASE_PRICE', updatedAt: T0 });
+    assert.ok(!Object.keys(u.updates).some((k) => k.includes('gone')));
+  });
+
+  const HH = { days: ['mon', 'TUE', 'WED', 'THU'], start: '15:00', end: '18:00', percentOff: 50 };
+  await check('S5 schedule: valid rule is tidied (days upper-case, in week order)', async () => {
+    assert.deepStrictEqual(P.validateSchedule({ ...HH, days: ['THU', 'mon', 'TUE', 'WED'] }),
+      { days: ['MON', 'TUE', 'WED', 'THU'], start: '15:00', end: '18:00', percentOff: 50 });
+    assert.strictEqual(P.describeSchedule(P.validateSchedule(HH)), 'Mon–Thu 15:00–18:00, 50% off');
+    assert.strictEqual(P.describeSchedule(P.validateSchedule({ ...HH, days: ['MON', 'WED', 'THU', 'SAT'] })), 'Mon, Wed, Thu, Sat 15:00–18:00, 50% off');
+  });
+  await check('S5 schedule: bad rules refused (no days, bad day, bad time, end before start, % out of range)', async () => {
+    for (const bad of [{ ...HH, days: [] }, { ...HH, days: ['FUN'] }, { ...HH, start: '3pm' },
+      { ...HH, start: '18:00', end: '15:00' }, { ...HH, end: '15:00' }, { ...HH, percentOff: 0 },
+      { ...HH, percentOff: 100 }, { ...HH, percentOff: 12.5 }, null]) {
+      assert.throws(() => P.validateSchedule(bad), undefined, JSON.stringify(bad));
+    }
+  });
+
+  const MGR = 'mgr-uid', STF = 'staff-only';
+  const hhDb = () => fakeDb({ staff: { [MGR]: { name: 'Mona T.', rank: 20 }, [STF]: { name: 'Stan T.', rank: 10 } } });
+  const mgrAuth = { uid: MGR, token: { staff_rank: 20, staff_name: 'Mona T.' } };
+  await check('S5 setHappyHour: signed out → unauthenticated; staff (rank 10) → permission-denied', async () => {
+    const db = hhDb();
+    await rejects(lib.setHappyHour(null, { schedule: HH }, { db, now: () => T0 }), 'unauthenticated');
+    await rejects(lib.setHappyHour({ uid: STF, token: { staff_rank: 10 } }, { schedule: HH }, { db, now: () => T0 }), 'permission-denied');
+    assert.ok(!db.data.menu);
+  });
+  await check('S5 setHappyHour: a rank claim without a staff entry is refused', async () => {
+    const db = hhDb();
+    await rejects(lib.setHappyHour({ uid: 'nobody', token: { staff_rank: 40 } }, { schedule: HH }, { db, now: () => T0 }), 'permission-denied');
+  });
+  await check('S5 setHappyHour: a manager saves the rule; it is logged with their name', async () => {
+    const db = hhDb();
+    const r = await lib.setHappyHour(mgrAuth, { schedule: HH }, { db, now: () => T0 });
+    assert.ok(r.ok);
+    assert.deepStrictEqual(db.data.menu.happyHour.schedule,
+      { days: ['MON', 'TUE', 'WED', 'THU'], start: '15:00', end: '18:00', percentOff: 50, by: 'Mona T.', at: T0 });
+    const log = Object.values(db.data['audit-log'])[0];
+    assert.strictEqual(log.action, 'happy_hour_schedule_set');
+    assert.strictEqual(log.actor, 'Mona T.');
+    assert.strictEqual(log.details, 'Mon–Thu 15:00–18:00, 50% off');
+  });
+  await check('S5 setHappyHour: a bad rule is refused with the reason, nothing written', async () => {
+    const db = hhDb();
+    const e = await rejects(lib.setHappyHour(mgrAuth, { schedule: { ...HH, end: '14:00' } }, { db, now: () => T0 }), 'invalid-argument');
+    assert.ok(/end after it starts/.test(e.message));
+    assert.ok(!db.data.menu);
+  });
+  await check('S5 setHappyHour: today off/on lasts until the next 4 AM New York time; null goes back to the schedule', async () => {
+    const db = hhDb();
+    await lib.setHappyHour(mgrAuth, { today: 'off' }, { db, now: () => T0 });
+    assert.deepStrictEqual(db.data.menu.happyHour.today, { state: 'off', until: M.next4am(T0), by: 'Mona T.', at: T0 });
+    await lib.setHappyHour(mgrAuth, { today: 'on' }, { db, now: () => T0 });
+    assert.strictEqual(db.data.menu.happyHour.today.state, 'on');
+    await lib.setHappyHour(mgrAuth, { today: null }, { db, now: () => T0 });
+    assert.ok(!db.data.menu.happyHour.today);
+    const actions = Object.values(db.data['audit-log']).map((l) => l.action);
+    assert.deepStrictEqual(actions, ['happy_hour_today_off', 'happy_hour_today_on', 'happy_hour_today_cleared']);
+  });
+  await check('S5 setHappyHour: anything else is refused', async () => {
+    const db = hhDb();
+    await rejects(lib.setHappyHour(mgrAuth, { today: 'maybe' }, { db, now: () => T0 }), 'invalid-argument');
+    await rejects(lib.setHappyHour(mgrAuth, {}, { db, now: () => T0 }), 'invalid-argument');
+  });
+  await check('S5 rules: prices and happy hour are public to read, and nobody writes them from a browser', async () => {
+    const rules = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'database.rules.json'), 'utf8')).rules;
+    for (const k of ['prices', 'happyHour']) {
+      assert.strictEqual(rules.menu[k]['.read'], true);
+      assert.strictEqual(rules.menu[k]['.write'], false);
+    }
+  });
+
   await check('index.js exports startToastSync as a callable in us-east1 using the GH_DISPATCH_TOKEN secret', async () => {
     process.env.GCLOUD_PROJECT = process.env.GCLOUD_PROJECT || 'half-shell-oyster-menu';
     const fns = require('./index.js');
@@ -363,6 +480,10 @@ async function rejects(promise, code) {
   });
   await check('index.js exports setMenuOverride as a callable in us-east1 (no secrets)', async () => {
     const ep = require('./index.js').setMenuOverride.__endpoint;
+    assert.ok(ep.callableTrigger && ep.region[0] === 'us-east1' && !(ep.secretEnvironmentVariables || []).length);
+  });
+  await check('index.js exports setHappyHour as a callable in us-east1 (no secrets)', async () => {
+    const ep = require('./index.js').setHappyHour.__endpoint;
     assert.ok(ep.callableTrigger && ep.region[0] === 'us-east1' && !(ep.secretEnvironmentVariables || []).length);
   });
 
