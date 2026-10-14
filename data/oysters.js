@@ -1537,5 +1537,26 @@ var OYSTERS = [
     photoUrl: "assets/oysters/Dukes-of-topsail.jpg",
     photoAlt: "Dukes of Topsail oysters on the half shell",
     price: 4
+  },
+  {
+    id: "funky-cold-medina",
+    name: "Funky Cold Medina",
+    salinity: "medium-high",
+    salinityText: "Rich and smooth",
+    region: "ma",
+    origin: "Eel River, Falmouth, Cape Cod",
+    farmer: null,
+    farmerUrl: null,
+    species: "Crassostrea Virginica",
+    farmingMethod: "Off-Bottom Cages",
+    growOut: "18-24 months",
+    seasonalAvailability: "Year round",
+    size: "Medium-small ~3”",
+    shell: "Smooth, with a curved teardrop shape",
+    tastingNotes: "Rich salt characteristic of Cape Cod oysters. You’ll find a balance of oceanic and vegetal notes finished with a scallop-like marine sweetness. With or without dressings, this oyster is best enjoyed often.",
+    notable: "This oyster was named after a 1989 song by Tone Lōc. \"Funky Cold Medina,\" is a play on words referencing \"cold medicine,\" referring to a fictional drink with love potion-like qualities.",
+    photoUrl: null,
+    photoAlt: "No photograph",
+    price: null
   }
 ];
