@@ -151,6 +151,12 @@
       padding: 0.7rem 1.1rem;
     }
     .hh-price s { opacity: 0.6; font-weight: 400; margin-right: 0.2rem; }
+    /* Game day (S7): the banner rotates game day with the regular line. */
+    .hh-banner { transition: opacity 0.25s ease; }
+    .hh-banner.fading { opacity: 0; }
+    .hh-banner.live.game { background: #0b4f7c; color: #ffffff; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (prefers-reduced-motion: reduce) { .hh-banner { transition: none; } }
 
     /* ── Card grid ── */
     .card-grid {
@@ -465,7 +471,8 @@
     CONSUMER ADVISORY — Eating raw, or undercooked oysters, clams or mussels may cause severe illness. People with the following conditions are at especially high risk: liver disease, alcoholism, diabetes, cancer, stomach or blood disorder, or weakened immune system. Ask your doctor if you are unsure of your risk. If you eat raw, or undercooked shellfish and become sick, see a doctor immediately.
   </div>
 
-  <div class="hh-banner" id="hh-banner" role="status" hidden></div>
+  <div class="hh-banner" id="hh-banner" aria-hidden="true" hidden></div>
+  <div class="sr-only" id="hh-banner-sr" role="status"></div>
 
   <div class="section-header">
     <h2>Tonight's Oysters</h2>
@@ -521,25 +528,49 @@ let currentSort   = 'az';
 let lastServingIds = new Set();
 
 // Prices (S5): Toast's regular price per oyster, and the happy hour rule
-// managers set on the employee page. Both come from Firebase; the price
+// (and game day, S7) managers set on the employee page. Both come from Firebase; the price
 // shown is worked out here, in New York time (src/price-display.js).
 let prices = {};
 let happyHour = null;
 let hhKey = '';
+// Banner lines (S7): game day, when on, rotates with the regular happy hour
+// line every 6 seconds. Screen readers get all lines once, not each rotation.
+let bannerList = [], bannerIdx = 0;
 
-function drawBanner() {
+function bannerKey(list) {
+  return list.map(b => b.text).join('|') + '|' + JSON.stringify(HS_PRICE.activeDiscount(happyHour, Date.now()));
+}
+
+function showBanner() {
   const el = document.getElementById('hh-banner');
-  const b = HS_PRICE.banner(happyHour, Date.now());
+  const b = bannerList.length ? bannerList[bannerIdx % bannerList.length] : null;
   el.hidden = !b;
   el.textContent = b ? b.text : '';
   el.classList.toggle('live', !!(b && b.live));
-  hhKey = b ? b.text : '';
+  el.classList.toggle('game', !!(b && b.game));
 }
 
-// Happy hour starts and ends on time without a reload.
+function drawBanner() {
+  bannerList = HS_PRICE.banners(happyHour, Date.now());
+  bannerIdx = 0;
+  hhKey = bannerKey(bannerList);
+  showBanner();
+  document.getElementById('hh-banner-sr').textContent = bannerList.map(b => b.text).join('. ');
+}
+
 setInterval(() => {
-  const b = HS_PRICE.banner(happyHour, Date.now());
-  if ((b ? b.text : '') !== hhKey) { drawBanner(); render(lastServingIds); }
+  if (bannerList.length < 2) return;
+  const el = document.getElementById('hh-banner');
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  bannerIdx++;
+  if (reduce) { showBanner(); return; }
+  el.classList.add('fading');
+  setTimeout(() => { showBanner(); el.classList.remove('fading'); }, 250);
+}, 6000);
+
+// Happy hour and game day start and end on time without a reload.
+setInterval(() => {
+  if (bannerKey(HS_PRICE.banners(happyHour, Date.now())) !== hhKey) { drawBanner(); render(lastServingIds); }
 }, 30000);
 
 const SAL_ORDER  = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };

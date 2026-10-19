@@ -265,6 +265,9 @@ const MANAGER_RANK = 20;
  *    or { today: 'on' | 'off' | null }                  today's switch, until
  *                                                        4 AM; null = back to
  *                                                        the schedule
+ *    or { gameDay: 'on' | 'extend' | 'off' }           game day (S7): on for
+ *                                                        4 hours, +30 min, or
+ *                                                        off; never past 4 AM
  * Writes menu/happyHour/... and one audit-log entry. Returns { ok, ... }.
  * This changes only what the site shows; Toast charges what Toast charges.
  */
@@ -302,6 +305,24 @@ async function setHappyHour(auth, data, deps) {
     await log(state === 'on' ? 'happy_hour_today_on' : 'happy_hour_today_off',
       `Happy hour ${state} today, until 4 AM`);
     return { ok: true, today: { state, until } };
+  }
+  if (data && 'gameDay' in data) {
+    const ref = db.ref('menu/happyHour/gameDay');
+    const current = (await ref.once('value')).val();
+    let next;
+    try { next = prices.gameDayChange(data.gameDay, now, current, menu.next4am(now)); } catch (e) {
+      throw new SyncError('invalid-argument', e.message);
+    }
+    if (!next) {
+      await ref.set(null);
+      await log('game_day_off', 'Game day happy hour off');
+      return { ok: true, gameDay: null };
+    }
+    await ref.set({ ...next, by: actor, at: now });
+    const until = new Date(next.until).toLocaleTimeString('en-US', { timeZone: menu.ZONE, hour: 'numeric', minute: '2-digit' });
+    await log(data.gameDay === 'on' ? 'game_day_on' : 'game_day_extended',
+      `Game day happy hour on until ${until}, ${next.percentOff}% off`);
+    return { ok: true, gameDay: { state: next.state, until: next.until, percentOff: next.percentOff } };
   }
   throw new SyncError('invalid-argument', 'Nothing to save.');
 }

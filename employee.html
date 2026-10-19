@@ -500,6 +500,8 @@
     .hh-panel { background: #fff; border: 1px solid #bcd4ce; border-radius: 6px; padding: 1rem 1.1rem; margin-bottom: 2.5rem; font-family: 'Lato', sans-serif; }
     .hh-now { font-size: 0.9rem; color: #0e2d3a; margin-bottom: 0.4rem; }
     .hh-now.live { font-weight: 700; color: #b5651d; }
+    .hh-game { font-size: 0.9rem; color: #0e2d3a; margin-bottom: 0.4rem; }
+    .hh-game.live { font-weight: 700; color: #0b4f7c; }
     .hh-sched { font-size: 0.8rem; color: #3f6470; margin-bottom: 0.8rem; }
     .hh-row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-bottom: 0.8rem; }
     .hh-row label { font-size: 0.78rem; color: #3f6470; display: inline-flex; align-items: center; gap: 0.25rem; }
@@ -677,15 +679,23 @@
     </div>
 
     <!-- Happy hour (S5): managers set the rule and today's on/off;
-         everyone sees it. src/price-display.js does the arithmetic. -->
+         everyone sees it. src/price-display.js does the arithmetic.
+         Game day (S7): managers switch it on for Panthers games. -->
     <div class="section-title">
       Happy hour
       <span class="badge amber" id="hh-badge"></span>
     </div>
     <div class="hh-panel" id="hh-panel">
       <div class="hh-now" id="hh-now">Loading…</div>
+      <div class="hh-game" id="hh-game"></div>
       <div class="hh-sched" id="hh-sched"></div>
       <div id="hh-controls" hidden>
+        <div class="hh-row">
+          <span class="hh-label">Panthers game</span>
+          <button class="save-btn secondary" type="button" data-gameday="on">Game on (4 hours)</button>
+          <button class="save-btn secondary" type="button" data-gameday="extend">+30 min</button>
+          <button class="save-btn secondary" type="button" data-gameday="off">Game over</button>
+        </div>
         <div class="hh-row">
           <span class="hh-label">Today</span>
           <button class="save-btn secondary" type="button" data-today="on">On today</button>
@@ -708,7 +718,9 @@
         </div>
         <div class="hh-msg" id="hh-msg" role="status"></div>
         <p class="hh-note">This changes only what the website shows. Guests are charged whatever Toast rings up,
-          so keep Toast's happy hour discount the same. "On today" and "Off today" last until 4 AM.</p>
+          so keep Toast's happy hour discount the same. "On today" and "Off today" last until 4 AM.
+          "Game on" shows oysters half off for 4 hours (use "+30 min" for overtime, never past 4 AM);
+          ring Toast's Game Day discount as usual.</p>
       </div>
     </div>
 
@@ -1797,7 +1809,19 @@ window.hsHappyHour = (function () {
     else if (live) nowEl.textContent = `Happy hour now, until ${P.clock(s.end)}: oysters ${s.percentOff}% off.`;
     else if (today === 'off') nowEl.textContent = 'Happy hour is off today (until 4 AM).';
     else nowEl.textContent = 'Not happy hour right now.';
-    el('hh-badge').textContent = live ? 'on now' : today === 'off' ? 'off today' : today === 'on' ? 'on today' : '';
+    const game = P.isGameDay(happyHour, now);
+    const gameEl = el('hh-game');
+    gameEl.classList.toggle('live', game);
+    if (game) {
+      const g = happyHour.gameDay;
+      const until = new Date(g.until).toLocaleTimeString('en-US', { timeZone: P.ZONE, hour: 'numeric', minute: '2-digit' });
+      gameEl.textContent = `Game day happy hour on until ${until}: oysters ${g.percentOff}% off` + (g.by ? ` (set by ${g.by}).` : '.');
+    } else gameEl.textContent = 'Game day happy hour: off.';
+    controls.querySelectorAll('[data-gameday]').forEach(btn => {
+      btn.classList.toggle('on', game && btn.dataset.gameday === 'on');
+      if (btn.dataset.gameday !== 'on') btn.disabled = !game;
+    });
+    el('hh-badge').textContent = game ? 'game day' : live ? 'on now' : today === 'off' ? 'off today' : today === 'on' ? 'on today' : '';
     const b = P.banner(happyHour, now);
     el('hh-sched').textContent = s ? `Schedule: ${P.dayRange(s.days)} ${P.clockRange(s.start, s.end)}, ${s.percentOff}% off` +
       (s.by ? ` (set by ${s.by})` : '') + (b && !b.live ? `. Customers see: “${b.text}”` : '') : '';
@@ -1831,6 +1855,11 @@ window.hsHappyHour = (function () {
     const v = btn.dataset.today;
     save({ today: v === 'clear' ? null : v },
       v === 'on' ? 'Happy hour is on today, until 4 AM.' : v === 'off' ? 'Happy hour is off today, until 4 AM.' : 'Back to the schedule.');
+  }));
+  controls.querySelectorAll('[data-gameday]').forEach(btn => btn.addEventListener('click', () => {
+    const v = btn.dataset.gameday;
+    save({ gameDay: v },
+      v === 'on' ? 'Game day is on for 4 hours. Go Panthers!' : v === 'extend' ? 'Game day extended 30 minutes.' : 'Game day is off.');
   }));
   controls.addEventListener('input', e => {
     if (e.target.matches('.hh-day, #hh-start, #hh-end, #hh-pct')) { formDirty = true; preview(); }

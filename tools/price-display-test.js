@@ -1,5 +1,5 @@
 /*
- * Tests for src/price-display.js (prices from Toast and happy hour, S5).
+ * Tests for src/price-display.js (prices from Toast and happy hour, S5; game day, S7).
  *   node tools/price-display-test.js
  */
 'use strict';
@@ -99,6 +99,50 @@ check('times and days read plainly', () => {
   assert.strictEqual(P.clock('12:00'), '12 PM');
   assert.strictEqual(P.dayRange(['MON', 'WED', 'THU', 'SAT']), 'Mon, Wed, Thu, Sat');
   assert.strictEqual(P.dayRange(['THU', 'MON', 'TUE', 'WED']), 'Mon–Thu');
+});
+
+// ─── Game day (S7) ──────────────────────────────────────────────────────────
+const SAT = (h, m) => edt(2026, 10, 10, h, m); // a Saturday: no scheduled happy hour
+const game = (until, pct = 50) => ({ state: 'on', until, percentOff: pct });
+check('game day: half off while on, read aloud as game day; regular once it runs out', () => {
+  const hh = { ...HH, gameDay: game(SAT(17, 0)) };
+  assert.deepStrictEqual(P.priceFor({ price: 5, strategy: 'BASE_PRICE' }, hh, SAT(13, 0)),
+    { text: '$2.50', regular: '$5', happy: true, game: true, label: 'Game day $2.50, regularly $5' });
+  assert.strictEqual(P.priceFor({ price: 4.25, strategy: 'BASE_PRICE' }, hh, SAT(13, 0)).text, '$2.13');
+  assert.deepStrictEqual(P.priceFor({ price: 5, strategy: 'BASE_PRICE' }, hh, SAT(17, 0)), { text: '$5', label: '$5' });
+});
+check('game day works with no happy hour schedule at all', () => {
+  assert.strictEqual(P.priceFor({ price: 4, strategy: 'BASE_PRICE' }, { gameDay: game(SAT(17, 0)) }, SAT(13, 0)).text, '$2');
+});
+check('game day during happy hour: one discount, never stacked; the bigger wins, a tie is game day', () => {
+  const both = { ...HH, gameDay: game(THU(20, 0)) };
+  assert.deepStrictEqual(P.activeDiscount(both, THU(16, 0)), { kind: 'game', percentOff: 50 });
+  assert.strictEqual(P.priceFor({ price: 4, strategy: 'BASE_PRICE' }, both, THU(16, 0)).text, '$2');
+  const bigHH = { schedule: { ...HH.schedule, percentOff: 60 }, gameDay: game(THU(20, 0)) };
+  assert.deepStrictEqual(P.activeDiscount(bigHH, THU(16, 0)), { kind: 'happy', percentOff: 60 });
+  assert.strictEqual(P.priceFor({ price: 5, strategy: 'BASE_PRICE' }, bigHH, THU(16, 0)).label, 'Happy hour $2, regularly $5');
+});
+check('game day: open price stays MP; the employee table still gets the regular price', () => {
+  const hh = { gameDay: game(SAT(17, 0)) };
+  assert.strictEqual(P.priceFor({ price: null, strategy: 'OPEN_PRICE' }, hh, SAT(13, 0)).text, 'MP');
+  assert.strictEqual(P.priceFor({ price: 5, strategy: 'BASE_PRICE' }, hh, SAT(13, 0), false).text, '$5');
+});
+check('game day off, run out or zero percent: no discount', () => {
+  assert.strictEqual(P.isGameDay({ gameDay: game(SAT(17, 0)) }, SAT(17, 0)), false);
+  assert.strictEqual(P.isGameDay({ gameDay: { state: 'off', until: SAT(17, 0), percentOff: 50 } }, SAT(13, 0)), false);
+  assert.strictEqual(P.isGameDay({ gameDay: game(SAT(17, 0), 0) }, SAT(13, 0)), false);
+  assert.strictEqual(P.activeDiscount({}, SAT(13, 0)), null);
+});
+check('banners: game day line first, then the regular line; only the regular line otherwise', () => {
+  const text = "It's Game Day! Half off all raw oysters -- Go Panthers!!";
+  assert.deepStrictEqual(P.banners({ ...HH, gameDay: game(SAT(17, 0)) }, SAT(13, 0)).map((b) => b.text),
+    [text, 'Happy hour Mon–Thu 3–6 PM: oysters 50% off']);
+  assert.deepStrictEqual(P.banners({ ...HH, gameDay: game(THU(20, 0)) }, THU(16, 0)).map((b) => b.text),
+    [text, 'Happy hour until 6 PM: oysters 50% off']);
+  assert.deepStrictEqual(P.banners({ gameDay: game(SAT(17, 0)) }, SAT(13, 0)).map((b) => b.text), [text]);
+  assert.deepStrictEqual(P.banners(HH, SAT(13, 0)).map((b) => b.text), ['Happy hour Mon–Thu 3–6 PM: oysters 50% off']);
+  assert.deepStrictEqual(P.banners(null, SAT(13, 0)), []);
+  assert.strictEqual(P.banners({ gameDay: game(SAT(17, 0)) }, SAT(13, 0))[0].live, true);
 });
 
 console.log(`\n${failed ? 'FAILED: ' + failed + ' of ' + (passed + failed) : 'All ' + passed + ' checks passed.'}`);

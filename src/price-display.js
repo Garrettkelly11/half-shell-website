@@ -14,6 +14,12 @@
  *
  * Rounding: to the cent, half a cent up ($4.25 half off → $2.13), as Toast
  * does (Garrett, 06/10/2026).
+ *
+ * Game day (S7, "Game Day Happy Hour Plan", 09/10/2026): while a manager's
+ *   menu/happyHour/gameDay = {state: 'on', until, percentOff}
+ * hasn't run out, oysters are half off. If regular happy hour is on too,
+ * the bigger discount applies once (a tie counts as game day). The banner
+ * rotates the game day line with the regular happy hour line.
  */
 (function (root) {
   'use strict';
@@ -61,6 +67,23 @@
     return now.minutes >= start && now.minutes < end;
   }
 
+  /** Is game day on at `ms`? */
+  function isGameDay(hh, ms) {
+    var g = hh && hh.gameDay;
+    return !!(g && g.state === 'on' && g.until > ms && g.percentOff > 0);
+  }
+
+  /**
+   * The discount in force at `ms`: {kind: 'game' | 'happy', percentOff} or
+   * null. One discount only: the bigger; a tie counts as game day.
+   */
+  function activeDiscount(hh, ms) {
+    var game = isGameDay(hh, ms) ? hh.gameDay.percentOff : 0;
+    var happy = isHappyHour(hh, ms) ? hh.schedule.percentOff : 0;
+    if (!game && !happy) return null;
+    return game >= happy ? { kind: 'game', percentOff: game } : { kind: 'happy', percentOff: happy };
+  }
+
   /** Happy hour price in cents, half a cent up. */
   function discountCents(cents, percentOff) {
     return Math.floor((cents * (100 - percentOff) + 50) / 100);
@@ -77,8 +100,9 @@
    *   {text: 'MP', mp: true}                 open / market price
    *   {text: '$5'}                           regular price
    *   {text: '$2.50', regular: '$5', happy: true, label: 'Happy hour $2.50, regularly $5'}
-   * `withHappyHour` false gives the regular price even during happy hour
-   * (the employee page's table).
+   *   {text: '$2.50', regular: '$5', happy: true, game: true, label: 'Game day $2.50, regularly $5'}
+   * `withHappyHour` false gives the regular price even during happy hour or
+   * game day (the employee page's table).
    */
   function priceFor(entry, hh, ms, withHappyHour) {
     if (!entry) return null;
@@ -86,11 +110,14 @@
       return entry.strategy === 'OPEN_PRICE' ? { text: 'MP', mp: true, label: 'Market price' } : null;
     }
     var cents = Math.round(entry.price * 100);
-    if (withHappyHour !== false && isHappyHour(hh, ms)) {
-      var d = discountCents(cents, hh.schedule.percentOff);
+    var off = withHappyHour !== false ? activeDiscount(hh, ms) : null;
+    if (off) {
+      var d = discountCents(cents, off.percentOff);
       if (d < cents) {
-        return { text: money(d), regular: money(cents), happy: true,
-          label: 'Happy hour ' + money(d) + ', regularly ' + money(cents) };
+        var p = { text: money(d), regular: money(cents), happy: true,
+          label: (off.kind === 'game' ? 'Game day ' : 'Happy hour ') + money(d) + ', regularly ' + money(cents) };
+        if (off.kind === 'game') p.game = true;
+        return p;
       }
     }
     return { text: money(cents), label: money(cents) };
@@ -159,8 +186,24 @@
     return { text: line, live: false };
   }
 
+  var GAME_DAY_TEXT = "It's Game Day! Half off all raw oysters -- Go Panthers!!"; // Garrett, 09/10/2026
+
+  /**
+   * Every banner line to show at `ms`, in rotation order: the game day line
+   * while game day is on, then the regular happy hour line (banner()).
+   * Empty when there is nothing to show.
+   */
+  function banners(hh, ms) {
+    var out = [];
+    if (isGameDay(hh, ms)) out.push({ text: GAME_DAY_TEXT, live: true, game: true });
+    var b = banner(hh, ms);
+    if (b) out.push(b);
+    return out;
+  }
+
   var api = {
     ZONE: ZONE, DAYS: DAYS, nyNow: nyNow, todayState: todayState, isHappyHour: isHappyHour,
+    isGameDay: isGameDay, activeDiscount: activeDiscount, banners: banners, GAME_DAY_TEXT: GAME_DAY_TEXT,
     discountCents: discountCents, money: money, priceFor: priceFor, priceHtml: priceHtml,
     clock: clock, clockRange: clockRange, dayRange: dayRange, banner: banner,
   };

@@ -424,9 +424,9 @@ setInterval(() => {
   if (lastServingIds && HS_FLIGHTS.rotationDate(new Date()) !== lastRenderedDate) render(lastServingIds);
 }, 60000);
 
-// Happy hour starts and ends on time without a reload.
+// Happy hour and game day start and end on time without a reload.
 setInterval(() => {
-  const key = String(HS_PRICE.isHappyHour(happyHour, Date.now()));
+  const key = JSON.stringify(HS_PRICE.activeDiscount(happyHour, Date.now()));
   if (key !== hhKey) { hhKey = key; if (lastServingIds) render(lastServingIds); }
 }, 30000);
 
@@ -466,7 +466,7 @@ setInterval(() => {
         });
         pricesRef.on('value', snap => { prices = snap.val() || {}; again(); }, () => {});
         hhRef.on('value', snap => {
-          happyHour = snap.val(); hhKey = String(HS_PRICE.isHappyHour(happyHour, Date.now())); again();
+          happyHour = snap.val(); hhKey = JSON.stringify(HS_PRICE.activeDiscount(happyHour, Date.now())); again();
         }, () => {});
       }
 
