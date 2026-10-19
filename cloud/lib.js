@@ -265,9 +265,9 @@ const MANAGER_RANK = 20;
  *    or { today: 'on' | 'off' | null }                  today's switch, until
  *                                                        4 AM; null = back to
  *                                                        the schedule
- *    or { gameDay: 'on' | 'extend' | 'off' }           game day (S7): on for
- *                                                        4 hours, +30 min, or
- *                                                        off; never past 4 AM
+ *    or { gameDay: 'on' | 'off' }                      game day (S7): on
+ *                                                        until the next 4 AM,
+ *                                                        or off
  * Writes menu/happyHour/... and one audit-log entry. Returns { ok, ... }.
  * This changes only what the site shows; Toast charges what Toast charges.
  */
@@ -320,7 +320,7 @@ async function setHappyHour(auth, data, deps) {
     }
     await ref.set({ ...next, by: actor, at: now });
     const until = new Date(next.until).toLocaleTimeString('en-US', { timeZone: menu.ZONE, hour: 'numeric', minute: '2-digit' });
-    await log(data.gameDay === 'on' ? 'game_day_on' : 'game_day_extended',
+    await log('game_day_on',
       `Game day happy hour on until ${until}, ${next.percentOff}% off`);
     return { ok: true, gameDay: { state: next.state, until: next.until, percentOff: next.percentOff } };
   }

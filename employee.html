@@ -692,8 +692,7 @@
       <div id="hh-controls" hidden>
         <div class="hh-row">
           <span class="hh-label">Panthers game</span>
-          <button class="save-btn secondary" type="button" data-gameday="on">Game on (4 hours)</button>
-          <button class="save-btn secondary" type="button" data-gameday="extend">+30 min</button>
+          <button class="save-btn secondary" type="button" data-gameday="on">Game on (until 4 AM)</button>
           <button class="save-btn secondary" type="button" data-gameday="off">Game over</button>
         </div>
         <div class="hh-row">
@@ -719,7 +718,7 @@
         <div class="hh-msg" id="hh-msg" role="status"></div>
         <p class="hh-note">This changes only what the website shows. Guests are charged whatever Toast rings up,
           so keep Toast's happy hour discount the same. "On today" and "Off today" last until 4 AM.
-          "Game on" shows oysters half off for 4 hours (use "+30 min" for overtime, never past 4 AM);
+          "Game on" shows oysters half off until 4 AM, or until you press "Game over";
           ring Toast's Game Day discount as usual.</p>
       </div>
     </div>
@@ -1859,7 +1858,7 @@ window.hsHappyHour = (function () {
   controls.querySelectorAll('[data-gameday]').forEach(btn => btn.addEventListener('click', () => {
     const v = btn.dataset.gameday;
     save({ gameDay: v },
-      v === 'on' ? 'Game day is on for 4 hours. Go Panthers!' : v === 'extend' ? 'Game day extended 30 minutes.' : 'Game day is off.');
+      v === 'on' ? 'Game day is on until 4 AM. Go Panthers!' : 'Game day is off.');
   }));
   controls.addEventListener('input', e => {
     if (e.target.matches('.hh-day, #hh-start, #hh-end, #hh-pct')) { formDirty = true; preview(); }

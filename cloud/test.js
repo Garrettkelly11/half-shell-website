@@ -462,41 +462,34 @@ async function rejects(promise, code) {
     await rejects(lib.setHappyHour(mgrAuth, { today: 'maybe' }, { db, now: () => T0 }), 'invalid-argument');
     await rejects(lib.setHappyHour(mgrAuth, {}, { db, now: () => T0 }), 'invalid-argument');
   });
-  await check('S7 game day: on = 4 hours, capped at 4 AM; +30 min, capped at 4 AM; off = nothing stored', async () => {
+  await check('S7 game day: on = until the next 4 AM; off = nothing stored; nothing else', async () => {
     const cap = M.next4am(T0);
-    assert.deepStrictEqual(P.gameDayChange('on', T0, null, cap), { state: 'on', until: T0 + 4 * 3600e3, percentOff: 50 });
+    assert.strictEqual(cap, T0 + 14 * 3600e3); // T0 is 2 PM New York
+    assert.deepStrictEqual(P.gameDayChange('on', T0, null, cap), { state: 'on', until: cap, percentOff: 50 });
     const late = cap - 30 * 60e3; // 3:30 AM New York
     assert.strictEqual(P.gameDayChange('on', late, null, M.next4am(late)).until, cap);
-    const on = { state: 'on', until: T0 + 4 * 3600e3, percentOff: 50 };
-    assert.strictEqual(P.gameDayChange('extend', T0, on, cap).until, T0 + 4.5 * 3600e3);
-    const nearCap = { state: 'on', until: cap - 10 * 60e3, percentOff: 50 };
-    assert.strictEqual(P.gameDayChange('extend', T0, nearCap, cap).until, cap);
-    assert.throws(() => P.gameDayChange('extend', T0, { state: 'on', until: cap, percentOff: 50 }, cap), /4 AM/);
-    assert.throws(() => P.gameDayChange('extend', T0, null, cap), /isn't on/);
-    assert.throws(() => P.gameDayChange('extend', T0, { state: 'on', until: T0 - 1, percentOff: 50 }, cap), /isn't on/);
+    const on = { state: 'on', until: cap, percentOff: 50 };
+    assert.throws(() => P.gameDayChange('extend', T0, on, cap));
     assert.throws(() => P.gameDayChange('maybe', T0, null, cap));
     assert.strictEqual(P.gameDayChange('off', T0, on, cap), null);
   });
-  await check('S7 setHappyHour gameDay: a manager switches it on, extends it and turns it off; each is logged', async () => {
+  await check('S7 setHappyHour gameDay: a manager switches it on until 4 AM and turns it off; each is logged', async () => {
     const db = hhDb();
+    const cap = T0 + 14 * 3600e3; // 4 AM New York, the next morning
     const r = await lib.setHappyHour(mgrAuth, { gameDay: 'on' }, { db, now: () => T0 });
-    assert.deepStrictEqual(r.gameDay, { state: 'on', until: T0 + 4 * 3600e3, percentOff: 50 });
+    assert.deepStrictEqual(r.gameDay, { state: 'on', until: cap, percentOff: 50 });
     assert.deepStrictEqual(db.data.menu.happyHour.gameDay,
-      { state: 'on', until: T0 + 4 * 3600e3, percentOff: 50, by: 'Mona T.', at: T0 });
-    await lib.setHappyHour(mgrAuth, { gameDay: 'extend' }, { db, now: () => T0 + 60e3 });
-    assert.strictEqual(db.data.menu.happyHour.gameDay.until, T0 + 4.5 * 3600e3);
+      { state: 'on', until: cap, percentOff: 50, by: 'Mona T.', at: T0 });
     await lib.setHappyHour(mgrAuth, { gameDay: 'off' }, { db, now: () => T0 + 120e3 });
     assert.ok(!db.data.menu.happyHour.gameDay);
     const logs = Object.values(db.data['audit-log']);
-    assert.deepStrictEqual(logs.map((l) => l.action), ['game_day_on', 'game_day_extended', 'game_day_off']);
-    assert.strictEqual(logs[0].details, 'Game day happy hour on until 6:00 PM, 50% off'); // T0 is 2 PM New York
-    assert.strictEqual(logs[1].details, 'Game day happy hour on until 6:30 PM, 50% off');
+    assert.deepStrictEqual(logs.map((l) => l.action), ['game_day_on', 'game_day_off']);
+    assert.strictEqual(logs[0].details, 'Game day happy hour on until 4:00 AM, 50% off');
   });
-  await check('S7 setHappyHour gameDay: staff refused; +30 min when off refused; nothing written', async () => {
+  await check('S7 setHappyHour gameDay: staff refused; anything but on/off refused; nothing written', async () => {
     const db = hhDb();
     await rejects(lib.setHappyHour({ uid: STF, token: { staff_rank: 10 } }, { gameDay: 'on' }, { db, now: () => T0 }), 'permission-denied');
-    const e = await rejects(lib.setHappyHour(mgrAuth, { gameDay: 'extend' }, { db, now: () => T0 }), 'invalid-argument');
-    assert.ok(/isn't on/.test(e.message));
+    await rejects(lib.setHappyHour(mgrAuth, { gameDay: 'extend' }, { db, now: () => T0 }), 'invalid-argument');
     await rejects(lib.setHappyHour(mgrAuth, { gameDay: 'yes' }, { db, now: () => T0 }), 'invalid-argument');
     assert.ok(!(db.data.menu && db.data.menu.happyHour));
   });

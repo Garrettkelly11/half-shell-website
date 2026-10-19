@@ -16,8 +16,8 @@
  *       The employee page's switch for today; lasts until the next 4 AM
  *       New York time, then the schedule applies again. Public.
  *   menu/happyHour/gameDay    = { state: 'on', until, percentOff, by, at }
- *       Game day happy hour (S7, Panthers games, half off): on for 4 hours
- *       from the switch, "+30 min" for overtime, never past the next 4 AM.
+ *       Game day happy hour (S7, Panthers games, half off): on from the
+ *       switch until the next 4 AM New York time, or until switched off.
  *       Absent when off. Public.
  * Only the server (Admin SDK) writes any of these.
  */
@@ -144,13 +144,11 @@ function describeSchedule(s) {
 
 // ─── Game day happy hour (S7) ───────────────────────────────────────────────
 
-const GAME_DAY_HOURS = 4;
-const GAME_DAY_EXTEND_MIN = 30;
 const GAME_DAY_PERCENT = 50; // half off (Garrett, 09/10/2026)
 
 /**
  * The game day setting after a switch press.
- *   action  'on' | 'extend' | 'off'
+ *   action  'on' | 'off'
  *   current the stored setting (or null)
  *   cap     the next 4 AM New York time after `now`, in ms
  * Returns the new setting { state, until, percentOff }, or null for off.
@@ -159,18 +157,13 @@ const GAME_DAY_PERCENT = 50; // half off (Garrett, 09/10/2026)
 function gameDayChange(action, now, current, cap) {
   if (action === 'off') return null;
   if (action === 'on') {
-    return { state: 'on', until: Math.min(now + GAME_DAY_HOURS * 3600e3, cap), percentOff: GAME_DAY_PERCENT };
+    // Until the next 4 AM (Garrett, 12/10/2026).
+    return { state: 'on', until: cap, percentOff: GAME_DAY_PERCENT };
   }
-  if (action === 'extend') {
-    if (!(current && current.state === 'on' && current.until > now)) throw new Error("Game day isn't on.");
-    const until = Math.min(current.until + GAME_DAY_EXTEND_MIN * 60e3, cap);
-    if (until <= current.until) throw new Error('Game day already runs until 4 AM, the latest it can.');
-    return { state: 'on', until, percentOff: current.percentOff || GAME_DAY_PERCENT };
-  }
-  throw new Error('Game day is on, +30 minutes, or off.');
+  throw new Error('Game day is on or off.');
 }
 
 module.exports = {
   DAYS, FOOD_MENU, itemsWithMenu, scanMenu, collectPrices, priceUpdates, validateSchedule, describeSchedule,
-  GAME_DAY_HOURS, GAME_DAY_EXTEND_MIN, GAME_DAY_PERCENT, gameDayChange,
+  GAME_DAY_PERCENT, gameDayChange,
 };
