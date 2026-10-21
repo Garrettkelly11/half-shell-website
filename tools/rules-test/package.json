@@ -1,0 +1,13 @@
+{
+  "name": "hs-rules-test",
+  "private": true,
+  "description": "Database rules tests (Firebase emulator). See rules-test.js.",
+  "scripts": {
+    "test": "firebase emulators:exec --only database --project demo-hs-rules \"node rules-test.js\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.2",
+    "firebase": "12.19.0",
+    "firebase-tools": "15.34.0"
+  }
+}
