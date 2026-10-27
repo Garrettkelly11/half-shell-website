@@ -518,6 +518,44 @@ async function rejects(promise, code) {
     assert.ok(ep.callableTrigger && ep.region[0] === 'us-east1' && !(ep.secretEnvironmentVariables || []).length);
   });
 
+  // ── Oyster Passport: deletePassport ──
+  const phoneAuth = (uid) => ({ uid, token: { phone_number: '+16505550101', firebase: { sign_in_provider: 'phone' } } });
+  function fakeAuth(fail) {
+    const deleted = [];
+    return { deleted, deleteUser: async (uid) => { if (fail) { const e = new Error(fail); e.code = fail; throw e; } deleted.push(uid); } };
+  }
+  const passportDb = () => fakeDb({
+    users: { g1: { profile: { name: 'Jane Doe' }, visits: { v1: { date: '2026-10-20' } }, cards: { c1: { last4: '0123' } } }, g2: { profile: { name: 'Other' } } },
+    toastOrders: { g1: { '2026-10-20': { chk: { items: {} } } }, g2: { x: 1 } },
+    staff: { 'merroir:1': { name: 'Jane D.', rank: 40 } },
+  });
+  await check('deletePassport: signed out refused; staff refused; nothing removed', async () => {
+    const db = passportDb(); const a = fakeAuth();
+    await rejects(lib.deletePassport(null, { db, auth: a }), 'unauthenticated');
+    await rejects(lib.deletePassport({ uid: 'merroir:1', token: { firebase: { sign_in_provider: 'custom' } } }, { db, auth: a }), 'permission-denied');
+    await rejects(lib.deletePassport({ uid: 'g1', token: { phone_number: '+1', firebase: { sign_in_provider: 'custom' } } }, { db, auth: a }), 'permission-denied');
+    assert.ok(db.data.users.g1 && db.data.toastOrders.g1);
+    assert.deepStrictEqual(a.deleted, []);
+  });
+  await check('deletePassport: removes only the caller\'s passport and orders, then their sign-in', async () => {
+    const db = passportDb(); const a = fakeAuth();
+    assert.deepStrictEqual(await lib.deletePassport(phoneAuth('g1'), { db, auth: a }), { ok: true });
+    assert.strictEqual(db.data.users.g1, undefined);
+    assert.strictEqual(db.data.toastOrders.g1, undefined);
+    assert.ok(db.data.users.g2 && db.data.toastOrders.g2 && db.data.staff['merroir:1']);
+    assert.deepStrictEqual(a.deleted, ['g1']);
+    assert.strictEqual(db.data['audit-log'], undefined, 'nothing about a deleted guest is kept');
+  });
+  await check('deletePassport: a sign-in already gone is fine; other auth errors are reported', async () => {
+    const db = passportDb();
+    assert.deepStrictEqual(await lib.deletePassport(phoneAuth('g1'), { db, auth: fakeAuth('auth/user-not-found') }), { ok: true });
+    await assert.rejects(lib.deletePassport(phoneAuth('g2'), { db: passportDb(), auth: fakeAuth('auth/internal-error') }));
+  });
+  await check('index.js exports deletePassport as a callable in us-east1 (no secrets)', async () => {
+    const ep = require('./index.js').deletePassport.__endpoint;
+    assert.ok(ep.callableTrigger && ep.region[0] === 'us-east1' && !(ep.secretEnvironmentVariables || []).length);
+  });
+
   console.log('\n' + (failed ? `${failed} of ${passed + failed} checks failed.` : `All ${passed} checks passed.`));
   process.exit(failed ? 1 : 0);
 })();

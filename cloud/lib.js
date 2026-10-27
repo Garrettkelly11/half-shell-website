@@ -327,7 +327,38 @@ async function setHappyHour(auth, data, deps) {
   throw new SyncError('invalid-argument', 'Nothing to save.');
 }
 
+// ─── Oyster Passport: delete my account (Build Sheet 5.7) ────────────────────
+
+/**
+ * deletePassport — "Delete my account" on the passport's Profile tab.
+ *   1. The caller must be signed in with a phone number (a Passport
+ *      account). Staff (Merroir sign-ins) and anyone else are refused.
+ *   2. Removes everything stored for them: users/{uid} and
+ *      toastOrders/{uid} (P2).
+ *   3. Deletes their sign-in, so the phone number starts fresh next time.
+ * Writes no audit entry: nothing about a deleted guest is kept.
+ * deps: db (admin Database), auth (admin Auth: deleteUser), now.
+ * auth: the callable's request.auth. Returns { ok: true }. Throws SyncError.
+ */
+async function deletePassport(auth, deps) {
+  if (!auth || !auth.uid) throw new SyncError('unauthenticated', 'Sign in to delete your passport.');
+  const provider = auth.token && auth.token.firebase && auth.token.firebase.sign_in_provider;
+  if (provider !== 'phone') {
+    throw new SyncError('permission-denied', 'Only an Oyster Passport account can be deleted here.');
+  }
+  const uid = auth.uid;
+  await deps.db.ref(`toastOrders/${uid}`).set(null);
+  await deps.db.ref(`users/${uid}`).set(null);
+  try {
+    await deps.auth.deleteUser(uid);
+  } catch (e) {
+    if (!(e && e.code === 'auth/user-not-found')) throw e;   // already gone: fine
+  }
+  return { ok: true };
+}
+
 module.exports = {
+  deletePassport,
   setHappyHour, MANAGER_RANK,
   startToastSync, setMenuOverride, SyncError, DISPATCH_URL, MIN_GAP_MS, LAST_TRIGGER_PATH,
   CATALOG_URL, _resetCatalogCache: () => { catalogCache = { at: 0, ids: null }; },

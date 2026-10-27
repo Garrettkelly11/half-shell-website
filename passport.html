@@ -155,6 +155,20 @@
     .stamp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 0.6rem; }
     .err-inline { color: var(--danger); font-size: 0.82rem; margin: 0.4rem 0; }
 
+    /* Profile */
+    .form-field { margin: 0.5rem 0 0.8rem; }
+    .form-field label { display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem; }
+    .form-field input, .card-form input, .card-form select, .dob-row select {
+      width: 100%; padding: 0.55rem 0.65rem; border: 1px solid #9ec4bc; border-radius: 4px; background: #fff; font: inherit; font-size: 0.95rem; color: var(--ink); min-height: 44px;
+    }
+    .dob-row, .card-form { display: flex; gap: 0.5rem; margin: 0.4rem 0; }
+    .dob-row select, .card-form input, .card-form select { flex: 1 1 0; min-width: 0; }
+    .dob-row select:first-child { flex-grow: 1.6; }
+    .why-pop { position: relative; background: var(--navy); color: var(--cream); border-radius: 6px; padding: 0.8rem 0.9rem; margin: 0.2rem 0 0.75rem; font-size: 0.82rem; line-height: 1.5; }
+    .why-pop::before { content: ''; position: absolute; top: -6px; left: 1.25rem; border: 6px solid transparent; border-top: none; border-bottom-color: var(--navy); }
+    .why-pop p { margin-bottom: 0.5rem; }
+    .why-pop a { color: var(--orange); font-weight: 700; }
+    .stamp-link { color: inherit; text-decoration: none; border-radius: 6px; display: block; }
     /* Bottom tab bar */
     .pp-nav {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
@@ -224,8 +238,7 @@
 <script>
 /*
  * Oyster Passport (Build Sheet sections 5.2–5.7). Overview and My Flight are
- * full; History is a timeline, Stamps a grid and Profile the basics until
- * steps 6–7.
+ * full; History is a timeline until step 7.
  */
 (function () {
   'use strict';
@@ -328,7 +341,7 @@
 
   function route() {
     var h = (location.hash || '#overview').slice(1).split('/');
-    var tabs = { overview: 1, flight: 1, history: 1, stamps: 1, profile: 1, past: 1, visit: 1 };
+    var tabs = { overview: 1, flight: 1, history: 1, stamps: 1, profile: 1, past: 1, visit: 1, stamp: 1 };
     return { tab: tabs[h[0]] ? h[0] : 'overview', arg: h[1] || null };
   }
   function render() {
@@ -337,13 +350,13 @@
     var changedTab = !current || current.tab !== r.tab || current.arg !== r.arg;
     if (changedTab) { ui = {}; if (['overview', 'flight', 'history', 'stamps', 'profile'].indexOf(r.tab) >= 0) S.track('passport_tab', { tab: r.tab }); }
     current = r;
-    var navTab = r.tab === 'past' ? 'flight' : r.tab === 'visit' ? 'history' : r.tab;
+    var navTab = r.tab === 'past' ? 'flight' : r.tab === 'visit' ? 'history' : r.tab === 'stamp' ? 'stamps' : r.tab;
     Array.prototype.forEach.call(document.querySelectorAll('.pp-nav a'), function (a) {
       if (a.getAttribute('data-tab') === navTab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     var y = window.scrollY;
     view.textContent = '';
-    ({ overview: overview, flight: flight, history: history, stamps: stamps, profile: profile, past: past, visit: visitView })[r.tab](r.arg);
+    ({ overview: overview, flight: flight, history: history, stamps: stamps, profile: profile, past: past, visit: visitView, stamp: stampView })[r.tab](r.arg);
     if (changedTab) {
       window.scrollTo(0, 0);
       if (r.tab === 'flight') s.flush();            // opening My Flight saves (6.2)
@@ -784,40 +797,250 @@
     view.appendChild(el('div', { class: 'btn-row' }, [el('a', { class: 'btn ghost block', href: '#past', text: 'Log a past visit' })]));
   }
 
-  // ── Stamps (grid; detail sheet comes in step 6) ───────────────────────────
+  // ── Stamps (5.6) ──────────────────────────────────────────────────────────
+  var TIER_NAMES = (window.HS_STAMPS && window.HS_STAMPS.TIER_NAMES) || {};
+  function progressText(e) {
+    return e.next && e.def.kind !== 'single' ? (e.value + ' / ' + e.next.at + ' to ' + (TIER_NAMES[e.next.tier] || e.next.tier)) : '';
+  }
   function stamps() {
     var ev = s.evaluated || {}, stored = s.state.stamps || {};
-    var names = (window.HS_STAMPS && window.HS_STAMPS.TIER_NAMES) || {};
     var ids = Object.keys(ev);
     if (!Object.keys(stored).length) view.appendChild(el('p', { class: 'body', text: 'Stamps appear here as you go. Your first one is one oyster away.' }));
     [['Regions', function (d) { return d.kind === 'region'; }], ['Milestones', function (d) { return d.kind !== 'region'; }]].forEach(function (g) {
       view.appendChild(el('div', { class: 'field-label', text: g[0] }));
       var grid = el('div', { class: 'stamp-grid' });
       ids.filter(function (id) { return g[1](ev[id].def); }).forEach(function (id) {
-        var e = ev[id], tier = P.shownTier(stored[id], e);
-        var cap = e.def.name;
-        var prog = e.next ? (e.value + ' / ' + e.next.at + ' to ' + (names[e.next.tier] || e.next.tier)) : '';
-        grid.appendChild(el('figure', {}, [el('div', { html: ART.render(e.def, tier, { size: 92 }) }), el('figcaption', { text: cap }),
-          prog && e.def.kind !== 'single' ? el('figcaption', { text: prog }) : null]));
+        var e = ev[id], tier = P.shownTier(stored[id], e), prog = progressText(e);
+        grid.appendChild(el('a', { href: '#stamp/' + id, class: 'stamp-link', 'aria-label': e.def.name + (tier ? (tier === 'single' ? ', earned' : ', ' + TIER_NAMES[tier]) : ', not earned yet') + (prog ? ', ' + prog : '') }, [
+          el('figure', {}, [el('div', { html: ART.render(e.def, tier, { size: 92, label: ' ' }), 'aria-hidden': 'true' }),
+            el('figcaption', { text: e.def.name }), prog ? el('figcaption', { text: prog }) : null])
+        ]));
       });
       view.appendChild(grid);
     });
   }
+  function fmtStamp(ms) {
+    return new Date(ms).toLocaleDateString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  /** One stamp: what it measures, every tier, dates earned. */
+  function stampView(id) {
+    var e = (s.evaluated || {})[id];
+    if (!e) { go('#stamps'); return; }
+    var st = (s.state.stamps || {})[id], tier = P.shownTier(st, e), d = e.def;
+    view.appendChild(el('div', { class: 'field-label', text: d.kind === 'region' ? 'Region stamp' : 'Stamp' }));
+    view.appendChild(el('div', { style: 'text-align:center;margin:.4rem 0 .6rem', html: ART.render(d, tier, { size: 168 }) }));
+    view.appendChild(el('h2', { class: 'page-h', style: 'text-align:center', text: d.name + (tier && tier !== 'single' ? ' · ' + TIER_NAMES[tier] : '') }));
+    view.appendChild(el('p', { class: 'body', style: 'text-align:center', text: d.description }));
+    if (d.kind === 'single') {
+      view.appendChild(el('p', { class: 'sub', style: 'text-align:center', text: tier && st && st.tierEarnedAt && st.tierEarnedAt.single ? 'Earned ' + fmtStamp(st.tierEarnedAt.single) : 'Not earned yet' }));
+    } else {
+      var ul = el('ul', { class: 'palate' });
+      (window.HS_STAMPS.TIERS || []).forEach(function (t, i) {
+        var at = d.thresholds[i], got = st && st.tierEarnedAt && st.tierEarnedAt[t];
+        ul.appendChild(el('li', {}, [el('b', { text: TIER_NAMES[t] }), ' — ' + P.stampLine(d, at),
+          el('small', { text: got ? 'Earned ' + fmtStamp(got) : (e.value >= at ? 'Earned' : e.value + ' / ' + at) })]));
+      });
+      view.appendChild(ul);
+    }
+    view.appendChild(el('div', { class: 'btn-row' }, [el('a', { class: 'btn ghost block', href: '#stamps', text: 'All stamps' })]));
+  }
 
-  // ── Profile (basics; cards, export and delete come in step 6) ─────────────
+  // ── Profile (5.7) ─────────────────────────────────────────────────────────
+  var WHY_TEXT = 'A card lets us connect what you order to your passport, so you don’t have to log every oyster yourself. ' +
+    'We only keep the last 4 digits and the card type, never the full number. It’s optional, and you can remove a card any time.';
+  function field(id, label, input) {
+    return el('div', { class: 'form-field' }, [el('label', { for: id, text: label }), input]);
+  }
+  function dobSelects(prefix) {
+    var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    var m = el('select', { id: prefix + '-m', 'aria-label': 'Birthday month' }, [el('option', { value: '', text: 'Month' })]);
+    MONTHS.forEach(function (n, i) { m.appendChild(el('option', { value: (i < 9 ? '0' : '') + (i + 1), text: n })); });
+    var d = el('select', { id: prefix + '-d', 'aria-label': 'Birthday day' }, [el('option', { value: '', text: 'Day' })]);
+    for (var i = 1; i <= 31; i++) d.appendChild(el('option', { value: (i < 10 ? '0' : '') + i, text: String(i) }));
+    var y = el('select', { id: prefix + '-y', 'aria-label': 'Birthday year' }, [el('option', { value: '', text: 'Year' })]);
+    for (var yr = Number(P.nyDate(s.now()).slice(0, 4)); yr >= 1900; yr--) y.appendChild(el('option', { value: String(yr), text: String(yr) }));
+    return { row: el('div', { class: 'dob-row' }, [m, d, y]), value: function () { return y.value + '-' + m.value + '-' + d.value; } };
+  }
   function profile() {
     var p = s.state.profile || {};
     var phone = String(p.phone || '').replace(/^\+1(\d{3})(\d{3})(\d{4})$/, '($1) $2-$3');
     view.appendChild(el('div', { class: 'field-label', text: 'Profile' }));
-    view.appendChild(el('p', { class: 'body' }, [el('b', { text: p.name || '' })]));
+
+    // Name and email
+    var nm = el('input', { id: 'pf-name', type: 'text', maxlength: P.NAME_MAX, autocomplete: 'name', value: p.name || '' });
+    var em = el('input', { id: 'pf-email', type: 'email', maxlength: P.EMAIL_MAX, autocomplete: 'email', value: p.email || '' });
+    var msg = el('div', { class: 'err-inline', role: 'alert' });
+    view.appendChild(field('pf-name', 'Name', nm));
+    view.appendChild(field('pf-email', 'Email (optional)', em));
+    view.appendChild(msg);
+    view.appendChild(el('button', { type: 'button', class: 'btn', text: 'Save', on: { click: function () {
+      var n = P.cleanName(nm.value), e = em.value.trim();
+      if (!P.validName(n)) { msg.textContent = 'Enter your name (up to 60 characters).'; return; }
+      if (e && !P.validEmail(e)) { msg.textContent = 'Check your email address, or leave it blank.'; return; }
+      s.apply({ 'profile/name': n, 'profile/email': e || null, 'profile/updatedAt': s.now() });
+      s.flush();
+      $('pp-name').textContent = s.firstName();
+      toast('Saved.');
+    } } }));
+
+    // Birthday
+    view.appendChild(el('div', { class: 'field-label', text: 'Birthday' }));
+    view.appendChild(el('p', { class: 'body', text: p.dob ? fmtLong(p.dob) : '' }));
+    if (p.dobEditsUsed === 0) {
+      if (!ui.dob) {
+        view.appendChild(el('button', { type: 'button', class: 'linklike', text: 'Correct birthday', on: { click: function () { ui.dob = 'pick'; render(); } } }));
+      } else {
+        var sel = dobSelects('pf-dob');
+        var derr = el('div', { class: 'err-inline', role: 'alert' });
+        view.appendChild(el('p', { class: 'hint', text: 'You can only change this once.' }));
+        view.appendChild(sel.row);
+        view.appendChild(derr);
+        view.appendChild(el('div', { class: 'btn-row' }, [
+          el('button', { type: 'button', class: 'btn small', text: 'Change it', on: { click: function () {
+            var dob = sel.value(), today = P.nyDate(s.now()), bad = P.checkDob(dob, today);
+            if (bad) { derr.textContent = bad === 'year' ? 'Choose a birth year of 1900 or later.' : bad === 'future' ? 'That birthday hasn’t happened yet.' : 'Choose your birthday.'; return; }
+            if (P.isUnder13(dob, today)) { derr.textContent = 'Sorry — you need to be 13 or older to create an account.'; return; }
+            s.apply({ 'profile/dob': dob, 'profile/dobEditsUsed': 1, 'profile/updatedAt': s.now() });
+            s.flush();
+            ui.dob = null;
+            toast('Birthday changed.');
+            render();
+          } } }),
+          el('button', { type: 'button', class: 'btn small ghost', text: 'Cancel', on: { click: function () { ui.dob = null; render(); } } })
+        ]));
+      }
+    } else {
+      view.appendChild(el('p', { class: 'hint', text: 'Your birthday has been corrected once, so it can’t be changed here.' }));
+    }
+
+    // Phone
+    view.appendChild(el('div', { class: 'field-label', text: 'Phone' }));
     view.appendChild(el('p', { class: 'body', text: phone }));
     view.appendChild(el('p', { class: 'hint', text: 'To use a different number, create a new account.' }));
+
+    // Cards
+    view.appendChild(el('div', { class: 'field-label', text: 'Cards' }));
+    view.appendChild(el('p', { class: 'hint', text: 'Used only to match your check to your passport. We never see or store full card numbers.' }));
+    var cards = s.state.cards || {};
+    Object.keys(cards).sort(function (a, b) { return (cards[a].addedAt || 0) - (cards[b].addedAt || 0); }).forEach(function (cid) {
+      var c = cards[cid];
+      view.appendChild(el('div', { class: 'row' }, [
+        el('div', { class: 'who', text: P.brandLabel(c.brand) + ' ending ' + c.last4 }),
+        el('button', { type: 'button', class: 'btn small ghost', 'aria-label': 'Remove ' + P.brandLabel(c.brand) + ' ending ' + c.last4, text: 'Remove', on: { click: function () {
+          var u = {}; u['cards/' + cid] = null; s.apply(u); s.flush();
+        } } })
+      ]));
+    });
+    var why = el('button', { type: 'button', class: 'linklike', id: 'pf-why-btn', 'aria-expanded': ui.why ? 'true' : 'false', 'aria-controls': 'pf-why', text: 'Why do we ask for this?',
+      on: { click: function () { ui.why = !ui.why; render(); } } });
+    view.appendChild(why);
+    if (ui.why) {
+      view.appendChild(el('div', { class: 'why-pop', id: 'pf-why', role: 'region', 'aria-label': 'Why we ask for a card',
+        on: { keydown: function (e) { if (e.key === 'Escape') { ui.why = false; render(); var b = $('pf-why-btn'); if (b) b.focus(); } } } }, [
+        el('p', { text: WHY_TEXT }), el('a', { href: 'privacy.html#card-digits', text: 'Read the card section of our privacy statement' })
+      ]));
+    }
+    if (!ui.addCard) {
+      view.appendChild(el('button', { type: 'button', class: 'btn ghost block', text: Object.keys(cards).length ? 'Add another card' : 'Add a card', on: { click: function () { ui.addCard = true; render(); } } }));
+    } else {
+      var l4 = el('input', { id: 'pf-last4', type: 'text', inputmode: 'numeric', maxlength: 4, placeholder: 'Last 4', autocomplete: 'off', 'aria-label': 'Last 4 digits' });
+      l4.addEventListener('input', function () { l4.value = l4.value.replace(/\D/g, '').slice(0, 4); });
+      var br = el('select', { id: 'pf-brand', 'aria-label': 'Card type' }, [el('option', { value: '', text: 'Card type' })]);
+      P.CARD_BRANDS.forEach(function (b) { br.appendChild(el('option', { value: b.code, text: b.label })); });
+      var cerr = el('div', { class: 'err-inline', role: 'alert' });
+      view.appendChild(el('div', { class: 'card-form' }, [l4, br]));
+      view.appendChild(el('p', { class: 'hint', text: 'Apple Pay or Google Pay? Use the last 4 shown for that card in your Wallet app.' }));
+      view.appendChild(cerr);
+      view.appendChild(el('div', { class: 'btn-row' }, [
+        el('button', { type: 'button', class: 'btn small', text: 'Add card', on: { click: function () {
+          var c = { last4: l4.value.trim(), brand: br.value };
+          if (!P.validCard(c)) { cerr.textContent = 'A card needs its last 4 digits and its type.'; return; }
+          var u = {}; u['cards/' + s.db.ref('users/' + s.uid + '/cards').push().key] = { last4: c.last4, brand: c.brand, addedAt: s.now() };
+          s.apply(u); s.flush(); ui.addCard = false; render();
+        } } }),
+        el('button', { type: 'button', class: 'btn small ghost', text: 'Cancel', on: { click: function () { ui.addCard = false; render(); } } })
+      ]));
+    }
+
+    // Export
+    view.appendChild(el('div', { class: 'field-label', text: 'Your data' }));
+    view.appendChild(el('button', { type: 'button', class: 'btn ghost block', text: 'Export my data', on: { click: exportData } }));
+    view.appendChild(el('p', { class: 'hint', text: 'Two files: everything in your passport (JSON), and your visits as a spreadsheet (CSV).' }));
     view.appendChild(el('div', { class: 'btn-row' }, [
       el('a', { class: 'btn ghost', href: 'privacy.html', text: 'Privacy' }),
       el('button', { type: 'button', class: 'btn ghost', text: 'Sign out', on: { click: function () {
         s.signOut().then(function () { location.replace('user.html'); });
       } } })
     ]));
+
+    // Delete
+    view.appendChild(el('hr', { class: 'perf' }));
+    if (!ui.del) {
+      view.appendChild(el('button', { type: 'button', class: 'btn danger block', text: 'Delete my account', on: { click: function () { ui.del = true; render(); var i = $('pf-del'); if (i) i.focus(); } } }));
+    } else {
+      var di = el('input', { id: 'pf-del', type: 'text', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false' });
+      var dbtn = el('button', { type: 'button', class: 'btn danger', text: 'Delete', disabled: true });
+      var derr2 = el('div', { class: 'err-inline', role: 'alert' });
+      di.addEventListener('input', function () { dbtn.disabled = di.value.trim() !== 'DELETE'; });
+      dbtn.addEventListener('click', function () { deleteAccount(dbtn, derr2); });
+      view.appendChild(el('div', { class: 'card accent' }, [
+        el('label', { for: 'pf-del', class: 'body', text: 'This permanently deletes your passport, history, stamps and cards. Type DELETE to confirm.' }),
+        el('div', { class: 'form-field' }, [di]), derr2,
+        el('div', { class: 'btn-row' }, [dbtn, el('button', { type: 'button', class: 'btn ghost', text: 'Cancel', on: { click: function () { ui.del = false; render(); } } })])
+      ]));
+    }
+  }
+  function fmtLong(d) {
+    var p = d.split('-').map(Number);
+    return new Date(Date.UTC(p[0], p[1] - 1, p[2])).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric', year: 'numeric' });
+  }
+  function download(name, type, text) {
+    var blob = new Blob([text], { type: type });
+    var a = el('a', { href: URL.createObjectURL(blob), download: name });
+    document.body.appendChild(a); a.click(); a.parentNode.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 10000);
+  }
+  function csvCell(v) {
+    var t = v === null || v === undefined ? '' : String(v);
+    return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  }
+  /** The two export files (5.7). */
+  function exportData() {
+    s.flush();
+    var st = s.state, day = s.today();
+    var data = { exported: new Date(s.now()).toISOString(), profile: st.profile || {}, cards: st.cards || {},
+      visits: st.visits || {}, stamps: st.stamps || {}, hereOn: st.hereOn || {} };
+    download('half-shell-passport-' + day + '.json', 'application/json', JSON.stringify(data, null, 2));
+    var rows = [['date', 'oyster id', 'oyster', 'qty', 'rating', 'two words', 'note']];
+    var visits = st.visits || {};
+    Object.keys(visits).sort(function (a, b) { return visits[a].date.localeCompare(visits[b].date); }).forEach(function (vid) {
+      var items = visits[vid].items || {};
+      Object.keys(items).forEach(function (oid) {
+        var it = items[oid];
+        rows.push([visits[vid].date, oid, nameOf(oid), it.qty, it.rating || '', it.twoWords || '', it.note || '']);
+      });
+    });
+    setTimeout(function () {
+      download('half-shell-passport-' + day + '-visits.csv', 'text/csv', rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n') + '\r\n');
+    }, 400);
+    S.track('data_exported');
+  }
+  function deleteAccount(btn, err) {
+    btn.disabled = true;
+    btn.textContent = 'Deleting…';
+    err.textContent = '';
+    S.sdk(['functions']).then(function () {
+      return S.app().functions('us-east1').httpsCallable('deletePassport')({});
+    }).then(function () {
+      s.discard();                                  // nothing left to save
+      S.track('account_deleted');
+      try { localStorage.removeItem(S.HERE_KEY); } catch (e) { /* storage off */ }
+      return s.auth.signOut().catch(function () {}).then(function () { S.markSignedIn(false); location.replace('index.html'); });
+    }).catch(function () {
+      btn.disabled = false;
+      btn.textContent = 'Delete';
+      err.textContent = 'We couldn’t delete your passport. Check your connection and try again.';
+    });
   }
 
   load();

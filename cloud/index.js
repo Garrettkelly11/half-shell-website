@@ -10,7 +10,8 @@
  * Garrettkelly11/half-shell-website only, Actions: read and write.
  * Set with:  firebase functions:secrets:set GH_DISPATCH_TOKEN
  *
- * Functions: startToastSync (S4), setMenuOverride (S6), setHappyHour (S5).
+ * Functions: startToastSync (S4), setMenuOverride (S6), setHappyHour (S5),
+ * deletePassport (Oyster Passport, delete my account).
  * The logic lives in lib.js, menu-logic.js and price-logic.js (tested by
  * `node test.js`).
  */
@@ -21,6 +22,7 @@ const { onCall, HttpsError } = require('firebase-functions/https');
 const { defineSecret } = require('firebase-functions/params');
 const { initializeApp } = require('firebase-admin/app');
 const { getDatabase } = require('firebase-admin/database');
+const { getAuth } = require('firebase-admin/auth');
 const lib = require('./lib');
 
 initializeApp();
@@ -73,6 +75,21 @@ exports.setHappyHour = onCall(
       if (e instanceof lib.SyncError) throw new HttpsError(e.code, e.message, e.details);
       console.error('setHappyHour failed', e);
       throw new HttpsError('internal', 'Something went wrong saving happy hour.');
+    }
+  },
+);
+
+// Oyster Passport (Build Sheet 5.7): a guest deletes their account from the
+// Profile tab. Removes users/{uid} and toastOrders/{uid}, then the sign-in.
+exports.deletePassport = onCall(
+  { region: 'us-east1', maxInstances: 2 },
+  async (request) => {
+    try {
+      return await lib.deletePassport(request.auth, { db: getDatabase(), auth: getAuth() });
+    } catch (e) {
+      if (e instanceof lib.SyncError) throw new HttpsError(e.code, e.message, e.details);
+      console.error('deletePassport failed', e);
+      throw new HttpsError('internal', 'Something went wrong deleting your passport.');
     }
   },
 );
