@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3SQ3075FQ1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    // Passport pages: no Google signals, no ad personalization (Build Sheet 5.11).
+    gtag('config', 'G-3SQ3075FQ1', { allow_google_signals: false, allow_ad_personalization_signals: false });
+  </script>
+  <meta name="description" content="Half Shell Raw Bar — your Oyster Passport." />
+  <meta name="robots" content="noindex" />
+  <title>Half Shell — Oyster Passport</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"></noscript>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0e2d3a; --cream: #f5f0e8; --paper: #f3f8f6; --orange: #e89438; --teal: #2a7f94;
+      --muted: #5f8794; --line: #bcd4ce; --ink: #0e2d3a; --rust: #b5651d; --danger: #b03a2e;
+    }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Lato', sans-serif;
+      background: var(--navy);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+    a { color: var(--teal); }
+    button { font: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+    [hidden] { display: none !important; }
+
+    .pp { max-width: 520px; margin: 0 auto; padding: 0 0.75rem calc(84px + env(safe-area-inset-bottom)); }
+
+    /* Header: the passport cover band */
+    .pp-head {
+      position: relative;
+      text-align: center;
+      color: var(--cream);
+      padding: 1.1rem 0 1rem;
+      background:
+        repeating-radial-gradient(circle at 50% 120%, rgba(232,148,56,.07) 0 2px, transparent 2px 9px);
+    }
+    .pp-head img { height: 54px; width: auto; display: block; margin: 0 auto 0.35rem; }
+    .pp-title { font-family: 'Playfair Display', Georgia, serif; font-size: 1.35rem; letter-spacing: 0.04em; }
+    .pp-name { font-family: 'Lato', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--orange); margin-top: 0.2rem; }
+    .pp-menu-link {
+      position: absolute; left: 0; top: 0.9rem;
+      display: inline-flex; align-items: center; gap: 0.3rem; min-height: 44px; padding: 0 0.5rem;
+      color: var(--cream); text-decoration: none; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    }
+
+    .pp-status {
+      display: none; margin: 0 0 0.6rem; padding: 0.5rem 0.75rem; border-radius: 4px;
+      font-size: 0.78rem; background: #fdf3e6; color: #7a4510; border: 1px solid #ecc896;
+    }
+    .pp-status.show { display: flex; gap: 0.5rem; align-items: center; justify-content: space-between; }
+    .pp-status button { background: none; border: 0; text-decoration: underline; cursor: pointer; min-height: 32px; font-weight: 700; }
+
+    /* Paper pages */
+    .page {
+      background-color: var(--cream);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+      border-radius: 6px;
+      padding: 1.25rem 1.1rem 1.4rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      min-height: 50vh;
+    }
+    .loading { color: var(--cream); text-align: center; padding: 3rem 0; font-family: 'Playfair Display', Georgia, serif; }
+    .loading .err { font-family: 'Lato', sans-serif; font-size: 0.85rem; margin-top: 1rem; }
+
+    .field-label {
+      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);
+      font-variant: small-caps; border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; margin: 1.35rem 0 0.7rem;
+    }
+    .field-label:first-child { margin-top: 0; }
+    .perf { border: 0; border-top: 2px dotted var(--line); margin: 1.25rem -1.1rem; }
+    h2.page-h { font-family: 'Playfair Display', Georgia, serif; font-weight: 400; font-size: 1.35rem; margin-bottom: 0.2rem; }
+    .sub { font-family: 'Montserrat', sans-serif; font-style: italic; font-size: 0.8rem; color: var(--muted); }
+    .hint { font-family: 'Montserrat', sans-serif; font-style: italic; font-size: 0.76rem; color: var(--muted); margin: 0.6rem 0; }
+    p.body { font-size: 0.9rem; line-height: 1.5; margin: 0.4rem 0; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 1rem;
+      border-radius: 4px; border: 1.5px solid var(--navy); background: var(--navy); color: var(--cream);
+      font-size: 0.76rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; text-decoration: none;
+    }
+    .btn.block { display: flex; width: 100%; }
+    .btn.ghost { background: transparent; color: var(--navy); }
+    .btn.small { min-height: 36px; padding: 0 0.7rem; font-size: 0.68rem; }
+    .btn.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+    .btn:disabled { opacity: .5; cursor: default; }
+    .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem; }
+    .btn-row .btn { flex: 1 1 auto; }
+    .linklike { background: none; border: 0; color: var(--teal); text-decoration: underline; cursor: pointer; min-height: 44px; font-size: 0.82rem; padding: 0 0.25rem; }
+
+    .card { border: 1px solid var(--line); border-radius: 6px; padding: 0.85rem 0.9rem; background: rgba(255,255,255,.55); margin-bottom: 0.8rem; }
+    .card.accent { border-color: var(--orange); background: #fff7ec; }
+
+    /* Overview */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; }
+    .stats div { padding: 0.2rem 0; }
+    .stats b { display: block; font-family: 'Roboto Mono', monospace; font-size: 1.35rem; color: var(--navy); }
+    .stats span { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    .stamp-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+    .stamp-row figure, .stamp-grid figure { text-align: center; }
+    .stamp-row figcaption, .stamp-grid figcaption { font-size: 0.66rem; color: var(--muted); margin-top: 0.15rem; }
+    .hs-stamp { mix-blend-mode: multiply; }
+    .palate li { list-style: none; padding: 0.35rem 0; border-bottom: 1px dotted var(--line); font-size: 0.9rem; }
+    .palate li:last-child { border-bottom: 0; }
+    .palate small { display: block; color: var(--muted); font-size: 0.72rem; }
+    .dots { display: inline-flex; gap: 3px; vertical-align: middle; margin-left: 0.4rem; }
+    .dots i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--teal); }
+    .dots i.on { background: var(--teal); }
+
+    /* Rows */
+    .row { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0; border-bottom: 1px dotted var(--line); flex-wrap: wrap; }
+    .row:last-child { border-bottom: 0; }
+    .row .who { flex: 1 1 140px; min-width: 0; }
+    .row .name { font-family: 'Playfair Display', Georgia, serif; font-size: 1.02rem; }
+    .row .origin { font-size: 0.74rem; color: var(--muted); }
+    .stepper { display: inline-flex; align-items: center; border: 1.5px solid var(--navy); border-radius: 22px; overflow: hidden; }
+    .stepper button { width: 44px; height: 40px; background: none; border: 0; font-size: 1.25rem; cursor: pointer; color: var(--navy); }
+    .stepper output { min-width: 1.8rem; text-align: center; font-family: 'Roboto Mono', monospace; font-weight: 700; }
+    .plus { width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--navy); background: var(--navy); color: var(--cream); font-size: 1.4rem; cursor: pointer; }
+    .confirm { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; flex-wrap: wrap; }
+    .item-extra { flex-basis: 100%; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .stars { display: inline-flex; }
+    .stars button { width: 40px; height: 44px; background: none; border: 0; font-size: 1.45rem; line-height: 1; color: #c9b9a0; cursor: pointer; padding: 0; }
+    .stars button.on { color: var(--orange); }
+    .note-box { flex-basis: 100%; padding: 0.4rem 0 0.2rem; }
+    .note-box label { display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 0.5rem 0 0.25rem; }
+    .note-box input, .note-box textarea, .search input, .past-date input, .custom input {
+      width: 100%; padding: 0.55rem 0.65rem; border: 1px solid #9ec4bc; border-radius: 4px; background: #fff; font: inherit; font-size: 0.95rem; color: var(--ink);
+    }
+    .note-box textarea { min-height: 4.5rem; resize: vertical; }
+    .count { font-family: 'Roboto Mono', monospace; font-size: 0.7rem; color: var(--muted); text-align: right; margin-top: 0.15rem; }
+    .results button { display: block; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px dotted var(--line); padding: 0.55rem 0.2rem; cursor: pointer; min-height: 44px; }
+    .results small { display: block; color: var(--muted); font-size: 0.72rem; }
+    .chips { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.5rem 0; }
+    .chips button { min-width: 44px; min-height: 44px; border-radius: 22px; border: 1.5px solid var(--navy); background: transparent; cursor: pointer; font-family: 'Roboto Mono', monospace; font-weight: 700; padding: 0 0.7rem; }
+    .custom { display: flex; gap: 0.4rem; align-items: center; }
+    .custom input { width: 6rem; }
+    .past-date { margin: 0.4rem 0 0.8rem; }
+    .visit-card { display: block; width: 100%; text-align: left; background: rgba(255,255,255,.55); border: 1px solid var(--line); border-radius: 6px; padding: 0.75rem 0.85rem; margin-bottom: 0.6rem; cursor: pointer; }
+    .visit-card .date { font-family: 'Playfair Display', Georgia, serif; font-size: 1.02rem; }
+    .visit-card ul { list-style: none; margin-top: 0.3rem; font-size: 0.82rem; color: #2c4a55; }
+    .stamp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 0.6rem; }
+    .err-inline { color: var(--danger); font-size: 0.82rem; margin: 0.4rem 0; }
+
+    /* Bottom tab bar */
+    .pp-nav {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+      background: var(--navy); border-top: 2px solid var(--orange);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .pp-nav ul { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); max-width: 520px; margin: 0 auto; }
+    .pp-nav a {
+      position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      min-height: 58px; color: var(--cream); text-decoration: none; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.05em;
+    }
+    .pp-nav a[aria-current="page"] { color: var(--orange); }
+    .pp-nav svg { width: 22px; height: 22px; }
+    .bubble {
+      position: absolute; top: 5px; left: 50%; margin-left: 6px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px;
+      background: var(--orange); color: var(--navy); font-family: 'Roboto Mono', monospace; font-size: 0.66rem; line-height: 18px; text-align: center;
+    }
+    .pp-toast {
+      position: fixed; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+      background: var(--navy); color: var(--cream); border: 1px solid var(--orange); padding: 0.6rem 1rem; border-radius: 4px;
+      font-size: 0.85rem; z-index: 60; max-width: 90vw; display: none;
+    }
+    .pp-toast.show { display: block; }
+    @media (max-width: 360px) { .pp { padding-left: 0.4rem; padding-right: 0.4rem; } .page { padding-left: 0.8rem; padding-right: 0.8rem; } .stars button { width: 36px; } }
+  </style>
+</head>
+<body>
+
+<div class="pp">
+  <header class="pp-head">
+    <a class="pp-menu-link" href="index.html">
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9,2 4,7 9,12"/></svg>
+      Menu
+    </a>
+    <img src="assets/logo.png" alt="Half Shell Raw Bar" width="54" height="54" />
+    <div class="pp-title">Oyster Passport</div>
+    <div class="pp-name" id="pp-name"></div>
+  </header>
+
+  <div class="pp-status" id="pp-status" role="status"></div>
+
+  <main id="pp-main">
+    <div class="loading" id="pp-loading">Opening your passport…<div class="err" id="pp-load-err" hidden></div></div>
+    <section class="page" id="view" hidden></section>
+  </main>
+</div>
+
+<nav class="pp-nav" aria-label="Passport" id="pp-nav" hidden>
+  <ul>
+    <li><a href="#overview" data-tab="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2z"/><circle cx="12" cy="10" r="3"/><path d="M9 16h6"/></svg>Overview</a></li>
+    <li><a href="#flight" data-tab="flight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15c2-7 16-7 18 0-2 5-16 5-18 0z"/><path d="M8 14h8"/></svg>My Flight<span class="bubble" id="flight-bubble" hidden></span></a></li>
+    <li><a href="#history" data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</a></li>
+    <li><a href="#stamps" data-tab="stamps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6" stroke-dasharray="2 2"/></svg>Stamps</a></li>
+    <li><a href="#profile" data-tab="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a></li>
+  </ul>
+</nav>
+<div class="pp-toast" id="pp-toast" role="status" aria-live="polite"></div>
+
+<script src="data/oysters.js?v=3"></script>
+<script src="data/regions.js"></script>
+<script src="data/flights.js"></script>
+<script src="data/stamps.js"></script>
+<script src="src/passport-core.js"></script>
+<script src="src/passport-store.js"></script>
+<script src="src/stamp-svg.js"></script>
+<script src="src/passport-ui.js"></script>
+<script>
+/*
+ * Oyster Passport (Build Sheet sections 5.2–5.7). Overview and My Flight are
+ * full; History is a timeline, Stamps a grid and Profile the basics until
+ * steps 6–7.
+ */
+(function () {
+  'use strict';
+  var P = window.HS_PASSPORT, S = window.HS_STORE, ART = window.HS_STAMP_SVG, UI = window.HS_UI;
+  var $ = function (id) { return document.getElementById(id); };
+  var view = $('view');
+  var s = null;                      // the session
+  var current = null;                // { tab, arg }
+  var ui = {};                       // per-view state kept across re-renders
+  var openedAt = Date.now();
+
+  // ── Small DOM helper (text only, never HTML from data) ────────────────────
+  function el(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === 'text') e.textContent = v;
+      else if (k === 'on') Object.keys(v).forEach(function (ev) { e.addEventListener(ev, v[ev]); });
+      else if (k === 'html') e.innerHTML = v;            // only for our own SVG
+      else e.setAttribute(k, v === true ? '' : v);
+    });
+    (kids || []).forEach(function (c) { if (c) e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return e;
+  }
+  function fmtDate(d) {
+    var p = d.split('-').map(Number);
+    return new Date(Date.UTC(p[0], p[1] - 1, p[2])).toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' });
+  }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+  function nameOf(id) { var o = s.oyster(id); return o ? o.name : id.replace(/-/g, ' '); }
+  function toast(msg) {
+    var t = $('pp-toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(function () { t.classList.remove('show'); }, 3500);
+  }
+  function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
+
+  // ── Start ─────────────────────────────────────────────────────────────────
+  function load() {
+    $('pp-load-err').hidden = true;
+    S.session({ redirect: true, served: true }).then(function (session) {
+      if (!session) return;                // on its way to user.html
+      s = session;
+      $('pp-name').textContent = s.firstName();
+      $('pp-loading').hidden = true;
+      view.hidden = false;
+      $('pp-nav').hidden = false;
+      s.on(function (what) {
+        if (what === 'status') return status();
+        if (what === 'served' && !(current && current.tab === 'flight')) return;
+        softRender();
+        UI.celebrate(s);
+      });
+      window.addEventListener('hashchange', render);
+      status();
+      render();
+      UI.celebrate(s);
+    }, function () {
+      var e = $('pp-load-err');
+      e.hidden = false;
+      e.textContent = '';
+      e.appendChild(document.createTextNode("We couldn't open your passport. Check your connection. "));
+      e.appendChild(el('button', { class: 'btn small ghost', style: 'color:#f5f0e8;border-color:#f5f0e8', text: 'Try again', on: { click: load } }));
+    });
+  }
+
+  function status() {
+    var box = $('pp-status');
+    box.textContent = '';
+    box.classList.remove('show');
+    var b = $('flight-bubble'), o = s.openVisit();
+    var n = o ? P.visitTotal(o.visit) : 0;
+    b.hidden = !o; b.textContent = n;
+    b.setAttribute('aria-label', o ? plural(n, 'oyster') + ' in this flight' : '');
+    if (!s.online) {
+      box.appendChild(document.createTextNode('Saved on this phone — will sync.'));
+      box.classList.add('show');
+    } else if (s.saveError) {
+      box.appendChild(document.createTextNode("Couldn't save just now. Your changes are kept on this phone."));
+      box.appendChild(el('button', { type: 'button', text: 'Try again', on: { click: function () { s.flush(); } } }));
+      box.classList.add('show');
+    }
+  }
+
+  // Re-render, unless the guest is typing (the field would lose focus).
+  function softRender() {
+    status();
+    var a = document.activeElement;
+    if (a && view.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName)) { ui.dirty = true; return; }
+    render();
+  }
+  view.addEventListener('focusout', function () {
+    setTimeout(function () {
+      var a = document.activeElement;
+      if (ui.dirty && !(a && view.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName))) { ui.dirty = false; render(); }
+    }, 0);
+  });
+
+  function route() {
+    var h = (location.hash || '#overview').slice(1).split('/');
+    var tabs = { overview: 1, flight: 1, history: 1, stamps: 1, profile: 1, past: 1, visit: 1 };
+    return { tab: tabs[h[0]] ? h[0] : 'overview', arg: h[1] || null };
+  }
+  function render() {
+    if (!s) return;
+    var r = route();
+    var changedTab = !current || current.tab !== r.tab || current.arg !== r.arg;
+    if (changedTab) { ui = {}; if (['overview', 'flight', 'history', 'stamps', 'profile'].indexOf(r.tab) >= 0) S.track('passport_tab', { tab: r.tab }); }
+    current = r;
+    var navTab = r.tab === 'past' ? 'flight' : r.tab === 'visit' ? 'history' : r.tab;
+    Array.prototype.forEach.call(document.querySelectorAll('.pp-nav a'), function (a) {
+      if (a.getAttribute('data-tab') === navTab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    var y = window.scrollY;
+    view.textContent = '';
+    ({ overview: overview, flight: flight, history: history, stamps: stamps, profile: profile, past: past, visit: visitView })[r.tab](r.arg);
+    if (changedTab) {
+      window.scrollTo(0, 0);
+      if (r.tab === 'flight') s.flush();            // opening My Flight saves (6.2)
+    } else window.scrollTo(0, y);
+  }
+
+  // ── Changes ───────────────────────────────────────────────────────────────
+  function itemBase(visitId, oid) { return 'visits/' + visitId + '/items/' + oid; }
+  function touch(u, visitId) { u['visits/' + visitId + '/lastChangedAt'] = s.now(); return u; }
+  /** +/− on an item of any visit (the open one or a past one). */
+  function changeQty(visitId, oid, delta, where) {
+    var v = (s.state.visits || {})[visitId], cur = v && v.items && v.items[oid];
+    var q = Math.min(P.MAX_QTY, ((cur && cur.qty) || 0) + delta), u = {};
+    if (q <= 0) u[itemBase(visitId, oid)] = null;
+    else { u[itemBase(visitId, oid) + '/qty'] = q; if (!cur) u[itemBase(visitId, oid) + '/addedAt'] = s.now(); }
+    s.apply(touch(u, visitId));
+    if (delta > 0) S.track('oyster_logged', { oyster: oid, qty: delta, where: where || 'menu' });
+  }
+  /** Adds to the open visit, opening one if needed (the menu rows and catalog search). */
+  function addOpen(oid, n, where) {
+    var r = P.addUpdates(s.state, oid, n, s.now(), s.newId());
+    s.apply(r.updates);
+    S.track('oyster_logged', { oyster: oid, qty: n, where: where });
+  }
+  function setField(visitId, oid, field, value) {
+    var u = {};
+    u[itemBase(visitId, oid) + '/' + field] = value === '' ? null : value;
+    s.apply(touch(u, visitId));
+  }
+  function startFlight() {
+    var id = s.newId(), now = s.now(), u = { activeVisitId: id };
+    u['visits/' + id + '/date'] = s.today();
+    u['visits/' + id + '/startedAt'] = now;
+    u['visits/' + id + '/lastChangedAt'] = now;
+    u['visits/' + id + '/source'] = 'manual';
+    s.apply(u);
+  }
+
+  // ── Pieces ────────────────────────────────────────────────────────────────
+  function stepper(name, qty, onMinus, onPlus) {
+    return el('span', { class: 'stepper' }, [
+      el('button', { type: 'button', 'aria-label': 'One fewer ' + name, text: '−', on: { click: onMinus } }),
+      el('output', { 'aria-live': 'polite', 'aria-label': name + ' count', text: String(qty) }),
+      el('button', { type: 'button', 'aria-label': 'One more ' + name, text: '+', disabled: qty >= P.MAX_QTY, on: { click: onPlus } })
+    ]);
+  }
+  function stars(visitId, oid, rating) {
+    var g = el('span', { class: 'stars', role: 'radiogroup', 'aria-label': 'Rate ' + nameOf(oid) });
+    [1, 2, 3, 4, 5].forEach(function (n) {
+      g.appendChild(el('button', {
+        type: 'button', role: 'radio', 'aria-checked': rating === n ? 'true' : 'false',
+        'aria-label': plural(n, 'star'), class: rating >= n ? 'on' : '', text: '★',
+        on: { click: function () {
+          var next = rating === n ? null : n;              // tap the same star again to clear
+          setField(visitId, oid, 'rating', next);
+          if (next) S.track('rating_given', { oyster: oid, stars: next });
+        } }
+      }));
+    });
+    return g;
+  }
+  /** One row per oyster in a visit: stepper, stars, note. */
+  function itemRows(visitId, visit) {
+    var box = el('div');
+    var items = visit.items || {};
+    var ids = Object.keys(items).sort(function (a, b) { return (items[a].addedAt || 0) - (items[b].addedAt || 0) || (a < b ? -1 : 1); });
+    if (!ids.length) box.appendChild(el('p', { class: 'hint', text: 'Nothing logged yet.' }));
+    ids.forEach(function (oid) {
+      var it = items[oid], name = nameOf(oid), key = visitId + '/' + oid;
+      var row = el('div', { class: 'row' });
+      var o = s.oyster(oid);
+      row.appendChild(el('div', { class: 'who' }, [el('div', { class: 'name', text: name }), o ? el('div', { class: 'origin', text: o.origin }) : null]));
+      if (ui.confirm === key) {
+        row.appendChild(el('span', { class: 'confirm' }, [
+          'Remove ' + name + '?',
+          el('button', { type: 'button', class: 'btn small danger', text: 'Remove', on: { click: function () { ui.confirm = null; changeQty(visitId, oid, -1); } } }),
+          el('button', { type: 'button', class: 'btn small ghost', text: 'Keep', on: { click: function () { ui.confirm = null; render(); } } })
+        ]));
+      } else {
+        row.appendChild(stepper(name, it.qty,
+          function () { if (it.qty <= 1) { ui.confirm = key; render(); } else changeQty(visitId, oid, -1); },
+          function () { changeQty(visitId, oid, 1, 'menu'); }));
+      }
+      var open = ui.note === key;
+      row.appendChild(el('div', { class: 'item-extra' }, [
+        stars(visitId, oid, it.rating),
+        el('button', { type: 'button', class: 'linklike', 'aria-expanded': open ? 'true' : 'false',
+          text: (it.twoWords || it.note) ? (open ? 'Hide note' : 'Edit note') : (open ? 'Hide note' : 'Add note'),
+          on: { click: function () { ui.note = open ? null : key; render(); } } })
+      ]));
+      if (it.twoWords && !open) row.appendChild(el('div', { class: 'hint', style: 'flex-basis:100%;margin:0', text: '“' + it.twoWords + '”' }));
+      if (open) row.appendChild(noteBox(visitId, oid, it));
+      box.appendChild(row);
+    });
+    return box;
+  }
+  function noteBox(visitId, oid, it) {
+    var idw = 'tw-' + oid, idn = 'nt-' + oid;
+    var tw = el('input', { id: idw, type: 'text', maxlength: P.TWO_WORDS_MAX, autocomplete: 'off', value: it.twoWords || '' });
+    var twc = el('div', { class: 'count', 'aria-live': 'polite' });
+    var nt = el('textarea', { id: idn, maxlength: P.NOTE_MAX });
+    nt.value = it.note || '';
+    var ntc = el('div', { class: 'count' });
+    function counts() {
+      twc.textContent = P.wordCount(tw.value) + '/2 words';
+      ntc.textContent = nt.value.length + '/' + P.NOTE_MAX;
+    }
+    var t1, t2;
+    tw.addEventListener('input', function () {
+      var cut = P.limitTwoWords(tw.value);
+      if (cut !== tw.value) tw.value = cut;            // a third word can't be typed
+      counts();
+      clearTimeout(t1);
+      t1 = setTimeout(function () { setField(visitId, oid, 'twoWords', tw.value.trim()); }, 700);
+    });
+    nt.addEventListener('input', function () {
+      counts();
+      clearTimeout(t2);
+      t2 = setTimeout(function () { setField(visitId, oid, 'note', nt.value); }, 700);
+    });
+    // On leaving a field, save after focus has moved, so moving between the
+    // two fields doesn't redraw the page under the guest's fingers.
+    tw.addEventListener('blur', function () {
+      clearTimeout(t1);
+      var val = tw.value.trim();
+      if ((it.twoWords || '') !== val) setTimeout(function () { setField(visitId, oid, 'twoWords', val); }, 0);
+    });
+    nt.addEventListener('blur', function () {
+      clearTimeout(t2);
+      var val = nt.value;
+      if ((it.note || '') !== val) setTimeout(function () { setField(visitId, oid, 'note', val); }, 0);
+    });
+    counts();
+    return el('div', { class: 'note-box' }, [
+      el('label', { for: idw, text: 'This oyster in two words' }), tw, twc,
+      el('label', { for: idn, text: 'Notes' }), nt, ntc
+    ]);
+  }
+  /** Catalog search + quantity chips. onAdd(oysterId, n). */
+  function catalogAdder(onAdd, label) {
+    var box = el('div', { class: 'search' });
+    if (!ui.adding) {
+      box.appendChild(el('button', { type: 'button', class: 'btn ghost block', text: label || 'Add another oyster',
+        on: { click: function () { ui.adding = true; ui.q = ''; ui.pick = null; render(); var i = $('cat-q'); if (i) i.focus(); } } }));
+      return box;
+    }
+    if (ui.pick) {
+      var o = s.oyster(ui.pick);
+      box.appendChild(el('p', { class: 'body' }, [el('b', { text: o ? o.name : ui.pick }), ' — how many?']));
+      var chips = el('div', { class: 'chips' });
+      [1, 2, 3, 6, 12].forEach(function (n) {
+        chips.appendChild(el('button', { type: 'button', text: String(n), 'aria-label': 'Add ' + n,
+          on: { click: function () { var id = ui.pick; ui.adding = false; ui.pick = null; onAdd(id, n); } } }));
+      });
+      box.appendChild(chips);
+      var ci = el('input', { id: 'cat-n', type: 'number', min: 1, max: 99, inputmode: 'numeric', 'aria-label': 'Custom number, 1 to 99' });
+      var err = el('div', { class: 'err-inline', role: 'alert' });
+      box.appendChild(el('div', { class: 'custom' }, [ci, el('button', { type: 'button', class: 'btn small', text: 'Add',
+        on: { click: function () {
+          var n = Number(ci.value);
+          if (!P.validQty(n)) { err.textContent = 'Choose a number from 1 to 99.'; return; }
+          var id = ui.pick; ui.adding = false; ui.pick = null; onAdd(id, n);
+        } } })]));
+      box.appendChild(err);
+      box.appendChild(el('button', { type: 'button', class: 'linklike', text: 'Cancel', on: { click: function () { ui.adding = false; ui.pick = null; render(); } } }));
+      return box;
+    }
+    var q = el('input', { id: 'cat-q', type: 'search', placeholder: 'Search by name or where it’s from', autocomplete: 'off', 'aria-label': 'Search oysters', value: ui.q || '' });
+    var results = el('div', { class: 'results' });
+    function fill() {
+      results.textContent = '';
+      var t = q.value.trim().toLowerCase();
+      ui.q = q.value;
+      if (!t) return;
+      s.oysters.filter(function (o) {
+        return [o.name, o.origin].concat(o.aliases || []).some(function (x) { return String(x || '').toLowerCase().indexOf(t) >= 0; });
+      }).slice(0, 8).forEach(function (o) {
+        results.appendChild(el('button', { type: 'button', on: { click: function () { ui.pick = o.id; render(); } } }, [o.name, el('small', { text: o.origin })]));
+      });
+      if (!results.children.length) results.appendChild(el('p', { class: 'hint', text: 'No oyster by that name.' }));
+    }
+    q.addEventListener('input', fill);
+    box.appendChild(q);
+    box.appendChild(results);
+    box.appendChild(el('button', { type: 'button', class: 'linklike', text: 'Cancel', on: { click: function () { ui.adding = false; render(); } } }));
+    fill();
+    return box;
+  }
+
+  // ── Overview (5.3) ────────────────────────────────────────────────────────
+  function overview() {
+    var st = s.state, visits = st.visits || {};
+    var m = P.measures(visits, s.oysters, s.regions);
+    view.appendChild(el('div', { class: 'field-label', text: 'Overview' }));
+
+    // 1. Rate the last visit
+    var closed = Object.keys(visits).filter(function (k) { return visits[k].closedAt; }).sort(function (a, b) {
+      return visits[b].date.localeCompare(visits[a].date) || visits[b].closedAt - visits[a].closedAt;
+    });
+    var last = closed[0], lv = last && visits[last];
+    var unrated = lv ? Object.keys(lv.items || {}).filter(function (k) { return !(lv.items[k].rating >= 1); }) : [];
+    // Only for a visit closed before this page opened: "one prompt on next open" (5.3).
+    if (lv && unrated.length && !lv.ratePromptDismissed && lv.closedAt < openedAt) {
+      view.appendChild(el('div', { class: 'card accent' }, [
+        el('p', { class: 'body', text: 'You had ' + plural(unrated.length, 'oyster') + ' on ' + fmtDate(lv.date) + ' that you haven’t rated.' }),
+        el('div', { class: 'btn-row' }, [
+          el('a', { class: 'btn small', href: '#visit/' + last, text: 'Rate' }),
+          el('button', { type: 'button', class: 'btn small ghost', text: 'Not now', on: { click: function () {
+            var u = {}; u['visits/' + last + '/ratePromptDismissed'] = true; s.apply(u);
+          } } })
+        ])
+      ]));
+    }
+    // 3. Birthday week
+    if (s.birthdayReward && st.profile && P.inBirthdayWeek(st.profile.dob, P.nyDate(s.now()))) {
+      view.appendChild(el('div', { class: 'card accent' }, [
+        el('h2', { class: 'page-h', text: 'Happy birthday week, ' + s.firstName() }),
+        el('p', { class: 'body', text: s.birthdayReward }),
+        el('p', { class: 'hint', text: 'Show this to your server.' })
+      ]));
+    }
+    // 4. Stats
+    view.appendChild(el('div', { class: 'card stats' }, [
+      el('div', {}, [el('b', { text: String(m.eaten) }), el('span', { text: 'Oysters' })]),
+      el('div', {}, [el('b', { text: String(m.allVarieties) }), el('span', { text: 'Varieties' })]),
+      el('div', {}, [el('b', { text: String(m.regions) }), el('span', { text: 'Regions' })]),
+      el('div', {}, [el('b', { text: String(m.visits) }), el('span', { text: 'Visits' })])
+    ]));
+    if (!m.eaten) view.appendChild(el('p', { class: 'body', text: 'Your passport is empty. Add oysters from tonight’s menu to get your first stamp.' }));
+
+    // 5. Recent stamps
+    var recent = P.recentStamps(st.stamps, 3).filter(function (id) { return s.evaluated && s.evaluated[id]; });
+    if (recent.length) {
+      view.appendChild(el('div', { class: 'field-label', text: 'Recent stamps' }));
+      var row = el('div', { class: 'stamp-row' });
+      recent.forEach(function (id) {
+        var def = s.evaluated[id].def, tier = st.stamps[id].tier;
+        row.appendChild(el('figure', {}, [el('div', { html: ART.render(def, tier, { size: 84 }) }), el('figcaption', { text: def.name })]));
+      });
+      view.appendChild(row);
+      view.appendChild(el('a', { href: '#stamps', class: 'linklike', style: 'display:inline-flex;align-items:center', text: 'All stamps' }));
+    }
+    // 6. Palate
+    view.appendChild(el('div', { class: 'field-label', text: 'Your palate' }));
+    var pal = P.palate(P.aggregateRatings(visits), s.oysters, s.regions);
+    if (!pal.unlocked) {
+      view.appendChild(el('p', { class: 'body', text: 'Rate 5 oysters to unlock your palate — ' + pal.toGo + ' to go.' }));
+    } else {
+      var ul = el('ul', { class: 'palate' });
+      if (pal.salinity) {
+        var dots = el('span', { class: 'dots', 'aria-label': 'Salinity ' + pal.salinity.band + ' of 5' });
+        for (var i = 1; i <= 5; i++) dots.appendChild(el('i', { class: i === pal.salinity.band ? 'on' : '' }));
+        ul.appendChild(el('li', {}, [pal.salinity.text, dots, el('small', { text: 'From ' + plural(pal.salinity.basis, 'rated oyster') })]));
+      }
+      if (pal.coast) ul.appendChild(el('li', {}, [pal.coast.text, el('small', { text: 'From ' + plural(pal.coast.basis, 'rated oyster') })]));
+      if (pal.size) ul.appendChild(el('li', {}, [pal.size.text, el('small', { text: 'From ' + plural(pal.size.basis, 'rated oyster') })]));
+      if (pal.region) ul.appendChild(el('li', {}, ['Your top region: ' + pal.region.name, el('small', { text: 'From ' + plural(pal.region.basis, 'rated oyster') })]));
+      if (!ul.children.length) ul.appendChild(el('li', { text: 'Rate a few more kinds of oyster and your palate fills in here.' }));
+      view.appendChild(ul);
+    }
+    // 7. Log
+    view.appendChild(el('div', { class: 'btn-row' }, [el('a', { class: 'btn block', href: '#flight', text: 'Log oysters' })]));
+  }
+
+  // ── My Flight (5.4) ───────────────────────────────────────────────────────
+  function flight() {
+    var o = s.openVisit();
+    if (!o) {
+      view.appendChild(el('div', { class: 'field-label', text: 'My Flight' }));
+      view.appendChild(el('p', { class: 'body', text: 'No flight open. Add oysters from tonight’s menu, or start one here.' }));
+      view.appendChild(el('div', { class: 'btn-row' }, [
+        el('button', { type: 'button', class: 'btn', text: 'Start tonight’s flight', on: { click: startFlight } }),
+        el('a', { class: 'btn ghost', href: '#past', text: 'Log a past visit' })
+      ]));
+      return;
+    }
+    var v = o.visit, total = P.visitTotal(v);
+    view.appendChild(el('div', { class: 'field-label', text: 'My Flight' }));
+    view.appendChild(el('h2', { class: 'page-h', text: fmtDate(v.date) }));
+    view.appendChild(el('p', { class: 'sub', text: plural(total, 'oyster') + ' so far' }));
+
+    view.appendChild(el('div', { class: 'field-label', text: 'Tonight’s menu' }));
+    var menu = el('div');
+    var served = s.served.filter(function (id) { return s.oyster(id); });
+    if (s.servedError) menu.appendChild(el('p', { class: 'err-inline', text: 'Tonight’s menu didn’t load. Use “Add another oyster” below.' }));
+    else if (!served.length) menu.appendChild(el('p', { class: 'hint', text: 'Tonight’s menu isn’t up yet. Use “Add another oyster” below.' }));
+    served.forEach(function (id) {
+      var ox = s.oyster(id), it = (v.items || {})[id];
+      var row = el('div', { class: 'row' }, [el('div', { class: 'who' }, [el('div', { class: 'name', text: ox.name }), el('div', { class: 'origin', text: ox.origin })])]);
+      if (it) row.appendChild(stepper(ox.name, it.qty,
+        function () { if (it.qty <= 1) { ui.confirm = o.id + '/' + id; go('#flight'); } else changeQty(o.id, id, -1); },
+        function () { changeQty(o.id, id, 1, 'menu'); }));
+      else row.appendChild(el('button', { type: 'button', class: 'plus', 'aria-label': 'Add ' + ox.name, text: '+', on: { click: function () { addOpen(id, 1, 'menu'); } } }));
+      menu.appendChild(row);
+    });
+    view.appendChild(menu);
+
+    view.appendChild(el('div', { class: 'field-label', text: 'In this flight' }));
+    view.appendChild(itemRows(o.id, v));
+    view.appendChild(catalogAdder(function (id, n) { addOpen(id, n, 'catalog'); }));
+
+    var anyUnrated = Object.keys(v.items || {}).some(function (k) { return !(v.items[k].rating >= 1); });
+    view.appendChild(el('hr', { class: 'perf' }));
+    if (anyUnrated) view.appendChild(el('p', { class: 'hint', text: 'Ratings are optional — they power your palate and recommendations.' }));
+    view.appendChild(el('button', { type: 'button', class: 'btn block', id: 'save-entry', text: 'Save Entry', on: { click: saveEntry } }));
+  }
+  function saveEntry() {
+    var o = s.openVisit();
+    if (!o) return;
+    var items = o.visit.items || {}, ids = Object.keys(items);
+    var n = P.visitTotal(o.visit), rated = ids.filter(function (k) { return items[k].rating >= 1; }).length;
+    s.apply(P.saveUpdates(s.state, s.now()));
+    s.flush();
+    if (n) {
+      S.track('visit_saved', { oysters: n, varieties: ids.length, rated: rated });
+      toast('Saved. ' + plural(n, 'oyster') + ' added to your passport.');
+    }
+    go('#overview');
+  }
+
+  // ── Log a past visit (5.4) ────────────────────────────────────────────────
+  function past() {
+    ui.draft = ui.draft || {};
+    var today = s.today();
+    view.appendChild(el('div', { class: 'field-label', text: 'Log a past visit' }));
+    view.appendChild(el('label', { for: 'past-date', class: 'sub', text: 'When were you in? (since we opened on Feb 3, 2026)' }));
+    var d = el('input', { id: 'past-date', type: 'date', min: P.OPENING_DAY, max: today, value: ui.date || '' });
+    d.addEventListener('change', function () { ui.date = d.value; ui.existing = null; });
+    view.appendChild(el('div', { class: 'past-date' }, [d]));
+    var ids = Object.keys(ui.draft);
+    var list = el('div');
+    ids.forEach(function (id) {
+      list.appendChild(el('div', { class: 'row' }, [
+        el('div', { class: 'who' }, [el('div', { class: 'name', text: nameOf(id) })]),
+        stepper(nameOf(id), ui.draft[id],
+          function () { if (ui.draft[id] <= 1) delete ui.draft[id]; else ui.draft[id]--; render(); },
+          function () { ui.draft[id] = Math.min(P.MAX_QTY, ui.draft[id] + 1); render(); })
+      ]));
+    });
+    view.appendChild(list);
+    view.appendChild(catalogAdder(function (id, n) { ui.draft[id] = Math.min(P.MAX_QTY, (ui.draft[id] || 0) + n); render(); }, ids.length ? 'Add another oyster' : 'Add an oyster'));
+    var err = el('div', { class: 'err-inline', role: 'alert' });
+    view.appendChild(err);
+    if (ui.existing) {
+      view.appendChild(el('div', { class: 'card accent' }, [
+        el('p', { class: 'body', text: 'You already logged ' + fmtDate(ui.date) + '. Add these to that visit?' }),
+        el('div', { class: 'btn-row' }, [
+          el('button', { type: 'button', class: 'btn small', text: 'Add to it', on: { click: function () { savePast(true); } } }),
+          el('button', { type: 'button', class: 'btn small ghost', text: 'Cancel', on: { click: function () { ui.existing = null; render(); } } })
+        ])
+      ]));
+    }
+    view.appendChild(el('hr', { class: 'perf' }));
+    view.appendChild(el('div', { class: 'btn-row' }, [
+      el('button', { type: 'button', class: 'btn', text: 'Save', on: { click: function () {
+        ui.date = d.value;
+        if (!P.isVisitDate(ui.date, today)) { err.textContent = 'Choose a date from Feb 3, 2026 to today.'; return; }
+        if (!Object.keys(ui.draft).length) { err.textContent = 'Add at least one oyster.'; return; }
+        var ex = P.visitOnDate(s.state.visits, ui.date);
+        if (ex && !ui.existing) { ui.existing = ex; render(); return; }
+        savePast(false);
+      } } }),
+      el('a', { class: 'btn ghost', href: '#flight', text: 'Cancel' })
+    ]));
+  }
+  function savePast(intoExisting) {
+    var now = s.now(), draft = ui.draft, id, u;
+    if (intoExisting && ui.existing) {
+      id = ui.existing; u = {};
+      var v = s.state.visits[id];
+      Object.keys(draft).forEach(function (oid) {
+        var cur = v.items && v.items[oid];
+        u[itemBase(id, oid) + '/qty'] = Math.min(P.MAX_QTY, ((cur && cur.qty) || 0) + draft[oid]);
+        if (!cur) u[itemBase(id, oid) + '/addedAt'] = now;
+      });
+      touch(u, id);
+    } else {
+      id = s.newId();
+      u = P.backdatedUpdates(id, ui.date, draft, now);
+    }
+    s.apply(u);
+    s.flush();
+    Object.keys(draft).forEach(function (oid) { S.track('oyster_logged', { oyster: oid, qty: draft[oid], where: 'past' }); });
+    toast('Saved. ' + plural(Object.keys(draft).reduce(function (a, k) { return a + draft[k]; }, 0), 'oyster') + ' added to your passport.');
+    ui.draft = {};
+    go('#visit/' + id);
+  }
+
+  // ── One visit (rate, edit, delete) ────────────────────────────────────────
+  function visitView(id) {
+    var v = (s.state.visits || {})[id];
+    if (!v) { go('#history'); return; }
+    view.appendChild(el('div', { class: 'field-label', text: v.closedAt ? 'Past visit' : 'My Flight' }));
+    view.appendChild(el('h2', { class: 'page-h', text: fmtDate(v.date) }));
+    view.appendChild(el('p', { class: 'sub', text: plural(P.visitTotal(v), 'oyster') }));
+    view.appendChild(itemRows(id, v));
+    view.appendChild(catalogAdder(function (oid, n) { changeQty(id, oid, n, 'catalog'); }));
+    view.appendChild(el('hr', { class: 'perf' }));
+    if (ui.del) {
+      view.appendChild(el('div', { class: 'card accent' }, [
+        el('p', { class: 'body', text: 'Delete this visit? This can’t be undone.' }),
+        el('div', { class: 'btn-row' }, [
+          el('button', { type: 'button', class: 'btn small danger', text: 'Delete', on: { click: function () {
+            var u = {}; u['visits/' + id] = null;
+            if (s.state.activeVisitId === id) u.activeVisitId = null;
+            s.apply(u); s.flush(); go('#history');
+          } } }),
+          el('button', { type: 'button', class: 'btn small ghost', text: 'Keep', on: { click: function () { ui.del = false; render(); } } })
+        ])
+      ]));
+    }
+    view.appendChild(el('div', { class: 'btn-row' }, [
+      el('a', { class: 'btn', href: v.closedAt ? '#history' : '#flight', text: 'Done' }),
+      el('button', { type: 'button', class: 'btn ghost', text: 'Delete visit', on: { click: function () { ui.del = true; render(); } } })
+    ]));
+  }
+
+  // ── History (timeline; map and favorites come in step 7) ──────────────────
+  function history() {
+    var visits = s.state.visits || {};
+    view.appendChild(el('div', { class: 'field-label', text: 'History' }));
+    var ids = Object.keys(visits).sort(function (a, b) {
+      return visits[b].date.localeCompare(visits[a].date) || (visits[b].startedAt || 0) - (visits[a].startedAt || 0);
+    });
+    if (!ids.length) view.appendChild(el('p', { class: 'body', text: 'Your passport is empty. Add oysters from tonight’s menu to get your first stamp.' }));
+    ids.forEach(function (id) {
+      var v = visits[id], items = v.items || {};
+      var ul = el('ul');
+      Object.keys(items).forEach(function (oid) {
+        var it = items[oid];
+        ul.appendChild(el('li', { text: nameOf(oid) + ' ×' + it.qty + (it.rating ? '  ★' + it.rating : '') + (it.twoWords ? '  “' + it.twoWords + '”' : '') }));
+      });
+      view.appendChild(el('a', { class: 'visit-card', href: '#visit/' + id, style: 'text-decoration:none;color:inherit' }, [
+        el('div', { class: 'date', text: fmtDate(v.date) + (v.closedAt ? '' : ' · open') }),
+        el('div', { class: 'sub', text: plural(P.visitTotal(v), 'oyster') }), ul
+      ]));
+    });
+    view.appendChild(el('div', { class: 'btn-row' }, [el('a', { class: 'btn ghost block', href: '#past', text: 'Log a past visit' })]));
+  }
+
+  // ── Stamps (grid; detail sheet comes in step 6) ───────────────────────────
+  function stamps() {
+    var ev = s.evaluated || {}, stored = s.state.stamps || {};
+    var names = (window.HS_STAMPS && window.HS_STAMPS.TIER_NAMES) || {};
+    var ids = Object.keys(ev);
+    if (!Object.keys(stored).length) view.appendChild(el('p', { class: 'body', text: 'Stamps appear here as you go. Your first one is one oyster away.' }));
+    [['Regions', function (d) { return d.kind === 'region'; }], ['Milestones', function (d) { return d.kind !== 'region'; }]].forEach(function (g) {
+      view.appendChild(el('div', { class: 'field-label', text: g[0] }));
+      var grid = el('div', { class: 'stamp-grid' });
+      ids.filter(function (id) { return g[1](ev[id].def); }).forEach(function (id) {
+        var e = ev[id], tier = P.shownTier(stored[id], e);
+        var cap = e.def.name;
+        var prog = e.next ? (e.value + ' / ' + e.next.at + ' to ' + (names[e.next.tier] || e.next.tier)) : '';
+        grid.appendChild(el('figure', {}, [el('div', { html: ART.render(e.def, tier, { size: 92 }) }), el('figcaption', { text: cap }),
+          prog && e.def.kind !== 'single' ? el('figcaption', { text: prog }) : null]));
+      });
+      view.appendChild(grid);
+    });
+  }
+
+  // ── Profile (basics; cards, export and delete come in step 6) ─────────────
+  function profile() {
+    var p = s.state.profile || {};
+    var phone = String(p.phone || '').replace(/^\+1(\d{3})(\d{3})(\d{4})$/, '($1) $2-$3');
+    view.appendChild(el('div', { class: 'field-label', text: 'Profile' }));
+    view.appendChild(el('p', { class: 'body' }, [el('b', { text: p.name || '' })]));
+    view.appendChild(el('p', { class: 'body', text: phone }));
+    view.appendChild(el('p', { class: 'hint', text: 'To use a different number, create a new account.' }));
+    view.appendChild(el('div', { class: 'btn-row' }, [
+      el('a', { class: 'btn ghost', href: 'privacy.html', text: 'Privacy' }),
+      el('button', { type: 'button', class: 'btn ghost', text: 'Sign out', on: { click: function () {
+        s.signOut().then(function () { location.replace('user.html'); });
+      } } })
+    ]));
+  }
+
+  load();
+})();
+</script>
+
+</body>
+</html>

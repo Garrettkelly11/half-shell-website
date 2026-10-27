@@ -10,9 +10,10 @@
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
 
-    gtag('config', 'G-3SQ3075FQ1');
+    // Passport pages: no Google signals, no ad personalization (Build Sheet 5.11).
+    gtag('config', 'G-3SQ3075FQ1', { allow_google_signals: false, allow_ad_personalization_signals: false });
   </script>
-  <meta name="description" content="Half Shell Raw Bar — Log in or sign up to access your account." />
+  <meta name="description" content="Half Shell Raw Bar — log in or create your Oyster Passport." />
   <title>Half Shell — Account</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -254,14 +255,6 @@
       margin-top: 0.75rem;
     }
 
-    /* Profile meta (phone display) */
-    .profile-phone {
-      font-family: 'Roboto Mono', monospace;
-      font-size: 0.82rem;
-      color: #6a8f9a;
-      margin-bottom: 1.5rem;
-    }
-
     /* Logout */
     .logout-link {
       display: block;
@@ -338,6 +331,159 @@
         font-size: 1.5rem;
       }
     }
+
+    /* ── Passport sign-up (Passport step 3) ── */
+    .stay-note {
+      display: none;              /* shown with the preview link, so the public view keeps its layout */
+      font-family: 'Montserrat', sans-serif;
+      font-style: italic;
+      font-size: 0.72rem;
+      color: #6a8f9a;
+      margin-top: 0.6rem;
+    }
+    .signed-in-as {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.8rem;
+      color: #6a8f9a;
+      margin-bottom: 1.25rem;
+    }
+    .optional {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    fieldset {
+      border: none;
+      margin: 0 0 1.25rem;
+      padding: 0;
+      text-align: left;
+    }
+    legend {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #6a8f9a;
+      margin-bottom: 0.4rem;
+      padding: 0;
+    }
+    .dob-row, .card-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .login-container select {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 0.6rem 0.4rem;
+      border: 1px solid #9ec4bc;
+      border-radius: 4px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.95rem;
+      color: #0e2d3a;
+      background: #fff;
+      outline: none;
+    }
+    .dob-row select.dob-month { flex-grow: 1.6; }
+    .login-container select:focus {
+      border-color: #e89438;
+      box-shadow: 0 0 0 2px rgba(232,148,56,0.18);
+    }
+    .fine-print {
+      font-family: 'Montserrat', sans-serif;
+      font-style: italic;
+      font-size: 0.72rem;
+      color: #6a8f9a;
+      line-height: 1.5;
+      margin-top: 0.5rem;
+    }
+    .fine-print a { color: #2a7f94; }
+    .card-row { margin-bottom: 0.5rem; align-items: stretch; }
+    .login-container .card-row input {
+      flex: 1 1 0;
+      min-width: 0;
+      margin-bottom: 0;
+      font-family: 'Roboto Mono', monospace;
+      letter-spacing: 0.15em;
+    }
+    .card-remove {
+      flex: 0 0 44px;
+      min-height: 44px;
+      background: transparent;
+      border: 1.5px solid #bcd4ce;
+      border-radius: 4px;
+      color: #6a8f9a;
+      font-size: 1.2rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .card-remove:hover { border-color: #c0392b; color: #c0392b; }
+    .add-card {
+      background: none;
+      border: none;
+      color: #2a7f94;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0.6rem 0;
+      min-height: 44px;
+    }
+    .add-card:hover { color: #e89438; }
+    .login-container :focus-visible {
+      outline: 2px solid #e89438;
+      outline-offset: 2px;
+    }
+    /* Touch targets on the new states: 44px or more */
+    #state-create .btn-primary, #state-loading .btn-secondary { min-height: 44px; }
+    #state-create .logout-link, #state-loading .logout-link {
+      min-height: 44px;
+      margin: 0.5rem auto 0;
+      padding: 0 0.75rem;
+    }
+    /* "Why do we ask for this?" pop-out on the card field */
+    .why-btn {
+      background: none;
+      border: none;
+      padding: 0.35rem 0;
+      min-height: 44px;
+      font-family: 'Montserrat', sans-serif;
+      font-style: italic;
+      font-size: 0.75rem;
+      color: #2a7f94;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .why-btn:hover { color: #e89438; }
+    .why-pop {
+      position: relative;
+      background: #0e2d3a;
+      color: #f5f0e8;
+      border-radius: 6px;
+      padding: 0.8rem 0.9rem;
+      margin: 0.35rem 0 0.75rem;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+    .why-pop::before {               /* the little pointer up to the button */
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 1.25rem;
+      border: 6px solid transparent;
+      border-top: none;
+      border-bottom-color: #0e2d3a;
+    }
+    .why-pop p { margin-bottom: 0.5rem; }
+    .why-pop a { color: #e89438; font-weight: 700; }
+    .notice {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.85rem;
+      color: #0e2d3a;
+      line-height: 1.5;
+      margin-bottom: 1.25rem;
+    }
   </style>
 </head>
 <body>
@@ -349,22 +495,23 @@
     <img src="assets/logo.png" alt="Half Shell Raw Bar" class="login-logo" width="72" height="72" />
     <div class="login-eyebrow">Half Shell Raw Bar</div>
     <h2>Welcome</h2>
-    <p class="state-hint">Enter your phone number to sign in or get started.</p>
+    <p class="state-hint">Enter your phone number to log in or create an account.</p>
 
-    <!-- Coming Soon Overlay -->
+    <!-- Coming Soon Overlay (removed on this phone by user.html?preview=1) -->
     <div class="coming-soon-overlay">
       <h3>Coming Soon</h3>
       <p>Customer sign-in is launching very soon. Stay tuned!</p>
     </div>
 
-    <div class="error-msg" id="phone-error"></div>
+    <div class="error-msg" id="phone-error" role="alert"></div>
 
     <label for="phone-input">Phone Number</label>
     <input type="tel" id="phone-input" placeholder="(704) 555-0123" autocomplete="tel" inputmode="numeric" />
 
     <div class="btn-group">
-      <button class="btn-primary" id="send-code-btn">Send Verification Code</button>
+      <button class="btn-primary" id="send-code-btn" disabled>Log in or create account</button>
     </div>
+    <p class="stay-note" id="stay-note">You'll stay signed in on this phone.</p>
 
     <div id="recaptcha-container"></div>
 
@@ -372,21 +519,22 @@
     <a class="btn-employee" href="employee.html">Employee Login</a>
 
     <a class="back-link" href="index.html">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="9,2 4,7 9,12"/>
       </svg>
       Back to Menu
     </a>
   </div>
 
-  <!-- ── State: OTP entry ── -->
+  <!-- ── State: Code entry ── -->
   <div id="state-otp" style="display:none">
     <img src="assets/logo.png" alt="Half Shell Raw Bar" class="login-logo" width="72" height="72" />
     <div class="login-eyebrow">Half Shell Raw Bar</div>
     <h2>Check Your Texts</h2>
-    <p class="state-hint" id="otp-hint">We sent a 6-digit code to your number.</p>
+    <p class="state-hint" id="otp-hint">We texted a 6-digit code to your number.</p>
 
-    <div class="error-msg" id="otp-error"></div>
+    <div class="error-msg" id="otp-error" role="alert"></div>
+    <p class="save-confirm" id="otp-sent" role="status">We sent a new code.</p>
 
     <label for="otp-input">Verification Code</label>
     <input type="text" id="otp-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
@@ -397,274 +545,427 @@
     </div>
 
     <button class="back-link" id="back-to-phone-btn">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="9,2 4,7 9,12"/>
       </svg>
       Change Number
     </button>
   </div>
 
-  <!-- ── State: Profile ── -->
-  <div id="state-profile" style="display:none">
+  <!-- ── State: Opening the passport ── -->
+  <div id="state-loading" style="display:none">
     <img src="assets/logo.png" alt="Half Shell Raw Bar" class="login-logo" width="72" height="72" />
-    <div class="login-eyebrow">Half Shell Raw Bar</div>
-    <h2 id="profile-greeting">My Profile</h2>
-    <p class="profile-phone" id="profile-phone"></p>
+    <div class="login-eyebrow">Oyster Passport</div>
+    <h2>Opening your passport…</h2>
+    <div class="error-msg" id="loading-error" role="alert"></div>
+    <div class="btn-group">
+      <button class="btn-secondary" id="loading-retry" style="display:none">Try again</button>
+    </div>
+    <button class="logout-link" id="loading-signout">Sign Out</button>
+  </div>
 
-    <div class="error-msg" id="profile-error"></div>
+  <!-- ── State: Create account ── -->
+  <div id="state-create" style="display:none">
+    <img src="assets/logo.png" alt="Half Shell Raw Bar" class="login-logo" width="72" height="72" />
+    <div class="login-eyebrow">Oyster Passport</div>
+    <h2>Create your passport</h2>
+    <p class="signed-in-as" id="create-phone"></p>
 
-    <label for="profile-name">Name</label>
-    <input type="text" id="profile-name" placeholder="Your name" autocomplete="name" />
+    <div class="error-msg" id="create-error" role="alert"></div>
 
-    <label for="profile-email">Email</label>
-    <input type="email" id="profile-email" placeholder="your@email.com" autocomplete="email" />
+    <label for="create-name">Name</label>
+    <input type="text" id="create-name" maxlength="60" autocomplete="name" placeholder="Your name" />
+
+    <fieldset>
+      <legend>Birthday</legend>
+      <div class="dob-row">
+        <select id="dob-month" class="dob-month" aria-label="Birthday month" autocomplete="bday-month"></select>
+        <select id="dob-day" aria-label="Birthday day" autocomplete="bday-day"></select>
+        <select id="dob-year" aria-label="Birthday year" autocomplete="bday-year"></select>
+      </div>
+      <p class="fine-print">We use your birthday for your birthday reward. You can correct it once later.</p>
+    </fieldset>
+
+    <label for="create-email">Email <span class="optional">(optional)</span></label>
+    <input type="email" id="create-email" maxlength="120" autocomplete="email" placeholder="your@email.com" />
+
+    <fieldset>
+      <legend>Add a card you pay with <span class="optional">(optional)</span></legend>
+      <button type="button" class="why-btn" id="why-card-btn" aria-expanded="false" aria-controls="why-card">Why do we ask for this?</button>
+      <div class="why-pop" id="why-card" role="region" aria-label="Why we ask for a card" hidden>
+        <p>A card lets us connect what you order to your passport, so you don't have to log every oyster yourself.
+          We only keep the last 4 digits and the card type, never the full number. It's optional, and you can
+          remove a card any time.</p>
+        <a href="privacy.html#card-digits">Read the card section of our privacy statement</a>
+      </div>
+      <div id="card-rows"></div>
+      <button type="button" class="add-card" id="add-card-btn">+ Add a card</button>
+      <p class="fine-print">Apple Pay or Google Pay? Use the last 4 shown for that card in your Wallet app.</p>
+    </fieldset>
 
     <div class="btn-group">
-      <button class="btn-primary" id="save-btn">Save Changes</button>
+      <button class="btn-primary" id="create-btn">Open my passport</button>
     </div>
 
-    <p class="save-confirm" id="save-confirm">Profile saved.</p>
+    <button class="logout-link" id="create-signout">Not you? Sign Out</button>
+  </div>
 
+  <!-- ── State: Under 13 ── -->
+  <div id="state-blocked" style="display:none">
+    <img src="assets/logo.png" alt="Half Shell Raw Bar" class="login-logo" width="72" height="72" />
+    <div class="login-eyebrow">Oyster Passport</div>
+    <h2>Sorry</h2>
+    <p class="notice" role="alert">Sorry — you need to be 13 or older to create an account.</p>
     <a class="back-link" href="index.html">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="9,2 4,7 9,12"/>
       </svg>
       Back to Menu
     </a>
-
-    <button class="logout-link" id="logout-btn">Sign Out</button>
   </div>
 
 </div>
 
+<script src="src/passport-core.js"></script>
+<script src="src/passport-store.js"></script>
 <script>
+/*
+ * Oyster Passport sign-in and sign-up (Build Sheet section 5.1).
+ * Phone + SMS code on the Passport's own Firebase app. A complete profile
+ * goes to passport.html; otherwise the guest creates one here.
+ */
 (function () {
-  const FIREBASE_CONFIG = {
-    apiKey:            "AIzaSyDNuyGuzAmow0YehKlztihYn3l57--82L8",
-    authDomain:        "half-shell-oyster-menu.firebaseapp.com",
-    databaseURL:       "https://half-shell-oyster-menu-default-rtdb.firebaseio.com",
-    projectId:         "half-shell-oyster-menu",
-    storageBucket:     "half-shell-oyster-menu.firebasestorage.app",
-    messagingSenderId: "784452175310",
-    appId:             "1:784452175310:web:2d56ed01d06bb39886179f"
-  };
+  'use strict';
+  var P = window.HS_PASSPORT, S = window.HS_STORE;
+  var $ = function (id) { return document.getElementById(id); };
 
-  function loadScript(src, cb) {
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = cb;
-    s.onerror = function () { cb(new Error('Failed to load ' + src)); };
-    document.head.appendChild(s);
+  var COPY = {
+    badPhone: 'Enter a 10-digit US phone number.',
+    smsFail: "We couldn't send a code. Check the number and try again.",
+    tooMany: 'Too many tries. Wait a few minutes and try again.',
+    badCode: "That code didn't work. Try again or send a new one.",
+    codeFormat: 'Enter the 6-digit code from the text.',
+    offline: "We couldn't reach Half Shell. Check your connection and try again.",
+    noSdk: "Sign-in couldn't load. Check your connection and reload the page.",
+    name: 'Enter your name (up to 60 characters).',
+    dob: 'Choose your birthday.',
+    dobYear: 'Choose a birth year of 1900 or later.',
+    dobFuture: "That birthday hasn't happened yet.",
+    email: 'Check your email address, or leave it blank.',
+    card: 'Each card needs its last 4 digits and its type. Remove any card you don’t want to add.',
+    save: "We couldn't save your passport. Check your connection and try again."
+  };
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                'August', 'September', 'October', 'November', 'December'];
+  var STATES = ['phone', 'otp', 'loading', 'create', 'blocked'];
+
+  // ── Preview (Garrett, 20/10/2026): "Coming soon" stays for everyone else ──
+  var preview = S.isPreview();
+  if (preview) {
+    var overlay = document.querySelector('.coming-soon-overlay');
+    if (overlay) overlay.parentNode.removeChild(overlay);
+    document.getElementById('stay-note').style.display = 'block';
   }
 
-  // Load Firebase Auth + DB SDKs sequentially
-  loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js', function () {
-    loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js', function () {
-      loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js', function () {
-        initApp();
-      });
-    });
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function showState(name) {
+    STATES.forEach(function (s) { $('state-' + s).style.display = s === name ? '' : 'none'; });
+  }
+  function showError(id, msg) {
+    var el = $(id);
+    el.textContent = msg || '';
+    el.style.display = msg ? 'block' : 'none';
+  }
+  function formatPhone(e164) {
+    var d = String(e164 || '').replace(/^\+1/, '');
+    return d.length === 10 ? '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6) : e164;
+  }
+  function toE164(raw) {
+    var digits = String(raw || '').replace(/\D/g, '');
+    if (digits.length === 11 && digits[0] === '1') digits = digits.slice(1);
+    return digits.length === 10 ? '+1' + digits : null;
+  }
+  function setBusy(id, busy) {
+    var b = $(id);
+    if (!b.dataset.label) b.dataset.label = b.textContent;
+    b.disabled = busy;
+    b.textContent = busy ? 'Please wait…' : b.dataset.label;
+  }
+  function go(url) { window.location.replace(url); }
+  function option(value, text) {
+    var o = document.createElement('option');
+    o.value = value; o.textContent = text;
+    return o;
+  }
+
+  // Phone input formatting (as before).
+  $('phone-input').addEventListener('input', function () {
+    var digits = this.value.replace(/\D/g, '').slice(0, 10);
+    if (digits.length >= 7)      this.value = '(' + digits.slice(0, 3) + ') ' + digits.slice(3, 6) + '-' + digits.slice(6);
+    else if (digits.length >= 4) this.value = '(' + digits.slice(0, 3) + ') ' + digits.slice(3);
+    else                         this.value = digits;
   });
+  $('otp-input').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 6); });
 
-  function initApp() {
-    firebase.initializeApp(FIREBASE_CONFIG);
-    const auth = firebase.auth();
-    const db   = firebase.database();
+  // Birthday selects: month, day, year (newest first).
+  (function () {
+    var m = $('dob-month'), d = $('dob-day'), y = $('dob-year');
+    m.appendChild(option('', 'Month'));
+    MONTHS.forEach(function (name, i) { m.appendChild(option((i < 9 ? '0' : '') + (i + 1), name)); });
+    d.appendChild(option('', 'Day'));
+    for (var i = 1; i <= 31; i++) d.appendChild(option((i < 10 ? '0' : '') + i, String(i)));
+    y.appendChild(option('', 'Year'));
+    var thisYear = Number(P.nyDate(Date.now()).slice(0, 4));
+    for (var yr = thisYear; yr >= 1900; yr--) y.appendChild(option(String(yr), String(yr)));
+  })();
 
-    let confirmationResult = null;
-    let recaptchaVerifier  = null;
+  // Card rows.
+  function addCardRow() {
+    var row = document.createElement('div');
+    row.className = 'card-row';
+    var n = $('card-rows').children.length + 1;
+    var input = document.createElement('input');
+    input.type = 'text'; input.inputMode = 'numeric'; input.maxLength = 4; input.autocomplete = 'off';
+    input.placeholder = 'Last 4'; input.className = 'card-last4';
+    input.setAttribute('aria-label', 'Card ' + n + ': last 4 digits');
+    input.addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 4); });
+    var sel = document.createElement('select');
+    sel.className = 'card-brand';
+    sel.setAttribute('aria-label', 'Card ' + n + ': type');
+    sel.appendChild(option('', 'Card type'));
+    P.CARD_BRANDS.forEach(function (b) { sel.appendChild(option(b.code, b.label)); });
+    var rm = document.createElement('button');
+    rm.type = 'button'; rm.className = 'card-remove'; rm.textContent = '×';
+    rm.setAttribute('aria-label', 'Remove card ' + n);
+    rm.addEventListener('click', function () {
+      row.parentNode.removeChild(row);
+      updateAddLabel();
+      $('add-card-btn').focus();
+    });
+    row.appendChild(input); row.appendChild(sel); row.appendChild(rm);
+    $('card-rows').appendChild(row);
+    updateAddLabel();
+    input.focus();
+  }
+  function updateAddLabel() {
+    $('add-card-btn').textContent = $('card-rows').children.length ? '+ Add another card' : '+ Add a card';
+  }
+  $('add-card-btn').addEventListener('click', addCardRow);
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+  // "Why do we ask for this?" opens and closes the explanation; Escape closes it.
+  function setWhy(open) {
+    $('why-card').hidden = !open;
+    $('why-card-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  $('why-card-btn').addEventListener('click', function () { setWhy($('why-card').hidden); });
+  $('why-card').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { setWhy(false); $('why-card-btn').focus(); }
+  });
+  $('why-card-btn').addEventListener('keydown', function (e) { if (e.key === 'Escape') setWhy(false); });
 
-    function showState(name) {
-      ['phone', 'otp', 'profile'].forEach(function (s) {
-        document.getElementById('state-' + s).style.display = s === name ? '' : 'none';
+  // ── Firebase ──────────────────────────────────────────────────────────────
+  S.sdk(['auth', 'database']).then(start, function () { showError('phone-error', COPY.noSdk); });
+
+  function start() {
+    var app = S.app(), auth = app.auth(), db = app.database();
+    var confirmation = null, verifier = null, lastPhone = null;
+    var justVerified = false, blocked = false, current = null;
+
+    $('send-code-btn').disabled = false;
+
+    function resetVerifier() {
+      if (verifier) { try { verifier.clear(); } catch (e) { /* already gone */ } verifier = null; }
+      var c = $('recaptcha-container'), fresh = document.createElement('div');
+      fresh.id = 'recaptcha-container';
+      c.parentNode.replaceChild(fresh, c);
+    }
+    function sendCode(phone, errId) {
+      if (!verifier) verifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' }, app);
+      return auth.signInWithPhoneNumber(phone, verifier).then(function (cr) {
+        confirmation = cr; lastPhone = phone;
+        $('otp-hint').textContent = 'We texted a 6-digit code to ' + formatPhone(phone) + '.';
+        return true;
+      }, function (err) {
+        showError(errId, err && err.code === 'auth/too-many-requests' ? COPY.tooMany : COPY.smsFail);
+        resetVerifier();
+        return false;
       });
     }
-
-    function showError(id, msg) {
-      const el = document.getElementById(id);
-      el.textContent = msg;
-      el.style.display = msg ? 'block' : 'none';
-    }
-
-    function formatPhone(digits) {
-      return '(' + digits.slice(0, 3) + ') ' + digits.slice(3, 6) + '-' + digits.slice(6);
-    }
-
-    function toE164(raw) {
-      const digits = raw.replace(/\D/g, '');
-      return digits.length === 10 ? '+1' + digits : null;
-    }
-
-    function setLoading(btnId, loading) {
-      const btn = document.getElementById(btnId);
-      btn.disabled = loading;
-      btn.textContent = loading ? 'Please wait…' : btn.dataset.label;
-    }
-
-    // Cache button labels for loading state
-    ['send-code-btn', 'verify-btn'].forEach(function (id) {
-      const btn = document.getElementById(id);
-      btn.dataset.label = btn.textContent;
-    });
-
-    // ── Auth state ────────────────────────────────────────────────────────────
 
     auth.onAuthStateChanged(function (user) {
-      if (user) {
-        loadProfile(user);
-      } else {
-        showState('phone');
-      }
+      if (user) { route(user); return; }
+      current = null;
+      S.markSignedIn(false);
+      if (!blocked) showState('phone');
     });
 
-    // ── Phone entry ───────────────────────────────────────────────────────────
-
-    // Format phone input as user types
-    document.getElementById('phone-input').addEventListener('input', function () {
-      const digits = this.value.replace(/\D/g, '').slice(0, 10);
-      if (digits.length >= 7)      this.value = '(' + digits.slice(0,3) + ') ' + digits.slice(3,6) + '-' + digits.slice(6);
-      else if (digits.length >= 4) this.value = '(' + digits.slice(0,3) + ') ' + digits.slice(3);
-      else if (digits.length >= 1) this.value = digits;
-    });
-
-    document.getElementById('send-code-btn').addEventListener('click', async function () {
-      showError('phone-error', '');
-      const phone = toE164(document.getElementById('phone-input').value);
-      if (!phone) {
-        showError('phone-error', 'Please enter a valid 10-digit US phone number.');
-        return;
-      }
-
-      setLoading('send-code-btn', true);
-
-      try {
-        if (!recaptchaVerifier) {
-          recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-            size: 'invisible'
-          });
+    // After sign-in: a complete profile opens the passport; otherwise create one.
+    function route(user) {
+      if (!user.phoneNumber) { auth.signOut(); return; }   // not a phone sign-in
+      current = user;
+      S.markSignedIn(true);
+      showState('loading');
+      showError('loading-error', '');
+      $('loading-retry').style.display = 'none';
+      db.ref('users/' + user.uid + '/profile').once('value').then(function (snap) {
+        var p = snap.val();
+        if (p && p.name && p.dob) {
+          if (justVerified) S.track('login', { method: 'phone' });
+          go('passport.html');
+        } else {
+          openCreate(user);
         }
-        confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
-        const digits = phone.replace('+1', '');
-        document.getElementById('otp-hint').textContent =
-          'We sent a 6-digit code to ' + formatPhone(digits) + '.';
-        showState('otp');
-        document.getElementById('otp-input').focus();
-      } catch (err) {
-        showError('phone-error', 'Could not send code — please check your number and try again.');
-        // Reset reCAPTCHA so next attempt works
-        if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
-      }
-
-      setLoading('send-code-btn', false);
-    });
-
-    // ── OTP entry ─────────────────────────────────────────────────────────────
-
-    document.getElementById('verify-btn').addEventListener('click', async function () {
-      showError('otp-error', '');
-      const code = document.getElementById('otp-input').value.trim();
-      if (code.length !== 6 || !/^\d{6}$/.test(code)) {
-        showError('otp-error', 'Please enter the 6-digit code from your text message.');
-        return;
-      }
-
-      setLoading('verify-btn', true);
-
-      try {
-        const result = await confirmationResult.confirm(code);
-        loadProfile(result.user);
-      } catch (err) {
-        showError('otp-error', 'Incorrect or expired code. Please try again or request a new one.');
-      }
-
-      setLoading('verify-btn', false);
-    });
-
-    document.getElementById('resend-btn').addEventListener('click', async function () {
-      showError('otp-error', '');
-      // Go back to phone state and re-trigger send
-      showState('phone');
-      if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
-      document.getElementById('send-code-btn').click();
-    });
-
-    document.getElementById('back-to-phone-btn').addEventListener('click', function () {
-      showState('phone');
-      if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
-      document.getElementById('otp-input').value = '';
-    });
-
-    // Allow Enter key on OTP input
-    document.getElementById('otp-input').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') document.getElementById('verify-btn').click();
-    });
-
-    // ── Profile ───────────────────────────────────────────────────────────────
-
-    async function loadProfile(user) {
-      showState('profile');
-      showError('profile-error', '');
-
-      const digits = user.phoneNumber.replace('+1', '');
-      document.getElementById('profile-phone').textContent = formatPhone(digits);
-
-      try {
-        const snap = await db.ref('users/' + user.uid).once('value');
-        const data = snap.val() || {};
-
-        document.getElementById('profile-name').value  = data.name  || '';
-        document.getElementById('profile-email').value = data.email || '';
-        document.getElementById('profile-greeting').textContent =
-          data.name ? 'Welcome, ' + data.name.split(' ')[0] : 'My Profile';
-
-        // Write phone on first load so it's stored for future Toast matching
-        if (!data.phone) {
-          db.ref('users/' + user.uid).update({ phone: user.phoneNumber });
-        }
-      } catch (err) {
-        showError('profile-error', 'Could not load your profile. Please try again.');
-      }
+      }, function () {
+        showError('loading-error', COPY.offline);
+        $('loading-retry').style.display = '';
+      });
     }
+    $('loading-retry').addEventListener('click', function () { if (current) route(current); });
 
-    document.getElementById('save-btn').addEventListener('click', async function () {
-      showError('profile-error', '');
-      const user  = auth.currentUser;
-      if (!user) return;
-
-      const name  = document.getElementById('profile-name').value.trim();
-      const email = document.getElementById('profile-email').value.trim();
-
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        showError('profile-error', 'Please enter a valid email address.');
-        return;
-      }
-
-      try {
-        await db.ref('users/' + user.uid).update({
-          name:      name,
-          email:     email,
-          phone:     user.phoneNumber,
-          updatedAt: new Date().toISOString()
-        });
-        document.getElementById('profile-greeting').textContent =
-          name ? 'Welcome, ' + name.split(' ')[0] : 'My Profile';
-
-        const confirm = document.getElementById('save-confirm');
-        confirm.style.display = 'block';
-        setTimeout(function () { confirm.style.display = 'none'; }, 3000);
-      } catch (err) {
-        showError('profile-error', 'Could not save your profile. Please try again.');
-      }
-    });
-
-    document.getElementById('logout-btn').addEventListener('click', function () {
-      auth.signOut().then(function () {
-        showState('phone');
-        document.getElementById('phone-input').value = '';
+    // ── Phone ──
+    $('send-code-btn').addEventListener('click', function () {
+      if (!preview) return;                     // "Coming soon" for the public
+      showError('phone-error', '');
+      var phone = toE164($('phone-input').value);
+      if (!phone) { showError('phone-error', COPY.badPhone); return; }
+      setBusy('send-code-btn', true);
+      sendCode(phone, 'phone-error').then(function (ok) {
+        setBusy('send-code-btn', false);
+        if (ok) {
+          showError('otp-error', '');
+          $('otp-sent').style.display = 'none';
+          $('otp-input').value = '';
+          showState('otp');
+          $('otp-input').focus();
+        }
       });
     });
+    $('phone-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('send-code-btn').click(); });
+
+    // ── Code ──
+    $('verify-btn').addEventListener('click', function () {
+      showError('otp-error', '');
+      var code = $('otp-input').value.trim();
+      if (!/^\d{6}$/.test(code)) { showError('otp-error', COPY.codeFormat); return; }
+      if (!confirmation) { showError('otp-error', COPY.badCode); return; }
+      setBusy('verify-btn', true);
+      justVerified = true;
+      confirmation.confirm(code).then(function () {
+        setBusy('verify-btn', false);           // onAuthStateChanged routes
+      }, function (err) {
+        justVerified = false;
+        setBusy('verify-btn', false);
+        var c = err && err.code;
+        showError('otp-error', c === 'auth/too-many-requests' ? COPY.tooMany
+          : c === 'auth/network-request-failed' ? COPY.offline : COPY.badCode);
+      });
+    });
+    $('otp-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('verify-btn').click(); });
+    $('resend-btn').addEventListener('click', function () {
+      showError('otp-error', '');
+      $('otp-sent').style.display = 'none';
+      if (!lastPhone) { showState('phone'); return; }
+      resetVerifier();
+      setBusy('resend-btn', true);
+      sendCode(lastPhone, 'otp-error').then(function (ok) {
+        setBusy('resend-btn', false);
+        if (ok) $('otp-sent').style.display = 'block';
+      });
+    });
+    $('back-to-phone-btn').addEventListener('click', function () {
+      resetVerifier();
+      confirmation = null;
+      $('otp-input').value = '';
+      showState('phone');
+      $('phone-input').focus();
+    });
+
+    // ── Create account ──
+    function openCreate(user) {
+      $('create-phone').textContent = 'Signed in as ' + formatPhone(user.phoneNumber);
+      showError('create-error', '');
+      showState('create');
+      $('create-name').focus();
+    }
+    function readCards() {
+      var rows = Array.prototype.slice.call(document.querySelectorAll('#card-rows .card-row'));
+      var cards = [], bad = false;
+      rows.forEach(function (row) {
+        var c = { last4: row.querySelector('.card-last4').value.trim(), brand: row.querySelector('.card-brand').value };
+        if (!c.last4 && !c.brand) return;       // an empty row is ignored
+        if (P.validCard(c)) cards.push(c); else bad = true;
+      });
+      return bad ? null : cards;
+    }
+    function clearBirthday() { ['dob-month', 'dob-day', 'dob-year'].forEach(function (id) { $(id).value = ''; }); }
+
+    $('create-btn').addEventListener('click', function () {
+      var user = current;
+      if (!user) return;
+      showError('create-error', '');
+      var name = P.cleanName($('create-name').value);
+      if (!P.validName(name)) { showError('create-error', COPY.name); $('create-name').focus(); return; }
+      var dob = $('dob-year').value + '-' + $('dob-month').value + '-' + $('dob-day').value;
+      var today = P.nyDate(Date.now());
+      var bad = P.checkDob(dob, today);
+      if (bad) {
+        showError('create-error', bad === 'year' ? COPY.dobYear : bad === 'future' ? COPY.dobFuture : COPY.dob);
+        $('dob-month').focus();
+        return;
+      }
+      var email = $('create-email').value.trim();
+      if (email && !P.validEmail(email)) { showError('create-error', COPY.email); $('create-email').focus(); return; }
+      var cards = readCards();
+      if (!cards) { showError('create-error', COPY.card); return; }
+
+      // Under 13: delete the new sign-in, write nothing, sign out (5.1).
+      if (P.isUnder13(dob, today)) {
+        blocked = true;
+        clearBirthday();
+        dob = null;
+        user.delete().catch(function () { /* fall through to sign-out */ })
+          .then(function () { return auth.signOut(); })
+          .catch(function () { /* already signed out */ })
+          .then(function () { S.markSignedIn(false); showState('blocked'); });
+        return;
+      }
+
+      var TS = firebase.database.ServerValue.TIMESTAMP;
+      var profile = { name: name, dob: dob, dobEditsUsed: 0, phone: user.phoneNumber, createdAt: TS, updatedAt: TS };
+      if (email) profile.email = email;
+      var u = { profile: profile };
+      cards.forEach(function (c) {
+        u['cards/' + db.ref('users/' + user.uid + '/cards').push().key] = { last4: c.last4, brand: c.brand, addedAt: TS };
+      });
+      // "Here today" dates from this phone, from the day before sign-up (5.8).
+      var here = S.hereRemembered();
+      P.hereOnCarry(Object.keys(here), P.businessDay(Date.now())).forEach(function (d) {
+        if (typeof here[d] === 'number') u['hereOn/' + d] = here[d];
+      });
+
+      setBusy('create-btn', true);
+      db.ref('users/' + user.uid).update(u).then(function () {
+        S.lsRemove(S.HERE_KEY);
+        S.track('sign_up', { method: 'phone', cards_added: cards.length >= 2 ? '2+' : String(cards.length) });
+        go('passport.html');
+      }, function () {
+        // The save may have gone through with the answer lost (the rules refuse
+        // a second sign-up, since createdAt can't change). Check before saying so.
+        db.ref('users/' + user.uid + '/profile').once('value').then(function (snap) {
+          var p = snap.val();
+          if (p && p.name && p.dob) { go('passport.html'); return; }
+          setBusy('create-btn', false);
+          showError('create-error', COPY.save);
+        }, function () {
+          setBusy('create-btn', false);
+          showError('create-error', COPY.save);
+        });
+      });
+    });
+
+    function signOut() { auth.signOut(); }
+    $('create-signout').addEventListener('click', signOut);
+    $('loading-signout').addEventListener('click', signOut);
   }
 })();
 </script>
