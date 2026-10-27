@@ -169,6 +169,43 @@
     .why-pop p { margin-bottom: 0.5rem; }
     .why-pop a { color: var(--orange); font-weight: 700; }
     .stamp-link { color: inherit; text-decoration: none; border-radius: 6px; display: block; }
+    /* History */
+    .seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 1.5px solid var(--navy); border-radius: 22px; overflow: hidden; margin-bottom: 1rem; }
+    .seg a { min-height: 40px; display: flex; align-items: center; justify-content: center; color: var(--navy); text-decoration: none; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .seg a.on { background: var(--navy); color: var(--cream); }
+    .visit-card { text-decoration: none; color: inherit; }
+    .vc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+    .tl-stars { color: var(--orange); letter-spacing: 1px; }
+    .tl-words { font-style: italic; color: var(--muted); }
+    .tl-note { font-size: 0.78rem; color: var(--muted); margin: 0.1rem 0 0.25rem; }
+    .map-wrap { margin: 0 -0.4rem; }
+    svg.map { display: block; width: 100%; height: auto; }
+    .map .rg-other { fill: #ebe5d8; stroke: #fff; stroke-width: 0.8; }
+    .map .rg { stroke: #2a7f94; stroke-width: 1.1; cursor: pointer; mix-blend-mode: multiply; }
+    .map-inset .rg { stroke-width: 0.6; }
+    .map-inset .rg-other { stroke-width: 0.4; }
+    .map .rg.pearl { stroke: #5b5f6e; }
+    .map .rg.sel { stroke: var(--orange); stroke-width: 2.4; }
+    .map-inset .rg.sel { stroke-width: 1.4; }
+    .map .rg:focus { outline: none; stroke: var(--orange); stroke-width: 2.4; }
+    .map .rg-label { fill: var(--navy); font-family: 'Lato', sans-serif; font-weight: 700; text-anchor: middle; pointer-events: none; }
+    .map-cap { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 0.6rem 0.4rem 0.2rem; }
+    .map-inset { border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.35); }
+    .legend { display: flex; gap: 0.8rem; flex-wrap: wrap; font-size: 0.72rem; color: var(--muted); margin: 0.6rem 0 0.2rem; }
+    .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 0.3rem; vertical-align: -2px; border: 1px solid rgba(0,0,0,.15); }
+    ol.fav { list-style: none; counter-reset: fav; }
+    ol.fav li { counter-increment: fav; display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.4rem 0; border-bottom: 1px dotted var(--line); font-size: 0.9rem; }
+    ol.fav li span::before { content: counter(fav) '. '; color: var(--muted); font-family: 'Roboto Mono', monospace; font-size: 0.8rem; }
+    ol.fav li b { font-family: 'Roboto Mono', monospace; color: var(--navy); }
+    .bars { display: grid; gap: 0.35rem; }
+    .bar-row { display: grid; grid-template-columns: 9.5rem 1fr 2.2rem; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
+    .bar { display: block; height: 10px; background: #e6dfd1; border-radius: 5px; overflow: hidden; }
+    .bar i { display: block; height: 100%; background: var(--teal); }
+    .bar-n { font-family: 'Roboto Mono', monospace; text-align: right; }
+    .ew { display: grid; grid-template-columns: auto 1fr auto; gap: 0.6rem; align-items: center; font-size: 0.85rem; font-weight: 700; }
+    .ew-bar { height: 12px; background: #c9b9a0; }
+    .ew-bar i { background: var(--navy); }
+    @media (max-width: 360px) { .bar-row { grid-template-columns: 8rem 1fr 2rem; } }
     /* Bottom tab bar */
     .pp-nav {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
@@ -238,7 +275,7 @@
 <script>
 /*
  * Oyster Passport (Build Sheet sections 5.2–5.7). Overview and My Flight are
- * full; History is a timeline until step 7.
+ * full.
  */
 (function () {
   'use strict';
@@ -774,10 +811,20 @@
     ]));
   }
 
-  // ── History (timeline; map and favorites come in step 7) ──────────────────
-  function history() {
-    var visits = s.state.visits || {};
+  // ── History (5.5): Timeline · Map · Favorites ─────────────────────────────
+  function history(arg) {
+    var mode = arg === 'map' || arg === 'favorites' ? arg : 'timeline';
     view.appendChild(el('div', { class: 'field-label', text: 'History' }));
+    var seg = el('div', { class: 'seg', role: 'tablist', 'aria-label': 'History views' });
+    [['timeline', 'Timeline'], ['map', 'Map'], ['favorites', 'Favorites']].forEach(function (m) {
+      seg.appendChild(el('a', { role: 'tab', href: '#history' + (m[0] === 'timeline' ? '' : '/' + m[0]), 'aria-selected': mode === m[0] ? 'true' : 'false',
+        class: mode === m[0] ? 'on' : '', text: m[1] }));
+    });
+    view.appendChild(seg);
+    ({ timeline: timeline, map: mapView, favorites: favorites })[mode]();
+  }
+  function timeline() {
+    var visits = s.state.visits || {};
     var ids = Object.keys(visits).sort(function (a, b) {
       return visits[b].date.localeCompare(visits[a].date) || (visits[b].startedAt || 0) - (visits[a].startedAt || 0);
     });
@@ -785,16 +832,202 @@
     ids.forEach(function (id) {
       var v = visits[id], items = v.items || {};
       var ul = el('ul');
-      Object.keys(items).forEach(function (oid) {
+      Object.keys(items).sort(function (a, b) { return (items[a].addedAt || 0) - (items[b].addedAt || 0); }).forEach(function (oid) {
         var it = items[oid];
-        ul.appendChild(el('li', { text: nameOf(oid) + ' ×' + it.qty + (it.rating ? '  ★' + it.rating : '') + (it.twoWords ? '  “' + it.twoWords + '”' : '') }));
+        ul.appendChild(el('li', {}, [
+          el('span', { class: 'tl-name', text: nameOf(oid) + ' ×' + it.qty }),
+          it.rating ? el('span', { class: 'tl-stars', 'aria-label': plural(it.rating, 'star'), text: ' ' + '★★★★★'.slice(0, it.rating) }) : null,
+          it.twoWords ? el('span', { class: 'tl-words', text: ' “' + it.twoWords + '”' }) : null,
+          it.note ? el('div', { class: 'tl-note', text: it.note }) : null
+        ]));
       });
-      view.appendChild(el('a', { class: 'visit-card', href: '#visit/' + id, style: 'text-decoration:none;color:inherit' }, [
-        el('div', { class: 'date', text: fmtDate(v.date) + (v.closedAt ? '' : ' · open') }),
-        el('div', { class: 'sub', text: plural(P.visitTotal(v), 'oyster') }), ul
+      view.appendChild(el('a', { class: 'visit-card', href: '#visit/' + id, 'aria-label': fmtDate(v.date) + ', ' + plural(P.visitTotal(v), 'oyster') + '. Edit or delete.' }, [
+        el('div', { class: 'vc-head' }, [el('span', { class: 'date', text: fmtDate(v.date) + (v.closedAt ? '' : ' · open') }),
+          el('span', { class: 'sub', text: plural(P.visitTotal(v), 'oyster') })]), ul
       ]));
     });
     view.appendChild(el('div', { class: 'btn-row' }, [el('a', { class: 'btn ghost block', href: '#past', text: 'Log a past visit' })]));
+  }
+
+  // Map: loaded the first time it's opened (data/map-na.js, about 20 KB).
+  var mapLoading = false, mapFailed = false;
+  function needMap() {
+    if (window.HS_MAP_NA || mapLoading) return;
+    mapLoading = true;
+    var sc = document.createElement('script');
+    sc.src = 'data/map-na.js';
+    sc.onload = function () { mapLoading = false; render(); };
+    sc.onerror = function () { mapLoading = false; mapFailed = true; render(); };
+    document.head.appendChild(sc);
+  }
+  // Labels that sit better a little off their region's centre (map units).
+  var LABEL_NUDGE = { ri: [9, 6], ct: [-2, 2], nj: [5, 2], md: [-6, -6], de: [5, 4], nh: [0, 4], ma: [-4, -2], pei: [0, -7], ns: [4, 4] };
+  function regionStats() {
+    var visits = s.state.visits || {}, agg = P.aggregateRatings(visits), by = {};
+    Object.keys(visits).forEach(function (vid) {
+      var items = visits[vid].items || {};
+      Object.keys(items).forEach(function (oid) {
+        var o = s.oyster(oid);
+        if (!o || !o.region) return;
+        var r = by[o.region] || (by[o.region] = { qty: 0, oysters: {} });
+        r.qty += items[oid].qty || 0;
+        var x = r.oysters[oid] || (r.oysters[oid] = { qty: 0, rating: agg[oid] ? agg[oid].rating : null });
+        x.qty += items[oid].qty || 0;
+      });
+    });
+    return by;
+  }
+  function mapView() {
+    var M = window.HS_MAP_NA;
+    if (!M) {
+      if (mapFailed) {
+        view.appendChild(el('p', { class: 'err-inline', text: 'The map didn’t load. Check your connection.' }));
+        view.appendChild(el('button', { type: 'button', class: 'btn small ghost', text: 'Try again', on: { click: function () { mapFailed = false; needMap(); render(); } } }));
+      } else {
+        view.appendChild(el('p', { class: 'hint', text: 'Loading the map…' }));
+        needMap();
+      }
+      return;
+    }
+    var regs = P.catalogRegions(s.oysters, s.regions), inCat = {}, short = {};
+    regs.forEach(function (r) { inCat[r.code] = true; short[r.code] = r.short || r.code.toUpperCase(); });
+    var colors = (window.HS_STAMPS && window.HS_STAMPS.TIER_COLORS) || {};
+    var stored = s.state.stamps || {}, ev = s.evaluated || {};
+    var stats = regionStats();
+    function tierOf(code) { return P.shownTier(stored['region-' + code], ev['region-' + code]); }
+    function fillOf(code) {
+      var t = tierOf(code);
+      if (!t) return inCat[code] ? '#fbf8f2' : '#e9e3d6';
+      return t === 'pearl' ? (colors.pearl || ['#e8e4f0'])[1] : colors[t];
+    }
+    function draw(viewBox, cls, labelWest, labelEast, labelSize) {
+      var NS = 'http://www.w3.org/2000/svg';
+      var svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', viewBox);
+      svg.setAttribute('class', 'map ' + cls);
+      svg.setAttribute('role', 'group');
+      svg.setAttribute('aria-label', cls === 'map-inset' ? 'East Coast, closer' : 'Map of the US and Canada');
+      M.shapes.forEach(function (sh) {
+        if (inCat[sh.code]) return;
+        var pth = document.createElementNS(NS, 'path');
+        pth.setAttribute('d', sh.d); pth.setAttribute('class', 'rg-other');
+        svg.appendChild(pth);
+      });
+      M.shapes.forEach(function (sh) {
+        if (!inCat[sh.code]) return;
+        var t = tierOf(sh.code), st = stats[sh.code];
+        var pth = document.createElementNS(NS, 'path');
+        pth.setAttribute('d', sh.d);
+        pth.setAttribute('fill', fillOf(sh.code));
+        pth.setAttribute('class', 'rg' + (ui.region === sh.code ? ' sel' : '') + (t === 'pearl' ? ' pearl' : ''));
+        pth.setAttribute('tabindex', '0');
+        pth.setAttribute('role', 'button');
+        pth.setAttribute('aria-label', sh.name + (t ? ', ' + TIER_NAMES[t] : ', no stamp yet') + ', ' + plural(st ? st.qty : 0, 'oyster'));
+        var pick = function () { ui.region = ui.region === sh.code ? null : sh.code; render(); };
+        pth.addEventListener('click', pick);
+        pth.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+        svg.appendChild(pth);
+      });
+      M.shapes.forEach(function (sh) {
+        if (!inCat[sh.code]) return;
+        var reg = (s.regions || []).filter(function (r) { return r.code === sh.code; })[0];
+        var west = reg && reg.coast === 'west';
+        if ((west && !labelWest) || (!west && !labelEast)) return;
+        var n = LABEL_NUDGE[sh.code] || [0, 0];
+        var tx = document.createElementNS(NS, 'text');
+        tx.setAttribute('x', sh.x + n[0]); tx.setAttribute('y', sh.y + n[1] + labelSize / 3);
+        tx.setAttribute('class', 'rg-label'); tx.setAttribute('font-size', labelSize);
+        tx.setAttribute('aria-hidden', 'true');
+        tx.textContent = short[sh.code];
+        svg.appendChild(tx);
+      });
+      return svg;
+    }
+    var wrap = el('div', { class: 'map-wrap' });
+    wrap.appendChild(draw(M.viewBox, 'map-full', true, false, 24));
+    wrap.appendChild(el('div', { class: 'map-cap', text: 'East Coast' }));
+    wrap.appendChild(draw(M.inset.join(' '), 'map-inset', false, true, 9));
+    view.appendChild(wrap);
+    var legend = el('div', { class: 'legend' });
+    ['bronze', 'silver', 'gold', 'pearl'].forEach(function (t) {
+      var c = t === 'pearl' ? (colors.pearl || ['#e8e4f0'])[1] : colors[t];
+      legend.appendChild(el('span', {}, [el('i', { style: 'background:' + c }), TIER_NAMES[t]]));
+    });
+    view.appendChild(legend);
+    if (!Object.keys(stats).length) view.appendChild(el('p', { class: 'hint', text: 'Every region you taste from gets colored in.' }));
+    else view.appendChild(el('p', { class: 'hint', text: 'Tap a region to see your oysters from it.' }));
+    if (ui.region) {
+      var st = stats[ui.region], reg = (s.regions || []).filter(function (r) { return r.code === ui.region; })[0];
+      var box = el('div', { class: 'card', role: 'region', 'aria-live': 'polite' }, [el('h2', { class: 'page-h', text: reg ? reg.name : ui.region })]);
+      if (!st) box.appendChild(el('p', { class: 'body', text: 'No oysters from here yet.' }));
+      else {
+        var ul = el('ul', { class: 'palate' });
+        Object.keys(st.oysters).sort(function (a, b) { return st.oysters[b].qty - st.oysters[a].qty || (nameOf(a) < nameOf(b) ? -1 : 1); }).forEach(function (oid) {
+          var x = st.oysters[oid];
+          ul.appendChild(el('li', {}, [nameOf(oid), el('small', { text: plural(x.qty, 'oyster') + (x.rating ? ' · your rating ★ ' + P.formatRating(x.rating) : '') })]));
+        });
+        box.appendChild(ul);
+        var stp = ev['region-' + ui.region];
+        if (stp) box.appendChild(el('a', { class: 'linklike', style: 'display:inline-flex;align-items:center', href: '#stamp/region-' + ui.region, text: 'See the ' + (reg ? reg.name : '') + ' stamp' }));
+      }
+      view.appendChild(box);
+    }
+  }
+
+  function favorites() {
+    var visits = s.state.visits || {};
+    var m = P.measures(visits, s.oysters, s.regions), agg = P.aggregateRatings(visits);
+    if (!m.eaten) { view.appendChild(el('p', { class: 'body', text: 'Your favorites show up here once you’ve logged a few oysters.' })); return; }
+    var qty = {};
+    Object.keys(visits).forEach(function (vid) {
+      var items = visits[vid].items || {};
+      Object.keys(items).forEach(function (oid) { qty[oid] = (qty[oid] || 0) + (items[oid].qty || 0); });
+    });
+    function list(title, ids, line) {
+      view.appendChild(el('div', { class: 'field-label', text: title }));
+      var ol = el('ol', { class: 'fav' });
+      ids.forEach(function (id) { ol.appendChild(el('li', {}, [el('span', { text: nameOf(id) }), el('b', { text: line(id) })])); });
+      view.appendChild(ol);
+    }
+    var rated = Object.keys(agg).sort(function (a, b) { return agg[b].rating - agg[a].rating || qty[b] - qty[a] || (a < b ? -1 : 1); }).slice(0, 5);
+    if (rated.length) list('Top rated', rated, function (id) { return '★ ' + P.formatRating(agg[id].rating); });
+    else { view.appendChild(el('div', { class: 'field-label', text: 'Top rated' })); view.appendChild(el('p', { class: 'hint', text: 'Rate an oyster and it shows up here.' })); }
+    list('Most eaten', Object.keys(qty).sort(function (a, b) { return qty[b] - qty[a] || (a < b ? -1 : 1); }).slice(0, 5), function (id) { return String(qty[id]); });
+
+    // Salinity: oysters eaten in each band (current catalog oysters only).
+    var BANDS = [['low', 'Low'], ['medium', 'Medium'], ['medium-high', 'Medium-high'], ['high', 'High'], ['very-high', 'Very high']];
+    var band = {}, bandTotal = 0;
+    Object.keys(qty).forEach(function (id) { var o = s.oyster(id); if (o && o.salinity) { band[o.salinity] = (band[o.salinity] || 0) + qty[id]; bandTotal += qty[id]; } });
+    view.appendChild(el('div', { class: 'field-label', text: 'Salinity' }));
+    var bars = el('div', { class: 'bars' });
+    BANDS.forEach(function (b, i) {
+      var n = band[b[0]] || 0, pct = bandTotal ? Math.round((n / bandTotal) * 100) : 0;
+      var dots = el('span', { class: 'dots', 'aria-hidden': 'true' });
+      for (var k = 1; k <= 5; k++) dots.appendChild(el('i', { class: k <= i + 1 ? 'on' : '' }));
+      bars.appendChild(el('div', { class: 'bar-row', 'aria-label': b[1] + ': ' + plural(n, 'oyster') }, [
+        el('span', { class: 'bar-label' }, [dots, ' ' + b[1]]),
+        el('span', { class: 'bar' }, [el('i', { style: 'width:' + pct + '%' })]),
+        el('span', { class: 'bar-n', text: String(n) })
+      ]));
+    });
+    view.appendChild(bars);
+
+    view.appendChild(el('div', { class: 'field-label', text: 'East vs West' }));
+    var ew = m.east + m.west;
+    view.appendChild(el('div', { class: 'ew', 'aria-label': 'East Coast ' + m.east + ', West Coast ' + m.west }, [
+      el('span', { text: 'East ' + m.east }),
+      el('span', { class: 'bar ew-bar' }, [el('i', { style: 'width:' + (ew ? Math.round((m.east / ew) * 100) : 50) + '%' })]),
+      el('span', { text: m.west + ' West' })
+    ]));
+
+    view.appendChild(el('div', { class: 'field-label', text: 'Totals' }));
+    view.appendChild(el('ul', { class: 'palate' }, [
+      el('li', { text: plural(m.eaten, 'oyster') }),
+      el('li', { text: plural(m.allVarieties, 'kind') + ' of oyster' }),
+      el('li', { text: plural(m.regions, 'region') }),
+      el('li', { text: plural(m.visits, 'visit') }),
+      m.firstVisit ? el('li', { text: 'First visit ' + fmtLong(m.firstVisit) }) : null
+    ]));
   }
 
   // ── Stamps (5.6) ──────────────────────────────────────────────────────────
