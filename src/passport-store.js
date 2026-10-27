@@ -78,10 +78,19 @@
     }
     return loads[src];
   }
-  /** Loads the compat SDK: app first, then each part ('auth', 'database', 'functions'). */
+  /**
+   * Loads the compat SDK: app first, then each part ('auth', 'database',
+   * 'functions'). Parts the page already loaded (the menu loads app and
+   * database) are not loaded again: a second copy of the app SDK would
+   * replace the page's firebase.
+   */
   function sdk(parts) {
-    return loadScript(SDK + 'app-compat.js').then(function () {
-      return Promise.all((parts || []).map(function (p) { return loadScript(SDK + p + '-compat.js'); }));
+    var fb = function () { return root.firebase; };
+    var app = fb() && typeof fb().initializeApp === 'function' ? Promise.resolve() : loadScript(SDK + 'app-compat.js');
+    return app.then(function () {
+      return Promise.all((parts || []).map(function (p) {
+        return typeof fb()[p] === 'function' ? null : loadScript(SDK + p + '-compat.js');
+      }));
     });
   }
   var theApp = null;
@@ -267,7 +276,7 @@
 
   /** Applies a change: memory, this phone, then the database within 5 s. */
   Session.prototype.apply = function (updates, opts) {
-    if (!updates || !Object.keys(updates).length) return;
+    if (this.closed || !updates || !Object.keys(updates).length) return;
     applyPaths(this.state, updates);
     mergePending(this.pending, updates);
     this.savePendingLocally();
@@ -285,22 +294,32 @@
     clearTimeout(this.timer);
     this.timer = setTimeout(function () { self.flush(); }, 5000);
   };
+  /** The account is gone: stop saving and forget unsent changes. */
+  Session.prototype.discard = function () {
+    clearTimeout(this.timer);
+    this.closed = true;
+    this.pending = {};
+    lsRemove(this.pendingKey);
+  };
   /** Sends pending changes in one update. Resolves true when the database has them. */
   Session.prototype.flush = function () {
     var self = this;
     clearTimeout(this.timer);
+    if (this.closed) return Promise.resolve(true);
     if (this.inflight) return this.inflightPromise;
     if (!Object.keys(this.pending).length) return Promise.resolve(true);
     this.inflight = this.pending;
     this.pending = {};
     this.inflightPromise = this.db.ref('users/' + this.uid).update(this.inflight).then(function () {
       self.inflight = null;
+      if (self.closed) return true;
       self.saveError = null;
       self.savePendingLocally();
       self.emit('status');
       if (Object.keys(self.pending).length) return self.flush();
       return true;
     }, function (err) {
+      if (self.closed) { self.inflight = null; return true; }
       // Keep everything; newer changes win.
       self.pending = mergePending(self.inflight, self.pending);
       self.inflight = null;

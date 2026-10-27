@@ -633,7 +633,7 @@ function render(servingIds) {
   countLabel.textContent = `${serving.length} variet${serving.length === 1 ? 'y' : 'ies'}`;
 
   grid.innerHTML = serving.map(o => `
-    <div class="oyster-card">
+    <div class="oyster-card" data-id="${o.id}">
       ${o.photoUrl
         ? `<img class="card-photo" src="${o.photoUrl}" alt="${o.name} oysters on the half shell" loading="lazy" width="300" height="180" onerror="this.outerHTML='<div class=\\'card-photo-placeholder\\'>🦪</div>'">`
         : `<div class="card-photo-placeholder">🦪</div>`}
@@ -661,6 +661,7 @@ function render(servingIds) {
       </div>
     </div>
   `).join('');
+  if (window.HS_PASSPORT_MENU) HS_PASSPORT_MENU.cards(grid, serving.map(o => o.id));   // Passport, signed in only
 }
 
 // ── Firebase real-time menu sync ────────────────────────────────────────────
@@ -804,6 +805,54 @@ function render(servingIds) {
       items: [{ item_name: nameEl.textContent.trim() }]
     });
   });
+</script>
+<script>
+/*
+ * Oyster Passport (Build Sheet 5.8; step 5). Nothing below changes the page
+ * for a guest without a Passport sign-in on this phone: they download
+ * nothing new.
+ * "Here today": a guest who isn't signed in has today's business date
+ * (4 AM New York rollover) remembered on this phone, nothing sent or shown,
+ * so signing up on this phone can carry it into the passport (5.8).
+ */
+(function () {
+  var signedIn = false;
+  try { signedIn = localStorage.getItem('hs_passport_signed_in') === '1'; } catch (e) { /* storage off */ }
+  if (!signedIn) {
+    try {
+      var p = {};
+      new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit' })
+        .formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; });
+      var d = new Date(Date.UTC(+p.year, +p.month - 1, +p.day) - ((+p.hour % 24) < 4 ? 864e5 : 0)).toISOString().slice(0, 10);
+      var here = JSON.parse(localStorage.getItem('hs_passport_here') || '{}') || {};
+      if (!here[d]) {
+        here[d] = Date.now();
+        var keep = Object.keys(here).sort().slice(-3), kept = {};   // the last 3 days are enough
+        keep.forEach(function (k) { kept[k] = here[k]; });
+        localStorage.setItem('hs_passport_here', JSON.stringify(kept));
+      }
+    } catch (e) { /* storage off */ }
+  }
+  if (!signedIn) return;
+  window.HS_MENU_PAGE = { redraw: function () { if (lastServingIds) render(lastServingIds); } };
+  var files = [
+    ['HS_REGIONS', 'data/regions.js'], ['HS_FLIGHTS', 'data/flights.js'], ['HS_STAMPS', 'data/stamps.js'],
+    ['HS_PASSPORT', 'src/passport-core.js'], ['HS_STORE', 'src/passport-store.js'],
+    ['HS_STAMP_SVG', 'src/stamp-svg.js'], ['HS_UI', 'src/passport-ui.js'], ['HS_PASSPORT_MENU', 'src/passport-menu.js']
+  ];
+  function next(i) {
+    if (i === files.length) { window.HS_MENU_PAGE.redraw(); window.HS_PASSPORT_MENU.start('cards'); return; }
+    if (window[files[i][0]]) return next(i + 1);
+    var s = document.createElement('script');
+    s.src = files[i][1];
+    s.onload = function () { next(i + 1); };
+    s.onerror = function () { /* the menu works without the Passport */ };
+    document.head.appendChild(s);
+  }
+  // After the menu has drawn.
+  if (document.readyState === 'complete') setTimeout(function () { next(0); }, 0);
+  else window.addEventListener('load', function () { setTimeout(function () { next(0); }, 0); });
+})();
 </script>
 </body>
 </html>
