@@ -8,10 +8,12 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-3SQ3075FQ1"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
+    // Opt-out: the button on privacy.html, or the browser's Global Privacy Control signal.
+    try { if (navigator.globalPrivacyControl === true || localStorage.getItem('hs_ga_optout') === '1') window['ga-disable-G-3SQ3075FQ1'] = true; } catch (e) {}
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
 
-    gtag('config', 'G-3SQ3075FQ1');
+    gtag('config', 'G-3SQ3075FQ1', { allow_ad_personalization_signals: false });
   </script>
   <meta name="description" content="The Half Shell Library — origin, flavor profile, and special notes for every oyster variety served at Half Shell Raw Bar." />
   <title>The Half Shell Library</title>
@@ -349,6 +351,10 @@
 
     /* ── Table scroll wrapper ── */
     .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* ── Privacy link ── */
+    .privacy-note { margin: 2rem 0 0.5rem; text-align: center; font-size: 0.8rem; }
+    .privacy-note a { color: #3a6070; }
 
     /* ── Quick Reference Table ── */
     #quick-reference { margin-top: 1rem; }
@@ -2425,6 +2431,8 @@
         </tbody>
       </table></div>
     </section>
+
+    <p class="privacy-note"><a href="privacy.html">Privacy notice</a></p>
 
   </main>
 </div>

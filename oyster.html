@@ -7,10 +7,12 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-3SQ3075FQ1"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
+    // Opt-out: the button on privacy.html, or the browser's Global Privacy Control signal.
+    try { if (navigator.globalPrivacyControl === true || localStorage.getItem('hs_ga_optout') === '1') window['ga-disable-G-3SQ3075FQ1'] = true; } catch (e) {}
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
 
-    gtag('config', 'G-3SQ3075FQ1');
+    gtag('config', 'G-3SQ3075FQ1', { allow_ad_personalization_signals: false });
   </script>
   <title>Half Shell — Oyster</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -387,6 +389,8 @@
   <a href="curated-flights.html">Curated Flights</a>
   <span class="sep">|</span>
   <a href="Oyster%20Overview.html">Oyster Library</a>
+  <span class="sep">|</span>
+  <a href="privacy.html">Privacy</a>
   <span class="sep">|</span>
   <a href="employee.html">Employee Portal</a>
 </footer>

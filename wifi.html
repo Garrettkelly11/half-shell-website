@@ -7,10 +7,12 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-3SQ3075FQ1"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
+    // Opt-out: the button on privacy.html, or the browser's Global Privacy Control signal.
+    try { if (navigator.globalPrivacyControl === true || localStorage.getItem('hs_ga_optout') === '1') window['ga-disable-G-3SQ3075FQ1'] = true; } catch (e) {}
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
 
-    gtag('config', 'G-3SQ3075FQ1');
+    gtag('config', 'G-3SQ3075FQ1', { allow_ad_personalization_signals: false });
   </script>
   <meta name="description" content="Welcome to Half Shell Raw Bar — you're connected to our WiFi." />
   <title>Half Shell — Welcome</title>
@@ -188,6 +190,10 @@
       color: #9ec4bc;
     }
 
+    /* ── Privacy link ── */
+    .privacy-note { margin-top: 1.25rem; text-align: center; font-family: 'Lato', sans-serif; font-size: 0.75rem; }
+    .privacy-note a { color: #3d7080; }
+
     /* ── Connected confirmation ── */
     .connected-msg {
       display: none;
@@ -242,6 +248,8 @@
     <p class="connected-msg" id="connected-msg">
       You're all set — enjoy your visit to Half Shell.
     </p>
+
+    <p class="privacy-note"><a href="privacy.html">Privacy notice</a></p>
 
   </div>
 </div>

@@ -7,6 +7,8 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-3SQ3075FQ1"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
+    // Opt-out: the button on privacy.html, or the browser's Global Privacy Control signal.
+    try { if (navigator.globalPrivacyControl === true || localStorage.getItem('hs_ga_optout') === '1') window['ga-disable-G-3SQ3075FQ1'] = true; } catch (e) {}
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     // Passport pages: no Google signals, no ad personalization (Build Sheet 5.11).
@@ -1079,7 +1081,7 @@
   }
 
   // ── Profile (5.7) ─────────────────────────────────────────────────────────
-  var WHY_TEXT = 'A card lets us connect what you order to your passport, so you don’t have to log every oyster yourself. ' +
+  var WHY_TEXT = 'Soon, a card will let us connect what you order to your passport, so you won’t have to log every oyster yourself. ' +
     'We only keep the last 4 digits and the card type, never the full number. It’s optional, and you can remove a card any time.';
   function field(id, label, input) {
     return el('div', { class: 'form-field' }, [el('label', { for: id, text: label }), input]);
@@ -1132,7 +1134,7 @@
           el('button', { type: 'button', class: 'btn small', text: 'Change it', on: { click: function () {
             var dob = sel.value(), today = P.nyDate(s.now()), bad = P.checkDob(dob, today);
             if (bad) { derr.textContent = bad === 'year' ? 'Choose a birth year of 1900 or later.' : bad === 'future' ? 'That birthday hasn’t happened yet.' : 'Choose your birthday.'; return; }
-            if (P.isUnder13(dob, today)) { derr.textContent = 'Sorry — you need to be 13 or older to create an account.'; return; }
+            if (P.isUnderMinAge(dob, today)) { derr.textContent = 'Sorry — you need to be 18 or older to create an account.'; return; }
             s.apply({ 'profile/dob': dob, 'profile/dobEditsUsed': 1, 'profile/updatedAt': s.now() });
             s.flush();
             ui.dob = null;
@@ -1170,7 +1172,7 @@
     if (ui.why) {
       view.appendChild(el('div', { class: 'why-pop', id: 'pf-why', role: 'region', 'aria-label': 'Why we ask for a card',
         on: { keydown: function (e) { if (e.key === 'Escape') { ui.why = false; render(); var b = $('pf-why-btn'); if (b) b.focus(); } } } }, [
-        el('p', { text: WHY_TEXT }), el('a', { href: 'privacy.html#card-digits', text: 'Read the card section of our privacy statement' })
+        el('p', { text: WHY_TEXT }), el('a', { href: 'privacy.html#card-digits', text: 'Read the card section of our privacy notice' })
       ]));
     }
     if (!ui.addCard) {

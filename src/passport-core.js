@@ -32,7 +32,7 @@
   var TIMEOUT_MS = 6 * 3600e3;          // a visit closes after 6 h with no changes
   var MAX_QTY = 99;
   var NAME_MAX = 60, EMAIL_MAX = 120, TWO_WORDS_MAX = 40, NOTE_MAX = 280;
-  var MIN_AGE = 13, PROMO_AGE = 21;
+  var MIN_AGE = 18, PROMO_AGE = 21;
   var UNLOCK_RATED = 5;                 // palate and "You might like"
   var CARD_BRANDS = [
     { code: 'VISA', label: 'Visa' },
@@ -127,7 +127,7 @@
     if (dob > today) return 'future';
     return null;
   }
-  function isUnder13(dob, today) { return age(dob, today) < MIN_AGE; }
+  function isUnderMinAge(dob, today) { return age(dob, today) < MIN_AGE; }
   /** Every alcohol promotion goes through this (21+). */
   function canShowAlcoholPromo(profile, today) {
     return !!(profile && isRealDate(profile.dob)) && age(profile.dob, today) >= PROMO_AGE;
@@ -591,7 +591,7 @@
     // dates
     nyDate: nyDate, businessDay: businessDay, isRealDate: isRealDate, addDays: addDays, isVisitDate: isVisitDate,
     // age and birthday
-    age: age, checkDob: checkDob, isUnder13: isUnder13, canShowAlcoholPromo: canShowAlcoholPromo,
+    age: age, checkDob: checkDob, isUnderMinAge: isUnderMinAge, canShowAlcoholPromo: canShowAlcoholPromo,
     birthdayIn: birthdayIn, inBirthdayWeek: inBirthdayWeek,
     // fields
     cleanName: cleanName, validName: validName, validEmail: validEmail, validTwoWords: validTwoWords,

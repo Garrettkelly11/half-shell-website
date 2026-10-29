@@ -231,10 +231,11 @@ check('business day across the autumn DST change (01/11/2026)', () => {
 });
 
 // ── Age and birthday (6.4) ─────────────────────────────────────────────────
-check('age gate: the day before the 13th birthday is blocked; the day of is allowed', () => {
-  assert.ok(P.isUnder13('2013-10-21', '2026-10-20'));
-  assert.ok(!P.isUnder13('2013-10-21', '2026-10-21'));
-  assert.strictEqual(P.age('2013-10-21', '2026-10-21'), 13);
+check('age gate: the day before the 18th birthday is blocked; the day of is allowed', () => {
+  assert.strictEqual(P.MIN_AGE, 18);
+  assert.ok(P.isUnderMinAge('2008-10-21', '2026-10-20'));
+  assert.ok(!P.isUnderMinAge('2008-10-21', '2026-10-21'));
+  assert.strictEqual(P.age('2008-10-21', '2026-10-21'), 18);
 });
 check('age with a 29 February birthday', () => {
   assert.strictEqual(P.age('2012-02-29', '2025-02-27'), 12);

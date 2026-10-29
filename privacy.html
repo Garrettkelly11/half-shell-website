@@ -7,21 +7,19 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-3SQ3075FQ1"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
+    // Opt-out: the button on privacy.html, or the browser's Global Privacy Control signal.
+    try { if (navigator.globalPrivacyControl === true || localStorage.getItem('hs_ga_optout') === '1') window['ga-disable-G-3SQ3075FQ1'] = true; } catch (e) {}
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-3SQ3075FQ1', { allow_google_signals: false, allow_ad_personalization_signals: false });
   </script>
-  <meta name="description" content="Half Shell Raw Bar — how the Oyster Passport uses your information." />
-  <title>Half Shell — Oyster Passport privacy</title>
+  <meta name="description" content="How Half Shell’s website and Oyster Passport handle your information." />
+  <title>Half Shell — Privacy Notice</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet"></noscript>
-  <!--
-    Oyster Passport privacy page (Build Sheet 5.10). Written by Claude for
-    Garrett, 27/10/2026, for the owners to review and sign off before the
-    public launch. Not legal advice. Contact: privacy@hsoysters.com.
-  -->
+  <!-- Privacy notice for hsoysters.com and the Oyster Passport. -->
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Lato', sans-serif; background: #0e2d3a; color: #0e2d3a; }
@@ -31,15 +29,29 @@
     .back { position: absolute; left: 0.5rem; top: 1rem; display: inline-flex; align-items: center; gap: 0.3rem; min-height: 44px; padding: 0 0.5rem;
       color: #f5f0e8; text-decoration: none; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
     main { max-width: 680px; margin: 0 auto 2rem; background: #f5f0e8; border-radius: 6px; padding: 1.5rem 1.25rem 2rem; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
-    .updated { font-style: italic; font-size: 0.8rem; color: #4f7480; margin-bottom: 1rem; }
+    .updated { font-style: italic; font-size: 0.8rem; color: #29525f; margin-bottom: 1rem; }
     h2 { font-family: 'Playfair Display', Georgia, serif; font-weight: 400; font-size: 1.2rem; margin: 1.6rem 0 0.5rem; padding-bottom: 0.3rem; border-bottom: 1px solid #bcd4ce; }
-    p, li { font-size: 0.95rem; line-height: 1.6; }
+    h3 { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 1rem; margin: 1.1rem 0 0.3rem; }
+    p, li { font-size: 0.95rem; line-height: 1.6; overflow-wrap: break-word; }
     p { margin: 0.5rem 0; }
     ul { margin: 0.4rem 0 0.6rem 1.2rem; }
     li { margin: 0.25rem 0; }
     a { color: #1f6b7d; }
     a:focus-visible { outline: 2px solid #e89438; outline-offset: 2px; }
-    section:target h2 { color: #b5651d; }
+    main a:focus-visible { outline-color: #8f4f14; }
+    section:target > h2, section:target > h3 { color: #8f4f14; }
+    .toc { margin: 1rem 0 0.5rem; padding: 0.4rem 1rem 0.6rem; border: 1px solid #bcd4ce; border-radius: 4px; }
+    .toc h2 { margin-top: 0.4rem; border-bottom: none; padding-bottom: 0; font-size: 1.05rem; }
+    .toc ul { list-style: none; margin: 0.3rem 0 0; }
+    .toc ul ul { margin: 0 0 0 1rem; }
+    .toc li { margin: 0.15rem 0; font-size: 0.9rem; }
+    .optout { margin: 0.6rem 0 0.8rem; padding: 0.8rem 1rem; border: 1px solid #bcd4ce; border-radius: 4px; }
+    .optout-status { font-weight: 700; margin: 0 0 0.6rem; }
+    .optout-btn { font-family: 'Lato', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em; min-height: 44px; padding: 0 1.1rem;
+      background: #1f6b7d; color: #f5f0e8; border: none; border-radius: 4px; cursor: pointer; }
+    .optout-btn:hover { background: #29525f; }
+    .optout-btn:focus-visible { outline: 2px solid #8f4f14; outline-offset: 2px; }
+    .optout-btn[hidden] { display: none; }
     @media (max-width: 400px) { main { margin: 0 0.5rem 1.5rem; padding: 1.2rem 1rem 1.6rem; } }
   </style>
 </head>
@@ -51,91 +63,358 @@
     Menu
   </a>
   <img src="assets/logo.png" alt="Half Shell Raw Bar" width="56" height="56" />
-  <h1>Oyster Passport privacy</h1>
+  <h1>Privacy Notice</h1>
 </header>
 
 <main>
-  <p class="updated">Last updated October 27, 2026</p>
-  <p>The Oyster Passport is an optional account on hsoysters.com for keeping track of the oysters you eat at Half Shell. Our menu works the same without one. This page explains what the passport stores, why, and how to see or delete it.</p>
+  <p class="updated">Effective <time datetime="2026-10-29">October 29, 2026</time> · Last updated <time datetime="2026-10-29">October 29, 2026</time></p>
+
+  <p>This notice explains how Half Shell Raw Bar in Charlotte, North Carolina (“Half Shell,” “we,” “us”) handles information on hsoysters.com. It covers the public pages of hsoysters.com and the Oyster Passport, an optional account for keeping track of the oysters you eat with us. You don’t need a passport to use the menu.</p>
+  <p>This notice doesn’t cover staff accounts or the employee page, or our Wi-Fi network itself. It also doesn’t cover what happens in the restaurant, such as paying your check, except as described in <a href="#planned">section 11</a>.</p>
+
+  <nav class="toc" aria-labelledby="toc-title">
+    <h2 id="toc-title">Contents</h2>
+    <ul>
+      <li><a href="#key-terms">1. Key terms</a></li>
+      <li><a href="#what-we-collect">2. Information we collect</a>
+        <ul>
+          <li><a href="#you-give">2.1 Information you give us</a></li>
+          <li><a href="#card-digits">2.2 Card digits</a></li>
+          <li><a href="#you-log">2.3 What you log</a></li>
+          <li><a href="#here-today">2.4 Here-today records</a></li>
+          <li><a href="#automatic">2.5 Information collected automatically</a></li>
+        </ul>
+      </li>
+      <li><a href="#how-we-use">3. How we use information</a></li>
+      <li><a href="#sharing">4. How we share information</a>
+        <ul>
+          <li><a href="#service-providers">4.1 Service providers</a></li>
+          <li><a href="#legal-reasons">4.2 Legal reasons</a></li>
+          <li><a href="#business-transfer">4.3 If the business changes hands</a></li>
+        </ul>
+      </li>
+      <li><a href="#analytics">5. Google Analytics, cookies and device storage</a>
+        <ul>
+          <li><a href="#google-analytics">5.1 Google Analytics</a></li>
+          <li><a href="#analytics-opt-out">5.2 Turning Google Analytics off</a></li>
+          <li><a href="#device-storage">5.3 Storage on your device</a></li>
+          <li><a href="#dnt">5.4 Global Privacy Control, Do Not Track and tracking by others</a></li>
+        </ul>
+      </li>
+      <li><a href="#where">6. Where information is stored and who can see it</a></li>
+      <li><a href="#retention">7. How long we keep information</a></li>
+      <li><a href="#your-data">8. Your choices: see, change, export and delete</a></li>
+      <li><a href="#age">9. Age requirements</a></li>
+      <li><a href="#security">10. Security</a></li>
+      <li><a href="#planned">11. Planned: check matching</a></li>
+      <li><a href="#changes">12. Changes to this notice</a></li>
+      <li><a href="#contact">13. Contact us</a></li>
+    </ul>
+  </nav>
+
+  <section id="key-terms">
+    <h2>1. Key terms</h2>
+    <ul>
+      <li><b>Site:</b> hsoysters.com.</li>
+      <li><b>Public pages:</b> Tonight’s Menu, Curated Flights, the oyster pages, the Oyster Library and the Wi-Fi welcome page.</li>
+      <li><b>Menu pages:</b> Tonight’s Menu and Curated Flights.</li>
+      <li><b>Passport pages:</b> the sign-in page and your passport.</li>
+      <li><b>Oyster Passport</b> or <b>passport:</b> your optional account and everything saved in it.</li>
+      <li><b>Sign-in:</b> the phone-number login that opens your passport.</li>
+      <li><b>Device:</b> the phone, tablet or computer, and the browser on it, that you use to visit the site.</li>
+      <li><b>Business day:</b> 4 AM to 4 AM, New York time. A visit after midnight counts toward the day before.</li>
+      <li><b>Check:</b> your bill at the restaurant.</li>
+      <li><b>Account ID:</b> a random code Firebase gives your passport. It doesn’t contain your phone number or name.</li>
+    </ul>
+  </section>
 
   <section id="what-we-collect">
-    <h2>What we collect</h2>
+    <h2>2. Information we collect</h2>
+
+    <section id="you-give">
+      <h3>2.1 Information you give us</h3>
+      <ul>
+        <li><b>Phone number:</b> required for a passport. US numbers only. It is used for your sign-in and saved in your passport. You can’t change it later.</li>
+        <li><b>Name:</b> required.</li>
+        <li><b>Birthday:</b> required. You can correct it once.</li>
+        <li><b>Email:</b> optional. It is kept with your passport.</li>
+        <li><b>Cards:</b> optional. See <a href="#card-digits">section 2.2</a>.</li>
+      </ul>
+    </section>
+
+    <section id="card-digits">
+      <h3>2.2 Card digits</h3>
+      <p>Adding a card is optional. You can remove a card at any time in your passport’s Profile.</p>
+      <ul>
+        <li><b>What we keep:</b> the last 4 digits, the card type (Visa, Mastercard, Amex, Discover or Other) and when you added the card. We never ask for or store the full card number, the expiry date or the security code. We can’t charge a card with what we keep.</li>
+        <li><b>What we use them for:</b> nothing yet. We only store them. Once check matching starts (<a href="#planned">section 11</a>), we will use them only to match your checks to your passport.</li>
+        <li><b>Apple Pay or Google Pay:</b> your Wallet app shows a different last 4 for that card. Add that one.</li>
+      </ul>
+    </section>
+
+    <section id="you-log">
+      <h3>2.3 What you log</h3>
+      <ul>
+        <li><b>Visits:</b> each visit’s business day; when you started it, last changed it and closed it; how it closed (you saved it, it timed out, or you added it as a past visit); and whether you dismissed the reminder to rate it.</li>
+        <li><b>Oysters:</b> which oysters and how many, when you added each one, and which Curated Flights you logged.</li>
+        <li><b>Ratings and notes:</b> any star ratings, “two words” and notes.</li>
+        <li><b>Stamps:</b> which stamps and levels you earn, when you earn them, and whether you have seen each one.</li>
+        <li><b>Account details:</b> when you created your passport, when you last changed your profile, and whether you have used your one birthday correction.</li>
+      </ul>
+    </section>
+
+    <section id="here-today">
+      <h3>2.4 Here-today records</h3>
+      <p>The first time each business day that you open Tonight’s Menu while signed in, we save the date and time to your passport. We call this a here-today record. It is saved wherever you open the page, and nothing on the page shows it. No other page makes one.</p>
+      <p>If you open Tonight’s Menu while not signed in, your device keeps the dates and times of the last 3 business days you opened it (<a href="#device-storage">section 5.3</a>). If you then create a passport on that device, any of those dates from your sign-up day and the day before are added to your passport as here-today records.</p>
+    </section>
+
+    <section id="automatic">
+      <h3>2.5 Information collected automatically</h3>
+      <ul>
+        <li><b>Google Analytics:</b> on every page, for every visitor, unless it is turned off. See <a href="#google-analytics">section 5.1</a>.</li>
+        <li><b>Connection details:</b> when your browser loads our pages, GitHub (which hosts the site) and Google receive your IP address and browser details. Google receives them through Google Fonts and Google Analytics on every page, and through Firebase on the passport pages and every public page except the Wi-Fi welcome page. During sign-in, Google reCAPTCHA receives them too. Google says Firebase keeps these for a few days (database) to a few weeks (sign-in).</li>
+        <li><b>Device storage:</b> see <a href="#device-storage">section 5.3</a>.</li>
+      </ul>
+    </section>
+  </section>
+
+  <section id="how-we-use">
+    <h2>3. How we use information</h2>
     <ul>
-      <li><b>Your phone number</b>, to sign you in. We text you a code to check it’s your phone.</li>
-      <li><b>Your name and birthday</b>, and your email if you give one.</li>
-      <li><b>Card digits, if you add a card:</b> the last 4 digits and the card type. See <a href="#card-digits">Card digits</a>.</li>
-      <li><b>What you log:</b> the date of each visit, the oysters and how many, and any ratings, “two words” and notes you add; the stamps you earn.</li>
-      <li><b>The days you open our menu while signed in.</b></li>
+      <li><b>To run your passport:</b> to save your visits, ratings and stamps, to show your name in your passport, and to suggest oysters based on your ratings.</li>
+      <li><b>Phone number:</b> to sign you in. When you ask, Google texts a one-time code to it on our behalf. Message and data rates may apply. We send no other texts. The number saved in your passport will also be used for check matching once it starts (<a href="#planned">section 11</a>).</li>
+      <li><b>Birthday:</b> to apply our age rules (<a href="#age">section 9</a>); to show a birthday reward, when we are offering one, from 3 days before to 3 days after your birthday; and for the Birthday Shuck stamp.</li>
+      <li><b>Email:</b> used only to contact you about your passport or a privacy request. We never use it for marketing.</li>
+      <li><b>Card digits and here-today records:</b> stored now for check matching, which hasn’t started (<a href="#planned">section 11</a>). We don’t use them for anything else.</li>
+      <li><b>Google Analytics data:</b> only to understand how the site and passport are used, so we can improve them. Never for advertising.</li>
+      <li><b>Security and the law:</b> to keep the site and passport secure, to prevent abuse, and to meet our legal obligations.</li>
     </ul>
   </section>
 
-  <section id="why">
-    <h2>Why</h2>
-    <ul>
-      <li>To run your passport: your history, ratings, stamps and the suggestions based on them.</li>
-      <li>Your birthday: for a birthday reward, and for our age rules. You must be 13 or older to have a passport, and we show nothing that promotes alcohol to anyone under 21.</li>
-      <li>Card digits and the days you open our menu: to match your check to your passport, so the oysters you order can be added without you logging each one. We will match a check by the phone number on it, or by a card you added together with a day you opened our menu.</li>
-    </ul>
-  </section>
+  <section id="sharing">
+    <h2>4. How we share information</h2>
+    <p>We don’t sell your information. We don’t send marketing texts or emails through this site or the passport. We share information only as described below.</p>
 
-  <section id="card-digits">
-    <h2>Card digits</h2>
-    <p>Adding a card is optional, and you can remove it any time in your passport’s Profile.</p>
-    <ul>
-      <li>We keep only the <b>last 4 digits</b> and the <b>card type</b> (Visa, Mastercard, Amex, Discover or other). We never ask for or store the full card number, the expiry date or the security code, and we can’t charge a card with what we keep.</li>
-      <li>We use them only to match your check to your passport, as described above.</li>
-      <li>Paying with Apple Pay or Google Pay? Your Wallet app shows a different last 4 for that card. Use that one.</li>
-    </ul>
-  </section>
+    <section id="service-providers">
+      <h3>4.1 Service providers</h3>
+      <ul>
+        <li><b>Google Firebase</b> (part of Google Cloud): stores passports and menu data, runs sign-in, and runs our server functions. Google sends sign-in codes by text through mobile carriers. Google also stores the phone numbers used to sign in, and says it uses them to help prevent spam and abuse across its services.</li>
+        <li><b>Google reCAPTCHA:</b> checks that sign-in requests aren’t automated. It collects information about your device and browser.</li>
+        <li><b>Google Analytics:</b> measures how the site is used. See <a href="#google-analytics">section 5.1</a>.</li>
+        <li><b>Google Fonts:</b> serves the site’s fonts, so Google receives your IP address and browser details.</li>
+        <li><b>GitHub Pages:</b> hosts the site’s files, so GitHub receives your IP address and browser details when you visit.</li>
+        <li><b>Cloudflare:</b> routes email for the hsoysters.com domain, so it handles anything you send to privacy@hsoysters.com.</li>
+      </ul>
+    </section>
 
-  <section id="what-we-dont-do">
-    <h2>What we don’t do</h2>
-    <ul>
-      <li>We don’t sell your information.</li>
-      <li>We don’t send marketing texts or emails.</li>
-      <li>We don’t share it, except with the Google services that run the passport (below).</li>
-    </ul>
-  </section>
+    <section id="legal-reasons">
+      <h3>4.2 Legal reasons</h3>
+      <p>We may disclose information if we believe the law requires it, such as in response to a subpoena or court order. We may also disclose it if we believe that is needed to protect someone’s safety, to prevent fraud or abuse, or to protect our rights.</p>
+    </section>
 
-  <section id="where">
-    <h2>Where it’s kept, and who can see it</h2>
-    <p>Your passport is stored in Google Firebase, which also handles signing in by text. You can see your own passport. Half Shell’s site administrator can see passport records in our database to fix problems. Staff on the floor can’t see your passport.</p>
+    <section id="business-transfer">
+      <h3>4.3 If the business changes hands</h3>
+      <p>If Half Shell or this site is sold, merged or transferred, passport information may be transferred to the new owner as part of the deal. We will update this notice before that happens.</p>
+    </section>
   </section>
 
   <section id="analytics">
-    <h2>Google Analytics</h2>
-    <p>We use Google Analytics to see how the passport is used: for example, that someone signed up, logged an oyster (which oyster and how many), rated one (which oyster and how many stars), saved a visit, or earned a stamp. None of this includes your name, phone number, email, birthday, card digits, notes or account ID. On passport pages, Google signals and ad personalization are turned off. Our menu pages use Google Analytics for every visitor, signed in or not.</p>
+    <h2>5. Google Analytics, cookies and device storage</h2>
+
+    <section id="google-analytics">
+      <h3>5.1 Google Analytics</h3>
+      <p>We use Google Analytics only to understand how guests use the site, so we can improve it. We don’t use it for advertising. Our tag turns off ad personalization on every page, and our Google Analytics account isn’t linked to Google Ads. You can turn Google Analytics off (<a href="#analytics-opt-out">section 5.2</a>).</p>
+      <p><b>What it collects.</b> Unless it is turned off, Google Analytics runs on every page for every visitor. It uses cookies to give your browser a random ID. It records:</p>
+      <ul>
+        <li>the pages you view;</li>
+        <li>interactions it measures automatically, such as scrolling down a page, clicking a link to another site, searching the site and downloading a file;</li>
+        <li>your device and browser type, and your approximate location, worked out from your IP address.</li>
+      </ul>
+      <p>On Tonight’s Menu, when you tap an oyster card, we send the oyster’s name.</p>
+      <p>When you use the passport, we also send events. These record when you:</p>
+      <ul>
+        <li>sign up, and how many cards you added (0, 1, or 2 or more), never the digits;</li>
+        <li>sign in;</li>
+        <li>open a passport tab;</li>
+        <li>log an oyster: which one, how many, and where you logged it from;</li>
+        <li>log a Curated Flight: which one;</li>
+        <li>rate an oyster: which one and how many stars;</li>
+        <li>save a visit: how many oysters, varieties and ratings;</li>
+        <li>earn a stamp: which one and its level;</li>
+        <li>export your data or delete your account.</li>
+      </ul>
+      <p>While you are signed in, we also tag your browser in Google Analytics as a passport member, with a range for how many visits you have logged (0, 1, 2–4, 5–9 or 10+).</p>
+      <p>We never send your name, phone number, email, birthday, card digits, “two words,” notes or account ID. Earning the Birthday Shuck stamp is sent, though, and it shows roughly when your birthday is.</p>
+      <p><b>Google signals.</b> Google signals is on for the public pages, including passport activity sent from Tonight’s Menu and Curated Flights. It is off on the passport pages and this notice. Google signals applies to visitors who are signed in to a Google account and have turned on ad personalization in it. For them, Google links visits across devices and adds estimated age range, gender and interests. We see this only in combined reports, not for any one person.</p>
+      <p><b>How long it is kept.</b> Google Analytics keeps event-level data for 14 months. Reports built from that data can be kept longer.</p>
+      <p>Google Analytics data isn’t linked to your passport, so deleting your passport doesn’t delete it. Google explains its use of this data in <a href="https://policies.google.com/technologies/partner-sites">How Google uses information from sites or apps that use our services</a>. We have turned off two data-sharing settings in our Google Analytics account, “Google products &amp; services” and “Modeling contributions &amp; business insights,” so Google doesn’t use our data for its own products and services or for industry benchmarks. Google uses it to provide Google Analytics to us, including keeping the service secure and working, and as the law requires.</p>
+    </section>
+
+    <section id="analytics-opt-out">
+      <h3>5.2 Turning Google Analytics off</h3>
+      <div class="optout">
+        <p class="optout-status" id="ga-status" role="status" aria-live="polite">Checking this browser’s Analytics setting…</p>
+        <button type="button" class="optout-btn" id="ga-toggle" hidden>Turn Analytics off</button>
+        <noscript><p>JavaScript is off in this browser, so Google Analytics isn’t running here and this button isn’t needed.</p></noscript>
+      </div>
+      <ul>
+        <li><b>This button:</b> turns Google Analytics off on our site in this browser. It works one browser and device at a time. Clearing your browser’s data for hsoysters.com resets it. Turning Analytics off takes effect right away on this page and on every page you open after it. Pages already open in other tabs keep sending until you reload them. Turning it back on takes effect from the next page you open. It doesn’t delete Analytics cookies already on your device.</li>
+        <li><b>Global Privacy Control:</b> if your browser sends this signal, our pages turn Google Analytics off automatically (<a href="#dnt">section 5.4</a>).</li>
+        <li><b>Google’s add-on:</b> the <a href="https://tools.google.com/dlpage/gaoptout">Google Analytics Opt-out Browser Add-on</a> (for desktop browsers) turns off Google Analytics on every site that uses it.</li>
+        <li><b>Google ad settings:</b> your <a href="https://adssettings.google.com">Google ad settings</a> control how Google uses activity linked to your Google account, including through Google signals.</li>
+      </ul>
+      <p>When Analytics is off, your browser still loads Google’s analytics script, so Google receives your IP address, but the script sends no analytics data.</p>
+    </section>
+
+    <section id="device-storage">
+      <h3>5.3 Storage on your device</h3>
+      <p>The site keeps the following in your browser:</p>
+      <ul>
+        <li><b>Your sign-in:</b> kept by Firebase, so you stay signed in on that device until you sign out. It includes your account ID and phone number.</li>
+        <li><b>A signed-in note:</b> so the menu pages know to show your passport.</li>
+        <li><b>Unsent changes:</b> each change is saved on the device first and sent to our database within a few seconds. If you are offline or a save fails, it stays on the device until it is sent. Unsent changes can include your name, email, birthday, card digits, ratings and notes. Signing out tries to send them first. If that fails, they stay on the device until you sign in there again with the same phone number, or clear the site’s data. Someone else signing in on that device doesn’t remove them.</li>
+        <li><b>Here-today dates:</b> if you open Tonight’s Menu while not signed in, the dates and times of the last 3 business days you opened it (<a href="#here-today">section 2.4</a>). They aren’t sent to us unless you create a passport on that device. Creating or deleting a passport on that device removes them. Signing in or out doesn’t.</li>
+        <li><b>Your Analytics choice:</b> if you turn Analytics off with the button in <a href="#analytics-opt-out">section 5.2</a>, a note saying so.</li>
+        <li><b>A preview setting:</b> only if you open one of our preview links.</li>
+        <li><b>Google Analytics cookies:</b> set on every page while Analytics is on (<a href="#google-analytics">section 5.1</a>). Turning Analytics off stops new data from being sent but doesn’t delete cookies already set. Clearing your browser’s data for hsoysters.com does.</li>
+      </ul>
+      <p>Firebase may also keep technical settings it needs to connect and keep you signed in. These don’t include what you log.</p>
+      <p>Clearing your browser’s data for hsoysters.com removes all of these, including your Analytics choice. Google reCAPTCHA may also store data under Google’s own domain during sign-in.</p>
+    </section>
+
+    <section id="dnt">
+      <h3>5.4 Global Privacy Control, Do Not Track and tracking by others</h3>
+      <p>We honor Global Privacy Control. If your browser sends it, every page that uses Google Analytics turns it off. This works even if your browser blocks our site’s storage.</p>
+      <p>Our site doesn’t respond to Do Not Track signals. We don’t collect information about your activity on other websites. Google, through the services in <a href="#service-providers">section 4.1</a>, may collect information about your activity on our site and on other websites over time.</p>
+    </section>
   </section>
 
-  <section id="your-data">
-    <h2>Seeing, changing and deleting your data</h2>
-    <p>In your passport’s Profile you can:</p>
+  <section id="where">
+    <h2>6. Where information is stored and who can see it</h2>
+    <p>Your passport is stored in Google Firebase in the United States. Our server functions run in Google Cloud in the United States. The Oyster Passport is for guests in the United States and accepts US phone numbers only.</p>
+    <p>Who can see your passport:</p>
     <ul>
-      <li>change your name and email;</li>
-      <li>correct your birthday once;</li>
-      <li>add or remove cards;</li>
-      <li>edit or delete any visit (in History);</li>
-      <li><b>export your data:</b> two files, everything in your passport (JSON) and your visits as a spreadsheet (CSV);</li>
-      <li><b>delete your account:</b> this permanently deletes your passport, history, stamps, cards and sign-in. It can’t be undone.</li>
+      <li><b>You,</b> while signed in with your phone number.</li>
+      <li><b>Our site administrator,</b> through the Firebase console, to run the passport and handle requests. Right now no one else at Half Shell can see passports, including restaurant staff and the employee page. If that changes, we will update this notice first.</li>
+      <li><b>Google,</b> which runs Firebase for us (<a href="#service-providers">section 4.1</a>).</li>
     </ul>
   </section>
 
-  <section id="backups">
-    <h2>Backups</h2>
-    <p>We keep daily backups of our database in case something goes wrong. Each backup is deleted after 30 days, so after you delete your account, your data leaves our backups within 30 days.</p>
+  <section id="retention">
+    <h2>7. How long we keep information</h2>
+    <ul>
+      <li><b>Your passport:</b> until you delete it. We don’t delete inactive passports automatically.</li>
+      <li><b>Our backups:</b> we back up our database daily. Each backup is deleted automatically once it is 30 days old. So anything you change or delete, including your whole passport, leaves our backups within 31 days.</li>
+      <li><b>Google’s systems:</b> Google says that after a sign-in is deleted, it removes the data from its live and backup systems within 180 days. Google may keep phone numbers used to sign in, to prevent spam and abuse.</li>
+      <li><b>Unfinished sign-ups:</b> if you confirm your phone number but don’t finish creating a passport, a sign-in record with your phone number stays in Firebase. You can’t delete it from the site. Email <a href="mailto:privacy@hsoysters.com">privacy@hsoysters.com</a> and we will delete it.</li>
+      <li><b>Google Analytics:</b> event-level data is kept for 14 months. Reports built from it can be kept longer.</li>
+      <li><b>Emails you send us:</b> these stay in our mailbox.</li>
+    </ul>
+  </section>
+
+  <section id="your-data">
+    <h2>8. Your choices: see, change, export and delete</h2>
+    <p>In your passport you can:</p>
+    <ul>
+      <li><b>See</b> everything you have logged (History) and your stamps (Stamps).</li>
+      <li><b>Edit or delete</b> any visit, rating, “two words” or note, and add past visits (History).</li>
+      <li><b>Change your profile</b> (Profile): change your name; change or remove your email; correct your birthday once; and add or remove cards. A birthday correction can’t make you younger than 18.</li>
+      <li><b>Export your data</b> (Profile): two files, made on your device. One holds everything in your passport (JSON). The other lists your visits as a spreadsheet (CSV).</li>
+      <li><b>Delete your account</b> (Profile): this permanently deletes your passport (profile, visits, stamps, cards and here-today records) and your sign-in. It can’t be undone. On the device you use, it also clears unsent changes, here-today dates and the signed-in note. Other devices aren’t cleared. Copies stay in our backups and Google’s systems for a time (<a href="#retention">section 7</a>), and Google Analytics data isn’t deleted (<a href="#google-analytics">section 5.1</a>).</li>
+    </ul>
+    <p>You can’t change your phone number. To use a different number, create a new passport with it. Your history doesn’t move to the new passport, and the old one stays until you delete it. Delete it first if you don’t want it kept.</p>
+    <p>If you can’t sign in (for example, you no longer have your number), never finished signing up, or need a change you can’t make yourself, email <a href="mailto:privacy@hsoysters.com">privacy@hsoysters.com</a>. We may ask you to confirm details to show the passport is yours.</p>
   </section>
 
   <section id="age">
-    <h2>Age</h2>
-    <p>You must be 13 or older to create a passport. If someone under 13 tries, we don’t create the account and keep nothing they entered.</p>
+    <h2>9. Age requirements</h2>
+    <p>You must be 18 or older to have a passport. We ask for your birthday after you confirm your phone number. If the birthday shows you are under 18, the page deletes the sign-in it just created, saves nothing from the form, and signs you out. If that deletion fails, for example because the connection drops, a sign-in record with the phone number stays in Firebase. Email <a href="mailto:privacy@hsoysters.com">privacy@hsoysters.com</a> and we will delete it. Google stores phone numbers used to sign in as described in <a href="#service-providers">section 4.1</a>.</p>
+    <p>If you believe someone under 18 has a passport, email <a href="mailto:privacy@hsoysters.com">privacy@hsoysters.com</a> and we will delete it.</p>
+    <p>The passport has no alcohol promotions, so it shows none to anyone under 21. The birthday reward, when we offer one, goes to every passport holder from 3 days before to 3 days after their birthday, and it is never alcohol.</p>
+  </section>
+
+  <section id="security">
+    <h2>10. Security</h2>
+    <ul>
+      <li>You sign in with a one-time code texted to your phone number.</li>
+      <li>Our database rules let a passport be read or changed only by its own sign-in. Our site administrator can see and manage records through the Firebase console.</li>
+      <li>Information travels between your browser and Firebase over encrypted connections.</li>
+      <li>We never collect full card numbers.</li>
+    </ul>
+    <p>No system is perfectly secure, and we can’t promise that your information will never be accessed without permission. If a breach affects your information, we will notify you as the law requires.</p>
+    <p>Phone-number sign-in has weak points. Anyone who can receive texts at your number can open your passport, and phone numbers get reassigned. If you are giving up your number, delete your passport first. On a shared device, sign out when you are done.</p>
+  </section>
+
+  <section id="planned">
+    <h2>11. Planned: check matching</h2>
+    <p>Check matching will add the oysters on your checks to your passport automatically. It isn’t running yet. Before it starts, we will update this notice and tell you in your passport. As planned:</p>
+    <ul>
+      <li>Each night, a job will copy checks from our point-of-sale system (Toast) into our sales records, a data warehouse in Google BigQuery.</li>
+      <li>It will link a check to your passport if the check has your phone number, or if it was paid with a card you added and you have a here-today record for that business day.</li>
+      <li>It can link checks from the business day before you created your passport onward.</li>
+      <li>Matched orders will be saved with your passport.</li>
+      <li>Our sales records will also hold a copy of passport information, identified only by your account ID, never your phone number or birthday. Card digits will be compared and not stored there.</li>
+      <li>If you delete your passport, your matched orders are deleted and your account ID is removed from our sales records.</li>
+    </ul>
+  </section>
+
+  <section id="changes">
+    <h2>12. Changes to this notice</h2>
+    <p>If we change this notice, we will post the new version here and update the “Last updated” date. If we make a material change to how we use information you have already given us, we will tell you in your passport before it takes effect. If the change would use that information in a materially different way, we will ask for your agreement first. You can delete your passport at any time.</p>
   </section>
 
   <section id="contact">
-    <h2>Questions</h2>
-    <p>Email <a href="mailto:privacy@hsoysters.com">privacy@hsoysters.com</a>.</p>
-    <p>If we change this page, we’ll update the date at the top.</p>
+    <h2>13. Contact us</h2>
+    <p>Half Shell Raw Bar, Charlotte, North Carolina.</p>
+    <p>For questions or requests, including if you can’t sign in to your passport, email <a href="mailto:privacy@hsoysters.com">privacy@hsoysters.com</a>.</p>
   </section>
 </main>
 
+<script>
+  /* Google Analytics opt-out for this browser (section 5.2). */
+  (function () {
+    var KEY = 'hs_ga_optout', GA_OFF = 'ga-disable-G-3SQ3075FQ1';
+    var btn = document.getElementById('ga-toggle'), status = document.getElementById('ga-status');
+    if (!btn || !status) return;
+    var gpc = navigator.globalPrivacyControl === true;
+    var reEnabled = false;   // turned back on during this page view: applies from the next page
+    function read() {
+      try { return { ok: true, off: localStorage.getItem(KEY) === '1' }; } catch (e) { return { ok: false, off: false }; }
+    }
+    function show() {
+      var r = read();
+      btn.hidden = false;
+      if (gpc) {
+        status.textContent = 'Your browser sends Global Privacy Control, so Analytics is off and stays off.';
+        btn.hidden = true;
+      } else if (!r.ok) {
+        status.textContent = 'This browser is blocking our site’s storage, so this button can’t save a choice here. To turn Analytics off, allow storage for hsoysters.com, use a browser that sends Global Privacy Control, or on a computer use Google’s add-on below.';
+        btn.hidden = true;
+      } else if (r.off) {
+        status.textContent = 'Analytics is off in this browser.';
+        btn.textContent = 'Turn Analytics on';
+      } else {
+        status.textContent = reEnabled ? 'Analytics is on in this browser, starting from the next page you open.' : 'Analytics is on in this browser.';
+        btn.textContent = 'Turn Analytics off';
+      }
+    }
+    btn.addEventListener('click', function () {
+      var r = read();
+      if (!r.ok) { show(); return; }
+      try {
+        if (r.off) { localStorage.removeItem(KEY); reEnabled = true; }
+        else { localStorage.setItem(KEY, '1'); window[GA_OFF] = true; reEnabled = false; }
+      } catch (e) { /* storage refused: show() reports it */ }
+      var after = read();
+      if (after.ok && after.off === r.off) {
+        status.textContent = 'This browser didn’t save your choice. You can use a browser that sends Global Privacy Control, or on a computer, Google’s add-on below.';
+        return;
+      }
+      show();
+    });
+    show();
+  })();
+</script>
 </body>
 </html>

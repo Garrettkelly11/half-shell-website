@@ -7,6 +7,8 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-3SQ3075FQ1"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
+    // Opt-out: the button on privacy.html, or the browser's Global Privacy Control signal.
+    try { if (navigator.globalPrivacyControl === true || localStorage.getItem('hs_ga_optout') === '1') window['ga-disable-G-3SQ3075FQ1'] = true; } catch (e) {}
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
 
@@ -593,10 +595,10 @@
       <legend>Add a card you pay with <span class="optional">(optional)</span></legend>
       <button type="button" class="why-btn" id="why-card-btn" aria-expanded="false" aria-controls="why-card">Why do we ask for this?</button>
       <div class="why-pop" id="why-card" role="region" aria-label="Why we ask for a card" hidden>
-        <p>A card lets us connect what you order to your passport, so you don't have to log every oyster yourself.
+        <p>Soon, a card will let us connect what you order to your passport, so you won't have to log every oyster yourself.
           We only keep the last 4 digits and the card type, never the full number. It's optional, and you can
           remove a card any time.</p>
-        <a href="privacy.html#card-digits">Read the card section of our privacy statement</a>
+        <a href="privacy.html#card-digits">Read the card section of our privacy notice</a>
       </div>
       <div id="card-rows"></div>
       <button type="button" class="add-card" id="add-card-btn">+ Add a card</button>
@@ -610,12 +612,12 @@
     <button class="logout-link" id="create-signout">Not you? Sign Out</button>
   </div>
 
-  <!-- ── State: Under 13 ── -->
+  <!-- ── State: Under 18 ── -->
   <div id="state-blocked" style="display:none">
     <img src="assets/logo.png" alt="Half Shell Raw Bar" class="login-logo" width="72" height="72" />
     <div class="login-eyebrow">Oyster Passport</div>
     <h2>Sorry</h2>
-    <p class="notice" role="alert">Sorry — you need to be 13 or older to create an account.</p>
+    <p class="notice" role="alert">Sorry — you need to be 18 or older to create an account.</p>
     <a class="back-link" href="index.html">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="9,2 4,7 9,12"/>
@@ -918,8 +920,8 @@
       var cards = readCards();
       if (!cards) { showError('create-error', COPY.card); return; }
 
-      // Under 13: delete the new sign-in, write nothing, sign out (5.1).
-      if (P.isUnder13(dob, today)) {
+      // Under 18: delete the new sign-in, write nothing, sign out (5.1).
+      if (P.isUnderMinAge(dob, today)) {
         blocked = true;
         clearBirthday();
         dob = null;
