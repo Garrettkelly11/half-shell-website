@@ -1558,5 +1558,26 @@ var OYSTERS = [
     photoUrl: null,
     photoAlt: "No photograph",
     price: null
+  },
+  {
+    id: "beach-glass",
+    name: "Beach Glass",
+    salinity: "medium-high",
+    salinityText: "Clean and Bright",
+    region: "wa",
+    origin: "Samish Bay",
+    farmer: null,
+    farmerUrl: null,
+    species: "Magallana Gigas",
+    farmingMethod: "Float Bags",
+    growOut: "18-24 months",
+    seasonalAvailability: "Year-Round",
+    size: "Medium-Large",
+    shell: "Dark, with a deep cup and smooth ridges",
+    tastingNotes: "Strong vegetal flavor with a palate cleansing bitterness for a finishing note. This west coast oyster has the classic notes of cucumber, melon, and seaweed that west coast fans are always looking for. Enjoy paired with our Sea Glass Martini for a curated cucumber experience!",
+    notable: "The famous west coast flavor comes from the microalgae diet they thrive on in the clean waters of their home in Samish Bay, WA. Samish Bay was also the place the first west coast oysters were grown in the United States when some specimen were tossed overboard a cargo ship in 1919. Since then the area has been synonymous with commercial oyster growing.",
+    photoUrl: null,
+    photoAlt: "No Photo",
+    price: null
   }
 ];
