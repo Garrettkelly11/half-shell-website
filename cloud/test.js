@@ -380,6 +380,46 @@ async function rejects(promise, code) {
   await check('S5 scan: prices come from every matched item, 86\'d or not, including sub-groups', async () => {
     assert.deepStrictEqual([...new Set(scan.appearances.map((a) => a.id))].sort(), ['blackberry', 'kumamoto', 'malpeque', 'market']);
   });
+  // Raw Bar scope (10/30/2026): only Food Menu › Raw Bar (and groups inside
+  // it) counts. A Drinks wine or a Lunch duplicate with an oyster's name is
+  // ignored, and an 86'd copy beside an in-stock one shows in `sources`.
+  const scopedMenu = {
+    menus: [
+      { name: 'Food Menu', menuGroups: [
+        { name: 'Starters', menuItems: [{ name: 'Kumamoto', guid: 'g-kuma-start', price: 9 }] },
+        { name: 'Raw Bar', menuItems: [
+          { name: 'Kumamoto', guid: 'g-kuma', price: 5, pricingStrategy: 'BASE_PRICE' },
+          { name: 'Blackberries', guid: 'g-bb', price: 4, pricingStrategy: 'BASE_PRICE' },
+          { name: 'Blackberries', guid: 'g-bb-dup', price: 4, pricingStrategy: 'BASE_PRICE' },
+        ], menuGroups: [{ name: 'Sub', menuItems: [{ name: 'Malpeque', guid: 'g-mal', price: 3, pricingStrategy: 'BASE_PRICE' }] }] },
+      ] },
+      { name: 'Drinks', menuGroups: [{ name: 'Wine', menuItems: [{ name: 'Market Oyster', guid: 'g-wine', price: 12 }] }] },
+      { name: 'Lunch Menu', menuGroups: [{ name: 'Raw Bar', menuItems: [{ name: 'Blackberries', guid: 'g-bb-lunch', price: 4 }] }] },
+    ],
+  };
+  const scoped = P.scanMenu(scopedMenu, (it) => slugOf[it.name] || null, new Set(['g-bb', 'g-bb-lunch']), P.RAW_BAR);
+  await check('Raw Bar scope: only Food Menu › Raw Bar and its sub-groups are read', async () => {
+    assert.strictEqual(scoped.scanned, 4);
+    assert.deepStrictEqual(scoped.matched.sort(), ['blackberry', 'kumamoto', 'malpeque']);
+    assert.ok(!scoped.matched.includes('market'), 'a Drinks item named like an oyster must not reach the menu');
+    assert.ok(scoped.appearances.every((a) => a.menu === 'Food Menu'));
+  });
+  await check('Raw Bar scope: matching items outside it are reported, not used', async () => {
+    assert.deepStrictEqual(scoped.outside.map((o) => `${o.id}|${o.menu} › ${o.group}|${o.inStock}`).sort(), [
+      'blackberry|Lunch Menu › Raw Bar|false', 'kumamoto|Food Menu › Starters|true', 'market|Drinks › Wine|true',
+    ]);
+  });
+  await check('Raw Bar scope: sources show the in-stock item and the 86\'d copy beside it', async () => {
+    assert.deepStrictEqual(scoped.sources.blackberry.map((s) => `${s.guid}|${s.inStock}`), ['g-bb|false', 'g-bb-dup|true']);
+    assert.strictEqual(scoped.sources.malpeque[0].group, 'Raw Bar › Sub');
+  });
+  await check('Raw Bar scope: no Raw Bar group → nothing scanned (the sync then stops)', async () => {
+    const none = P.scanMenu({ menus: [{ name: 'Food Menu', menuGroups: [{ name: 'Oysters', menuItems: [{ name: 'Kumamoto', guid: 'x' }] }] }] },
+      (it) => slugOf[it.name] || null, new Set(), P.RAW_BAR);
+    assert.strictEqual(none.scanned, 0);
+    assert.deepStrictEqual(none.matched, []);
+  });
+
   const col = P.collectPrices(scan.appearances);
   await check('S5 prices: one per oyster; a different price on another menu → the Food Menu\'s, reported', async () => {
     assert.deepStrictEqual(col.prices.kumamoto, { price: 5, strategy: 'BASE_PRICE' });

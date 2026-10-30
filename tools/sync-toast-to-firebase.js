@@ -5,15 +5,23 @@
  * Runs in the GitHub Actions environment (not Firebase Functions). Reads
  * credentials from environment variables set as GitHub Secrets, then:
  *   1. Authenticates with Toast (OAuth client-credentials flow)
- *   2. Fetches /menus/v2/menus to get the full Raw Bar item list
+ *   2. Fetches /menus/v2/menus and reads only Food Menu › Raw Bar (and any
+ *      groups inside it). Items anywhere else in Toast — Drinks, Lunch,
+ *      Toast Tables — are ignored, so a wine or a duplicate button that
+ *      shares an oyster's name can't put that oyster on the menu.
  *   3. Fetches /stock/v1/inventory to get which items are currently 86'd
- *   4. Name-matches every item against the Half Shell oyster catalog
+ *   4. Name-matches every Raw Bar item against the Half Shell oyster catalog
  *   5. Writes tonight's menu to /menu/serving: Toast's in-stock oysters plus
  *      employee-page overrides (until 4 AM), and Toast's list to
  *      /menu/toastInStock (step S6; cloud/menu-logic.js)
  *   6. Writes Toast's regular price for every matched oyster, 86'd or not,
  *      to /menu/prices (step S5; cloud/price-logic.js). Only changes are
  *      written; entries are never deleted.
+ *   7. Logs why each oyster is on the menu: the Toast item(s) that are in
+ *      stock for it, any employee-page override, and any 86'd copies.
+ *
+ * If Food Menu › Raw Bar has no items (menu or group renamed in Toast), the
+ * run fails and the menu is left as it was, rather than emptied.
  *
  * Required environment variables (set as GitHub Secrets):
  *   TOAST_CLIENT_ID        — OAuth client ID
@@ -169,6 +177,43 @@ if (!getApps().length) {
 }
 const db = getDatabase();
 
+// ─── Why each oyster is on the menu ─────────────────────────────────────────
+const nyTime = ms => new Date(ms).toLocaleString('en-US', { timeZone: 'America/New_York' });
+const describe = s => `"${s.name}" (${s.menu} › ${s.group}, ${s.guid || 'no GUID'})`;
+
+function logWhy(plan, sources, outside, overrides, now, scope) {
+  // Active overrides, plus any the one-time carry-over just created.
+  const active = menuLogic.splitOverrides(overrides, now).active;
+  for (const [k, v] of Object.entries(plan.updates)) {
+    if (k.startsWith('overrides/') && v) active[k.slice('overrides/'.length)] = v;
+  }
+  const serving = Object.keys(plan.updates)
+    .filter(k => k.startsWith('serving/') && plan.updates[k])
+    .map(k => k.slice('serving/'.length)).sort();
+
+  console.log(`\nWhy each oyster is on the menu (${serving.length}):`);
+  for (const id of serving) {
+    const list = sources[id] || [];
+    const why = [];
+    const inStock = list.filter(s => s.inStock), out = list.filter(s => !s.inStock);
+    if (inStock.length) why.push('in stock in Toast as ' + inStock.map(describe).join('; '));
+    const o = active[id];
+    if (o && o.state === 'on') why.push(`employee-page override on (${o.by || 'unknown'}, until ${nyTime(o.until)})`);
+    if (out.length) why.push('86\'d copies: ' + out.map(describe).join('; '));
+    console.log(`  ${id}: ${why.join(' | ') || 'no reason found'}`);
+  }
+
+  const off = Object.entries(active).filter(([, o]) => o.state === 'off');
+  if (off.length) {
+    console.log(`Kept off by employee-page override: ` +
+      off.map(([id, o]) => `${id} (${o.by || 'unknown'}, until ${nyTime(o.until)})`).join(', '));
+  }
+  if (outside.length) {
+    console.log(`Ignored — matches an oyster name but sits outside ${scope.menu} › ${scope.group}:`);
+    for (const s of outside) console.log(`  - ${s.id} ← ${describe(s)}, ${s.inStock ? 'in stock' : '86\'d'}`);
+  }
+}
+
 // ─── Main sync ───────────────────────────────────────────────────────────────
 (async () => {
   const now = Date.now();
@@ -183,11 +228,17 @@ const db = getDatabase();
     // matched item (86'd or not). GUID override table first, then names.
     const matchSlug = item =>
       (item.guid && guidToSlug[item.guid]) || matchIndex.get(normalize(item.name)) || null;
-    const { matched, unmatched, skipped, appearances } =
-      priceLogic.scanMenu(menuData, matchSlug, outOfStockGuids);
+    const scope = priceLogic.RAW_BAR;
+    const { matched, unmatched, skipped, scanned, appearances, sources, outside } =
+      priceLogic.scanMenu(menuData, matchSlug, outOfStockGuids, scope);
 
+    if (!scanned) {
+      throw new Error(`No items found in ${scope.menu} › ${scope.group}. The menu or group may have been ` +
+        `renamed in Toast. Menu left unchanged.`);
+    }
+    console.log(`Read ${scanned} items from ${scope.menu} › ${scope.group}.`);
     console.log(`Matched: ${matched.length} | Unmatched: ${unmatched.length} | 86'd (skipped): ${skipped}`);
-    if (matched.length) console.log(`Serving: ${matched.join(', ')}`);
+    if (matched.length) console.log(`Toast in stock: ${matched.join(', ')}`);
     if (unmatched.length) {
       console.log(`Unmatched items (not in catalog):`);
       for (const u of unmatched) console.log(`  - ${u.name} ($${u.price})`);
@@ -204,6 +255,7 @@ const db = getDatabase();
     ]);
     const plan = menuLogic.planSync(matched, servingSnap.val(), overridesSnap.val(), now);
     const { added, refreshed: updated, removed } = plan;
+    logWhy(plan, sources, outside, overridesSnap.val(), now, scope);
 
     // Prices (S5): Toast's regular price for every matched oyster.
     const { prices, conflicts } = priceLogic.collectPrices(appearances);

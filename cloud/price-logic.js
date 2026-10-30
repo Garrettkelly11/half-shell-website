@@ -30,14 +30,30 @@ const TIME = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
 
 // ─── Reading Toast's menu ───────────────────────────────────────────────────
 
-/** Every menu item with the name of the menu it sits in. */
-function* itemsWithMenu(menuData) {
+/**
+ * Where tonight's oysters are read from: the Food Menu's Raw Bar group and
+ * any groups inside it. Items elsewhere in Toast (Drinks, Lunch, Toast
+ * Tables, other groups) are ignored, so a wine or a duplicate button that
+ * shares an oyster's name can't put that oyster on the menu (10/30/2026).
+ */
+const RAW_BAR = { menu: FOOD_MENU, group: 'Raw Bar' };
+
+/**
+ * Every menu item with the name of the menu it sits in, the path of groups
+ * above it ("Raw Bar › Sub"), and whether it is inside `scope` (a group
+ * named scope.group, at any depth, in the menu named scope.menu). With no
+ * scope every item is in scope.
+ */
+function* itemsWithMenu(menuData, scope) {
   for (const menu of (menuData && menuData.menus) || []) {
-    const stack = [...(menu.menuGroups || [])];
+    const name = menu.name || '';
+    const stack = (menu.menuGroups || []).map((g) => ({ g, path: [], inScope: false }));
     while (stack.length) {
-      const g = stack.shift();
-      for (const item of g.menuItems || []) yield { item, menu: menu.name || '' };
-      stack.push(...(g.menuGroups || []));
+      const { g, path, inScope } = stack.shift();
+      const here = [...path, g.name || ''];
+      const scoped = !scope || inScope || (name === scope.menu && g.name === scope.group);
+      for (const item of g.menuItems || []) yield { item, menu: name, group: here.join(' › '), inScope: scoped };
+      stack.push(...(g.menuGroups || []).map((c) => ({ g: c, path: here, inScope: scoped })));
     }
   }
 }
@@ -46,33 +62,49 @@ function* itemsWithMenu(menuData) {
  * One pass over Toast's menu.
  *   matchSlug(item) → catalog id or null
  *   outOfStock      → Set of 86'd item GUIDs
+ *   scope           → optional { menu, group } (see RAW_BAR); items outside
+ *                     it are left out of everything below except `outside`
  * Returns:
- *   matched     — ids of in-stock oysters (tonight's menu, as before)
+ *   matched     — ids of in-stock oysters (tonight's menu)
  *   unmatched   — in-stock items no oyster matches
  *   skipped     — number of 86'd items
+ *   scanned     — number of items in scope
  *   appearances — every matched item, 86'd or not: { id, price, strategy, menu }
+ *   sources     — per matched id, every Toast item for it:
+ *                 { name, guid, menu, group, inStock } — shows which item put
+ *                 an oyster on the menu, and any 86'd copies beside it
+ *   outside     — items outside the scope whose name matches an oyster:
+ *                 { id, name, guid, menu, group, inStock } (ignored; logged)
  */
-function scanMenu(menuData, matchSlug, outOfStock) {
-  const matched = [], seen = new Set(), unmatched = [], appearances = [];
-  let skipped = 0;
-  for (const { item, menu } of itemsWithMenu(menuData)) {
+function scanMenu(menuData, matchSlug, outOfStock, scope) {
+  const matched = [], seen = new Set(), unmatched = [], appearances = [], outside = [];
+  const sources = {};
+  let skipped = 0, scanned = 0;
+  for (const { item, menu, group, inScope } of itemsWithMenu(menuData, scope)) {
     if (!item || !item.name) continue;
     const id = matchSlug(item);
+    const inStock = !(item.guid && outOfStock.has(item.guid));
+    if (!inScope) {
+      if (id) outside.push({ id, name: item.name, guid: item.guid || null, menu, group, inStock });
+      continue;
+    }
+    scanned++;
     if (id) {
       appearances.push({
         id, menu,
         price: typeof item.price === 'number' ? item.price : null,
         strategy: item.pricingStrategy || null,
       });
+      (sources[id] = sources[id] || []).push({ name: item.name, guid: item.guid || null, menu, group, inStock });
     }
-    if (item.guid && outOfStock.has(item.guid)) { skipped++; continue; }
+    if (!inStock) { skipped++; continue; }
     if (id) {
       if (!seen.has(id)) { seen.add(id); matched.push(id); }
     } else {
       unmatched.push({ name: item.name, guid: item.guid, price: item.price ?? null });
     }
   }
-  return { matched, unmatched, skipped, appearances };
+  return { matched, unmatched, skipped, scanned, appearances, sources, outside };
 }
 
 /**
@@ -164,6 +196,6 @@ function gameDayChange(action, now, current, cap) {
 }
 
 module.exports = {
-  DAYS, FOOD_MENU, itemsWithMenu, scanMenu, collectPrices, priceUpdates, validateSchedule, describeSchedule,
+  DAYS, FOOD_MENU, RAW_BAR, itemsWithMenu, scanMenu, collectPrices, priceUpdates, validateSchedule, describeSchedule,
   GAME_DAY_PERCENT, gameDayChange,
 };
