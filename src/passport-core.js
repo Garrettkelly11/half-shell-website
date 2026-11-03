@@ -310,7 +310,8 @@
   /**
    * A guest's rating of each oyster, out of 10: square-root-weighted by
    * quantity across visits; unrated visits ignored (6.3).
-   * { oysterId: { rating, visits, qty } }
+   * { oysterId: { rating, visits, qty, eaten } }
+   * qty: eaten on the rated visits; eaten: eaten on every visit (palate weight).
    */
   function aggregateRatings(visits) {
     var acc = {};
@@ -324,10 +325,15 @@
         a.sw += w; a.swr += w * sc; a.visits++; a.qty += x.qty || 0;
       });
     });
+    var eaten = {};
+    Object.keys(visits || {}).forEach(function (vid) {
+      var it = items(visits[vid]);
+      Object.keys(it).forEach(function (oid) { if (acc[oid]) eaten[oid] = (eaten[oid] || 0) + (it[oid].qty || 0); });
+    });
     var out = {};
     Object.keys(acc).forEach(function (oid) {
       var a = acc[oid];
-      out[oid] = { rating: a.swr / a.sw, visits: a.visits, qty: a.qty };
+      out[oid] = { rating: a.swr / a.sw, visits: a.visits, qty: a.qty, eaten: eaten[oid] || a.qty };
     });
     return out;
   }
@@ -527,33 +533,51 @@
 
   // ── Palate and recommendations ────────────────────────────────────────────
   function ranks() { var I = flights()._internals; return { sal: I.salinityRank, size: I.sizeRank }; }
-  /** Rated current oysters with their facts: [{ id, rating, o, sal, size, region, coast }]. */
+  /**
+   * Rated current oysters with their facts:
+   * [{ id, rating, weight, o, sal, size, region, coast }].
+   * weight = √(how many of that oyster the guest has eaten, every visit),
+   * so what they order a lot counts more in the palate (Garrett, 03/11/2026).
+   */
   function ratedFacts(agg, oysters, regions) {
     var cat = catalogIndex(oysters), reg = regionIndex(regions), R = ranks();
     return Object.keys(agg).filter(function (id) { return cat[id]; }).sort().map(function (id) {
       var o = cat[id], r = reg[o.region];
-      return { id: id, rating: agg[id].rating, o: o, sal: R.sal(o), size: R.size(o), region: o.region || null,
-               coast: r ? r.coast : null };
+      return { id: id, rating: agg[id].rating, weight: Math.sqrt(Math.max(1, agg[id].eaten || agg[id].qty || 1)), o: o,
+               sal: R.sal(o), size: R.size(o), region: o.region || null, coast: r ? r.coast : null };
     });
   }
+  /** Average rating of a list of rated oysters, each counted by its weight. */
+  function weightedMean(list) {
+    var sw = 0, swr = 0;
+    list.forEach(function (x) { sw += x.weight; swr += x.weight * x.rating; });
+    return sw ? swr / sw : null;
+  }
+  /**
+   * The group (salinity band, size, region) with the highest weighted average
+   * rating, among groups with at least `minCount` rated oysters. Ties go to
+   * the group with more rated oysters.
+   */
   function bestGroup(list, keyFn, minCount) {
     var g = {};
     list.forEach(function (x) {
       var k = keyFn(x);
       if (k === null || k === undefined || (typeof k === 'number' && isNaN(k))) return;
-      (g[k] = g[k] || []).push(x.rating);
+      (g[k] = g[k] || []).push(x);
     });
     var best = null;
     Object.keys(g).forEach(function (k) {
       var n = g[k].length;
       if (n < minCount) return;
-      var mean = g[k].reduce(function (a, b) { return a + b; }, 0) / n;
+      var mean = weightedMean(g[k]);
       if (!best || mean > best.mean || (mean === best.mean && n > best.count)) best = { key: k, mean: mean, count: n };
     });
     return best;
   }
-  var SAL_LEAN = { 1: 'mild', 2: 'mild', 3: 'middle', 4: 'briny', 5: 'briny' };   // [CALL]
-  var SAL_TEXT = { mild: 'You lean mild', middle: 'Right down the middle', briny: 'You lean briny' };
+  // Salinity bands: low 1, medium 2, medium-high 3, high 4, very high 5.
+  // Medium reads as medium, not mild (Garrett, 03/11/2026).
+  var SAL_LEAN = { 1: 'mild', 2: 'medium', 3: 'medium-high', 4: 'briny', 5: 'briny' };
+  var SAL_TEXT = { mild: 'You lean mild', medium: 'You lean medium', 'medium-high': 'You lean medium-high', briny: 'You lean briny' };
   var SIZE_WORD = { 1: 'small', 2: 'medium', 3: 'large' };
   /**
    * "Your palate" (6.6). Null until 5 varieties are rated. Each line is null
@@ -567,9 +591,8 @@
     out.salinity = s && { band: Number(s.key), lean: SAL_LEAN[s.key], text: SAL_TEXT[SAL_LEAN[s.key]],
       basis: f.filter(function (x) { return !isNaN(x.sal); }).length };
     var east = f.filter(function (x) { return x.coast === 'east'; }), west = f.filter(function (x) { return x.coast === 'west'; });
-    var mean = function (l) { return l.reduce(function (a, x) { return a + x.rating; }, 0) / l.length; };
     if (east.length >= 2 && west.length >= 2) {
-      var e = mean(east), w = mean(west);
+      var e = weightedMean(east), w = weightedMean(west);
       out.coast = { east: e, west: w, lean: e > w ? 'east' : w > e ? 'west' : 'even',
         text: e > w ? 'You lean East Coast' : w > e ? 'You lean West Coast' : 'Both coasts, equally',
         basis: east.length + west.length };

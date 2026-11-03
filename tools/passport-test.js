@@ -498,6 +498,41 @@ check('palate: salinity, coast, size and region, each with its basis', () => {
   assert.strictEqual(p.region.code, 'ma');
   assert.strictEqual(p.region.basis, 2);
 });
+check('palate counts volume: each oyster weighted by √(how many eaten) (03/11/2026)', () => {
+  // Briny: 24 at 9.0 and 1 at 6.0. Mild: 2 at 8.0 and 2 at 7.5.
+  // Unweighted: briny 7.5 < mild 7.75. Weighted: briny (9·√24 + 6) / (√24 + 1) = 8.49 > 7.75.
+  const fix = [
+    { id: 'b1', salinity: 'high', region: 'ma', size: 'Medium' }, { id: 'b2', salinity: 'high', region: 'ma', size: 'Medium' },
+    { id: 'm1', salinity: 'low', region: 'wa', size: 'Small' }, { id: 'm2', salinity: 'low', region: 'wa', size: 'Small' },
+    { id: 'n1', salinity: 'medium', region: 'zz', size: 'Large' },   // no coast on file
+  ];
+  const v = withScores(visitsOf([['b1', 24, 4.5], ['b2', 1, 3], ['m1', 2, 4], ['m2', 2, 3.75], ['n1', 1, 1]]));
+  const agg = P.aggregateRatings(v);
+  assert.strictEqual(agg.b1.eaten, 24);
+  const p = P.palate(agg, fix, REGIONS);
+  assert.deepStrictEqual([p.salinity.lean, p.salinity.text, p.salinity.band], ['briny', 'You lean briny', 4]);
+  assert.strictEqual(p.coast.lean, 'east');
+  near(p.coast.east, (9 * Math.sqrt(24) + 6) / (Math.sqrt(24) + 1));
+  near(p.coast.west, 7.75);
+  assert.strictEqual(p.region.code, 'ma');
+  near(p.region.mean, 8.4914, 1e-4);
+});
+check('palate weight counts every visit of an oyster, rated or not', () => {
+  const v = visitsOf([['a', 1, 5], ['a', 8]]);          // rated once (1 eaten), then 8 more unrated
+  const agg = P.aggregateRatings(v);
+  assert.strictEqual(agg.a.qty, 1);
+  assert.strictEqual(agg.a.eaten, 9);
+});
+check('palate salinity words: low mild, medium medium, medium-high medium-high, high and very high briny', () => {
+  const words = {};
+  ['low', 'medium', 'medium-high', 'high', 'very-high'].forEach(sal => {
+    const fix = [{ id: 'p', salinity: sal, region: 'ma', size: 'Small' }, { id: 'q', salinity: sal, region: 'ma', size: 'Small' },
+      { id: 'r', salinity: null, region: 'wa', size: 'Large' }, { id: 's', salinity: null, region: 'wa', size: 'Large' }, { id: 't', salinity: null, region: 'nc', size: 'Medium' }];
+    words[sal] = P.palate(P.aggregateRatings(visitsOf([['p', 1, 5], ['q', 1, 4], ['r', 1, 3], ['s', 1, 3], ['t', 1, 3]])), fix, REGIONS).salinity.text;
+  });
+  assert.deepStrictEqual(words, { low: 'You lean mild', medium: 'You lean medium', 'medium-high': 'You lean medium-high',
+    high: 'You lean briny', 'very-high': 'You lean briny' });
+});
 check('palate size reads the size text the way Curated Flights does', () => {
   // "Very small — ... large meat" is small (only the words before " — " count).
   const fix = [
