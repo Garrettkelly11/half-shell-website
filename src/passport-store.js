@@ -108,7 +108,7 @@
     sign_up: ['method', 'cards_added'],
     login: ['method'],
     oyster_logged: ['oyster', 'qty', 'where'],
-    rating_given: ['oyster', 'stars'],
+    rating_given: ['oyster', 'score'],
     flight_logged: ['flight'],
     visit_saved: ['oysters', 'varieties', 'rated'],
     stamp_earned: ['stamp', 'tier'],
@@ -360,10 +360,11 @@
   };
   /** Stamps waiting for their celebration, oldest first. */
   Session.prototype.unseen = function () { return this.P.unseenStamps(this.state.stamps); };
-  Session.prototype.markSeen = function (id) {
+  /** Marks one stamp id, or a list of them, as celebrated (one update). */
+  Session.prototype.markSeen = function (ids) {
     var u = {};
-    u['stamps/' + id + '/seen'] = true;
-    this.apply(u, { noStamps: true });
+    [].concat(ids).forEach(function (id) { u['stamps/' + id + '/seen'] = true; });
+    if (Object.keys(u).length) this.apply(u, { noStamps: true });
   };
   /** A catalog oyster by id (null for a retired one). */
   Session.prototype.oyster = function (id) {

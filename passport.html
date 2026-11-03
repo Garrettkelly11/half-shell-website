@@ -27,12 +27,20 @@
       --navy: #0e2d3a; --cream: #f5f0e8; --paper: #f3f8f6; --orange: #e89438; --teal: #2a7f94;
       --muted: #5f8794; --line: #bcd4ce; --ink: #0e2d3a; --rust: #b5651d; --danger: #b03a2e;
     }
-    html { -webkit-text-size-adjust: 100%; }
+    html { -webkit-text-size-adjust: 100%; height: 100%; }
     body {
       font-family: 'Lato', sans-serif;
       background: var(--navy);
       color: var(--ink);
-      min-height: 100vh;
+      height: 100%;
+      overflow: hidden;
+    }
+    /* The page scrolls inside this box, never the document (03/11/2026). When
+       the document scrolled, phone browsers shrank their toolbars, and after a
+       tab change the bottom bar ignored taps until the page was touched. */
+    .pp-scroll {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
     }
     a { color: var(--teal); }
     button { font: inherit; color: inherit; }
@@ -107,10 +115,27 @@
     .card.accent { border-color: var(--orange); background: #fff7ec; }
 
     /* Overview */
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; }
-    .stats div { padding: 0.2rem 0; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; padding: 0.35rem 0.3rem; }
+    .stats a { display: block; padding: 0.35rem 0.1rem; min-height: 44px; border-radius: 4px; color: inherit; text-decoration: none; }
+    .stats a + a { border-left: 1px dotted var(--line); }
+    .stats a:active { background: rgba(42,127,148,.08); }
     .stats b { display: block; font-family: 'Roboto Mono', monospace; font-size: 1.35rem; color: var(--navy); }
-    .stats span { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    .stats span { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); }
+    .stats span::after { content: ' ›'; }
+    /* The big medal (owners, 03/11/2026: Volume) */
+    .feature { display: flex; align-items: center; gap: 0.9rem; color: inherit; text-decoration: none; padding: 0.9rem 0.9rem 1rem; }
+    .feature-art { flex: 0 0 auto; width: 124px; text-align: center; }
+    .feature-txt { flex: 1 1 auto; min-width: 0; }
+    .feature-name { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--rust); }
+    .feature-big { font-family: 'Playfair Display', Georgia, serif; font-size: 1.55rem; line-height: 1.15; margin: 0.15rem 0 0.1rem; }
+    .feature-tier { font-size: 0.82rem; color: #2c4a55; }
+    .feature-bar { display: block; height: 8px; border-radius: 4px; background: #e6dfd1; overflow: hidden; margin: 0.55rem 0 0.3rem; }
+    .feature-bar i { display: block; height: 100%; background: var(--orange); }
+    .feature-next { font-family: 'Roboto Mono', monospace; font-size: 0.74rem; color: var(--muted); }
+    @media (max-width: 360px) { .feature-art { width: 100px; } .feature-big { font-size: 1.3rem; } }
+    .recent { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; padding: 0.55rem 0.1rem; min-height: 44px; border-bottom: 1px dotted var(--line); color: inherit; text-decoration: none; }
+    .recent .date { font-family: 'Playfair Display', Georgia, serif; font-size: 1rem; white-space: nowrap; }
+    .recent .what { flex: 1 1 auto; min-width: 0; font-size: 0.78rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
     .stamp-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
     .stamp-row figure, .stamp-grid figure { text-align: center; }
     .stamp-row figcaption, .stamp-grid figcaption { font-size: 0.66rem; color: var(--muted); margin-top: 0.15rem; }
@@ -134,9 +159,21 @@
     .plus { width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--navy); background: var(--navy); color: var(--cream); font-size: 1.4rem; cursor: pointer; }
     .confirm { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; flex-wrap: wrap; }
     .item-extra { flex-basis: 100%; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .stars { display: inline-flex; }
-    .stars button { width: 40px; height: 44px; background: none; border: 0; font-size: 1.45rem; line-height: 1; color: #c9b9a0; cursor: pointer; padding: 0; }
-    .stars button.on { color: var(--orange); }
+    /* Rating out of 10: tap or slide; 0.5 steps (03/11/2026) */
+    .score { flex: 1 1 100%; display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+    .score-track { position: relative; flex: 1 1 auto; height: 44px; cursor: pointer; touch-action: pan-y; -webkit-tap-highlight-color: transparent; outline: none; }
+    .score-rail { position: absolute; left: 11px; right: 11px; top: 19px; height: 6px; border-radius: 3px; background: #e2d7c3; overflow: hidden; }
+    .score-fill { display: block; height: 100%; background: var(--orange); }
+    .score-thumb { position: absolute; top: 11px; width: 22px; height: 22px; margin-left: -11px; border-radius: 50%; background: var(--orange); border: 2px solid var(--cream); box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+    .score-thumb-box { position: absolute; left: 11px; right: 11px; top: 0; bottom: 0; pointer-events: none; }
+    .score-track.unrated .score-thumb { background: var(--cream); border-color: #b9a98d; box-shadow: none; }
+    .score-track:focus-visible .score-thumb { outline: 2px solid var(--navy); outline-offset: 2px; }
+    /* Fixed widths, so the bar doesn't move under the finger once a rating appears. */
+    .score-num { flex: 0 0 4.1rem; text-align: right; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 1.15rem; color: var(--navy); white-space: nowrap; }
+    .score-num small { font-size: 0.7rem; font-weight: 400; color: var(--muted); }
+    .score-num.none { color: #b9a98d; }
+    .score-clear { flex: 0 0 auto; min-height: 44px; font-size: 0.74rem; }
+    .score-clear.off { visibility: hidden; }
     .note-box { flex-basis: 100%; padding: 0.4rem 0 0.2rem; }
     .note-box label { display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 0.5rem 0 0.25rem; }
     .note-box input, .note-box textarea, .search input, .past-date input, .custom input {
@@ -177,7 +214,8 @@
     .seg a.on { background: var(--navy); color: var(--cream); }
     .visit-card { text-decoration: none; color: inherit; }
     .vc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
-    .tl-stars { color: var(--orange); letter-spacing: 1px; }
+    .tl-score { font-family: 'Roboto Mono', monospace; font-size: 0.78rem; font-weight: 700; color: var(--rust); }
+    .visit-card.just-saved { border-color: var(--orange); background: #fff7ec; }
     .tl-words { font-style: italic; color: var(--muted); }
     .tl-note { font-size: 0.78rem; color: var(--muted); margin: 0.1rem 0 0.25rem; }
     .map-wrap { margin: 0 -0.4rem; }
@@ -231,11 +269,12 @@
       font-size: 0.85rem; z-index: 60; max-width: 90vw; display: none;
     }
     .pp-toast.show { display: block; }
-    @media (max-width: 360px) { .pp { padding-left: 0.4rem; padding-right: 0.4rem; } .page { padding-left: 0.8rem; padding-right: 0.8rem; } .stars button { width: 36px; } }
+    @media (max-width: 360px) { .pp { padding-left: 0.4rem; padding-right: 0.4rem; } .page { padding-left: 0.8rem; padding-right: 0.8rem; } }
   </style>
 </head>
 <body>
 
+<div class="pp-scroll" id="pp-scroll">
 <div class="pp">
   <header class="pp-head">
     <a class="pp-menu-link" href="index.html">
@@ -253,6 +292,7 @@
     <div class="loading" id="pp-loading">Opening your passport…<div class="err" id="pp-load-err" hidden></div></div>
     <section class="page" id="view" hidden></section>
   </main>
+</div>
 </div>
 
 <nav class="pp-nav" aria-label="Passport" id="pp-nav" hidden>
@@ -284,10 +324,12 @@
   var P = window.HS_PASSPORT, S = window.HS_STORE, ART = window.HS_STAMP_SVG, UI = window.HS_UI;
   var $ = function (id) { return document.getElementById(id); };
   var view = $('view');
+  var scroller = $('pp-scroll');     // the page scrolls in here, not the document
   var s = null;                      // the session
   var current = null;                // { tab, arg }
   var ui = {};                       // per-view state kept across re-renders
   var openedAt = Date.now();
+  var justSaved = null;              // the visit Save Entry just closed (highlighted in History)
 
   // ── Small DOM helper (text only, never HTML from data) ────────────────────
   function el(tag, attrs, kids) {
@@ -387,19 +429,22 @@
     if (!s) return;
     var r = route();
     var changedTab = !current || current.tab !== r.tab || current.arg !== r.arg;
+    if (changedTab && current && current.tab === 'history' && r.tab !== 'history') justSaved = null;
     if (changedTab) { ui = {}; if (['overview', 'flight', 'history', 'stamps', 'profile'].indexOf(r.tab) >= 0) S.track('passport_tab', { tab: r.tab }); }
     current = r;
     var navTab = r.tab === 'past' ? 'flight' : r.tab === 'visit' ? 'history' : r.tab === 'stamp' ? 'stamps' : r.tab;
     Array.prototype.forEach.call(document.querySelectorAll('.pp-nav a'), function (a) {
       if (a.getAttribute('data-tab') === navTab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
-    var y = window.scrollY;
+    var y = scroller.scrollTop;
     view.textContent = '';
     ({ overview: overview, flight: flight, history: history, stamps: stamps, profile: profile, past: past, visit: visitView, stamp: stampView })[r.tab](r.arg);
     if (changedTab) {
-      window.scrollTo(0, 0);
+      scroller.scrollTop = 0;
       if (r.tab === 'flight') s.flush();            // opening My Flight saves (6.2)
-    } else window.scrollTo(0, y);
+    } else scroller.scrollTop = y;
+    // A rating changed from the keyboard: keep focus on its slider after the redraw.
+    if (ui.refocus) { var f = $(ui.refocus); ui.refocus = null; if (f) try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); } }
   }
 
   // ── Changes ───────────────────────────────────────────────────────────────
@@ -419,6 +464,11 @@
     var r = P.addUpdates(s.state, oid, n, s.now(), s.newId());
     s.apply(r.updates);
     S.track('oyster_logged', { oyster: oid, qty: n, where: where });
+  }
+  /** Rates an item out of 10 (null clears it). */
+  function setScore(visitId, oid, score) {
+    s.apply(touch(P.scoreUpdates(itemBase(visitId, oid), score), visitId));
+    if (score !== null) S.track('rating_given', { oyster: oid, score: score });
   }
   function setField(visitId, oid, field, value) {
     var u = {};
@@ -442,20 +492,74 @@
       el('button', { type: 'button', 'aria-label': 'One more ' + name, text: '+', disabled: qty >= P.MAX_QTY, on: { click: onPlus } })
     ]);
   }
-  function stars(visitId, oid, rating) {
-    var g = el('span', { class: 'stars', role: 'radiogroup', 'aria-label': 'Rate ' + nameOf(oid) });
-    [1, 2, 3, 4, 5].forEach(function (n) {
-      g.appendChild(el('button', {
-        type: 'button', role: 'radio', 'aria-checked': rating === n ? 'true' : 'false',
-        'aria-label': plural(n, 'star'), class: rating >= n ? 'on' : '', text: '★',
-        on: { click: function () {
-          var next = rating === n ? null : n;              // tap the same star again to clear
-          setField(visitId, oid, 'rating', next);
-          if (next) S.track('rating_given', { oyster: oid, stars: next });
-        } }
-      }));
+  /**
+   * Rating out of 10 in 0.5 steps (owners, 03/11/2026): tap anywhere on the
+   * bar or slide along it; saved when the finger lifts. Arrow keys move 0.5,
+   * Page Up/Down 1, Home/End the ends, Delete clears.
+   */
+  function scoreSlider(visitId, oid, score) {
+    var name = nameOf(oid), id = 'sc-' + visitId + '-' + oid;
+    var MIN = P.SCORE_MIN, MAX = P.SCORE_MAX;
+    var fill = el('span', { class: 'score-fill' }), thumb = el('span', { class: 'score-thumb' });
+    var rail = el('span', { class: 'score-rail' }, [fill]);
+    var track = el('div', { class: 'score-track', id: id, role: 'slider', tabindex: '0', 'aria-label': 'Rate ' + name + ' out of 10',
+      'aria-valuemin': String(MIN), 'aria-valuemax': String(MAX) }, [rail, el('span', { class: 'score-thumb-box' }, [thumb])]);
+    var out = el('output', { class: 'score-num', 'aria-hidden': 'true' });
+    function paint(v) {
+      var pct = v === null ? 0 : ((v - MIN) / (MAX - MIN)) * 100;
+      fill.style.width = (v === null ? 0 : pct) + '%';
+      thumb.style.left = pct + '%';
+      track.classList.toggle('unrated', v === null);
+      out.classList.toggle('none', v === null);
+      out.textContent = '';
+      out.appendChild(document.createTextNode(v === null ? '–' : P.formatRating(v)));
+      out.appendChild(el('small', { text: '/10' }));
+      if (v === null) { track.removeAttribute('aria-valuenow'); track.setAttribute('aria-valuetext', 'Not rated'); }
+      else { track.setAttribute('aria-valuenow', String(v)); track.setAttribute('aria-valuetext', P.formatRating(v) + ' out of 10'); }
+    }
+    function fromX(x) {
+      var r = rail.getBoundingClientRect(), f = r.width ? (x - r.left) / r.width : 0;
+      f = Math.max(0, Math.min(1, f));
+      return Math.max(MIN, Math.min(MAX, Math.round((MIN + f * (MAX - MIN)) * 2) / 2));
+    }
+    function commit(v, fromKeys) {
+      if (v === score) return paint(score);
+      if (fromKeys) ui.refocus = id;
+      setScore(visitId, oid, v);
+    }
+    var dragging = false, shown = score;
+    track.addEventListener('pointerdown', function (e) {
+      if (e.button > 0) return;
+      dragging = true;
+      shown = fromX(e.clientX); paint(shown);
+      try { track.setPointerCapture(e.pointerId); } catch (err) { /* old browser */ }
     });
-    return g;
+    track.addEventListener('pointermove', function (e) { if (dragging) { shown = fromX(e.clientX); paint(shown); } });
+    track.addEventListener('pointerup', function () { if (!dragging) return; dragging = false; commit(shown); });
+    // The browser took the gesture (the guest was scrolling the page): put it back.
+    track.addEventListener('pointercancel', function () { dragging = false; shown = score; paint(score); });
+    track.addEventListener('keydown', function (e) {
+      var cur = score === null ? null : score, next;
+      switch (e.key) {
+        case 'ArrowRight': case 'ArrowUp': next = cur === null ? MIN : cur + 0.5; break;
+        case 'ArrowLeft': case 'ArrowDown': next = cur === null ? MIN : cur - 0.5; break;
+        case 'PageUp': next = cur === null ? 1 : cur + 1; break;
+        case 'PageDown': next = cur === null ? MIN : cur - 1; break;
+        case 'Home': next = MIN; break;
+        case 'End': next = MAX; break;
+        case 'Delete': case 'Backspace': next = null; break;
+        default: return;
+      }
+      e.preventDefault();
+      if (next !== null) next = Math.max(MIN, Math.min(MAX, next));
+      commit(next, true);
+    });
+    paint(score);
+    // Clear keeps its place while unrated (hidden), so nothing shifts on the first tap.
+    var clear = el('button', { type: 'button', class: 'linklike score-clear' + (score === null ? ' off' : ''), text: 'Clear',
+      'aria-label': 'Clear rating for ' + name, 'aria-hidden': score === null ? 'true' : null, tabindex: score === null ? '-1' : null,
+      on: { click: function () { setScore(visitId, oid, null); } } });
+    return el('div', { class: 'score' }, [track, out, clear]);
   }
   /** One row per oyster in a visit: stepper, stars, note. */
   function itemRows(visitId, visit) {
@@ -481,7 +585,7 @@
       }
       var open = ui.note === key;
       row.appendChild(el('div', { class: 'item-extra' }, [
-        stars(visitId, oid, it.rating),
+        scoreSlider(visitId, oid, P.itemScore(it)),
         el('button', { type: 'button', class: 'linklike', 'aria-expanded': open ? 'true' : 'false',
           text: (it.twoWords || it.note) ? (open ? 'Hide note' : 'Edit note') : (open ? 'Hide note' : 'Add note'),
           on: { click: function () { ui.note = open ? null : key; render(); } } })
@@ -596,7 +700,7 @@
       return visits[b].date.localeCompare(visits[a].date) || visits[b].closedAt - visits[a].closedAt;
     });
     var last = closed[0], lv = last && visits[last];
-    var unrated = lv ? Object.keys(lv.items || {}).filter(function (k) { return !(lv.items[k].rating >= 1); }) : [];
+    var unrated = lv ? Object.keys(lv.items || {}).filter(function (k) { return P.itemScore(lv.items[k]) === null; }) : [];
     // Only for a visit closed before this page opened: "one prompt on next open" (5.3).
     if (lv && unrated.length && !lv.ratePromptDismissed && lv.closedAt < openedAt) {
       view.appendChild(el('div', { class: 'card accent' }, [
@@ -617,17 +721,40 @@
         el('p', { class: 'hint', text: 'Show this to your server.' })
       ]));
     }
-    // 4. Stats
-    view.appendChild(el('div', { class: 'card stats' }, [
-      el('div', {}, [el('b', { text: String(m.eaten) }), el('span', { text: 'Oysters' })]),
-      el('div', {}, [el('b', { text: String(m.allVarieties) }), el('span', { text: 'Varieties' })]),
-      el('div', {}, [el('b', { text: String(m.regions) }), el('span', { text: 'Regions' })]),
-      el('div', {}, [el('b', { text: String(m.visits) }), el('span', { text: 'Visits' })])
+    // The big medal (owners, 03/11/2026)
+    featuredMedal();
+
+    // 4. Stats: each opens its part of History (03/11/2026)
+    function stat(n, label, href, aria) {
+      return el('a', { href: href, 'aria-label': aria }, [el('b', { text: String(n) }), el('span', { text: label })]);
+    }
+    view.appendChild(el('nav', { class: 'card stats', 'aria-label': 'Your totals' }, [
+      stat(m.eaten, 'Oysters', '#history', plural(m.eaten, 'oyster') + '. See your visits.'),
+      stat(m.allVarieties, 'Varieties', '#history/favorites', plural(m.allVarieties, 'variety').replace('varietys', 'varieties') + '. See your favorites.'),
+      stat(m.regions, 'Regions', '#history/map', plural(m.regions, 'region') + '. See your map.'),
+      stat(m.visits, 'Visits', '#history', plural(m.visits, 'visit') + '. See your visits.')
     ]));
     if (!m.eaten) view.appendChild(el('p', { class: 'body', text: 'Your passport is empty. Add oysters from tonight’s menu to get your first stamp.' }));
 
-    // 5. Recent stamps
-    var recent = P.recentStamps(st.stamps, 3).filter(function (id) { return s.evaluated && s.evaluated[id]; });
+    // Recent visits (03/11/2026)
+    var recentIds = Object.keys(visits).filter(function (k) { return !P.isEmpty(visits[k]); }).sort(function (a, b) {
+      return visits[b].date.localeCompare(visits[a].date) || (visits[b].startedAt || 0) - (visits[a].startedAt || 0);
+    });
+    if (recentIds.length) {
+      view.appendChild(el('div', { class: 'field-label', text: 'Recent visits' }));
+      recentIds.slice(0, 3).forEach(function (id) {
+        var v = visits[id], it = v.items || {};
+        var names = Object.keys(it).sort(function (a, b) { return (it[b].qty || 0) - (it[a].qty || 0) || ((it[a].addedAt || 0) - (it[b].addedAt || 0)); }).map(nameOf);
+        view.appendChild(el('a', { class: 'recent', href: '#visit/' + id, 'aria-label': fmtDate(v.date) + ', ' + plural(P.visitTotal(v), 'oyster') + (v.closedAt ? '' : ', open') + '. Open this visit.' }, [
+          el('span', { class: 'date', text: fmtDate(v.date) + (v.closedAt ? '' : ' · open') }),
+          el('span', { class: 'what', text: plural(P.visitTotal(v), 'oyster') + ' · ' + names.join(', ') })
+        ]));
+      });
+      view.appendChild(el('a', { href: '#history', class: 'linklike', style: 'display:inline-flex;align-items:center', text: recentIds.length > 3 ? 'See all ' + recentIds.length + ' visits' : 'See your history' }));
+    }
+
+    // 5. Recent stamps (not ones still waiting for their celebration)
+    var recent = P.recentStamps(st.stamps, 3).filter(function (id) { return s.evaluated && s.evaluated[id] && st.stamps[id].seen !== false; });
     if (recent.length) {
       view.appendChild(el('div', { class: 'field-label', text: 'Recent stamps' }));
       var row = el('div', { class: 'stamp-row' });
@@ -660,6 +787,29 @@
     view.appendChild(el('div', { class: 'btn-row' }, [el('a', { class: 'btn block', href: '#flight', text: 'Log oysters' })]));
   }
 
+  /** The big medal at the top of Overview: its tier and how far to the next one. */
+  function featuredMedal() {
+    var fid = (window.HS_STAMPS && window.HS_STAMPS.FEATURED) || 'volume';
+    var e = (s.evaluated || {})[fid];
+    if (!e) return;
+    var tier = P.shownTier((s.state.stamps || {})[fid], e);
+    var d = e.def, tiers = window.HS_STAMPS.TIERS, idx = tier ? tiers.indexOf(tier) : -1;
+    var nextTier = tiers[idx + 1] || null, nextAt = nextTier ? d.thresholds[idx + 1] : null;
+    var from = idx >= 0 ? d.thresholds[idx] : 0;
+    var pct = nextAt ? Math.max(0, Math.min(100, ((e.value - from) / (nextAt - from)) * 100)) : 100;
+    var big = P.stampLine(d, e.value);
+    view.appendChild(el('a', { class: 'card feature', href: '#stamp/' + fid,
+      'aria-label': d.name + ' medal, ' + (tier ? TIER_NAMES[tier] : 'not earned yet') + '. ' + big + '.' + (nextAt ? ' ' + e.value + ' of ' + nextAt + ' to ' + TIER_NAMES[nextTier] + '.' : '') }, [
+      el('div', { class: 'feature-art', 'aria-hidden': 'true', html: ART.render(d, tier, { size: 120, label: ' ' }) }),
+      el('div', { class: 'feature-txt', 'aria-hidden': 'true' }, [
+        el('div', { class: 'feature-name', text: d.name + ' medal' }),
+        el('div', { class: 'feature-big', text: big }),
+        el('div', { class: 'feature-tier', text: tier ? TIER_NAMES[tier] : 'No medal yet' }),
+        el('span', { class: 'feature-bar' }, [el('i', { style: 'width:' + Math.round(pct) + '%' })]),
+        el('div', { class: 'feature-next', text: nextAt ? e.value + ' / ' + nextAt + ' to ' + TIER_NAMES[nextTier] : 'Top tier' })
+      ])
+    ]));
+  }
   // ── My Flight (5.4) ───────────────────────────────────────────────────────
   function flight() {
     var o = s.openVisit();
@@ -697,7 +847,7 @@
     view.appendChild(itemRows(o.id, v));
     view.appendChild(catalogAdder(function (id, n) { addOpen(id, n, 'catalog'); }));
 
-    var anyUnrated = Object.keys(v.items || {}).some(function (k) { return !(v.items[k].rating >= 1); });
+    var anyUnrated = Object.keys(v.items || {}).some(function (k) { return P.itemScore(v.items[k]) === null; });
     view.appendChild(el('hr', { class: 'perf' }));
     if (anyUnrated) view.appendChild(el('p', { class: 'hint', text: 'Ratings are optional — they power your palate and recommendations.' }));
     view.appendChild(el('button', { type: 'button', class: 'btn block', id: 'save-entry', text: 'Save Entry', on: { click: saveEntry } }));
@@ -706,14 +856,15 @@
     var o = s.openVisit();
     if (!o) return;
     var items = o.visit.items || {}, ids = Object.keys(items);
-    var n = P.visitTotal(o.visit), rated = ids.filter(function (k) { return items[k].rating >= 1; }).length;
-    s.apply(P.saveUpdates(s.state, s.now()));
+    var n = P.visitTotal(o.visit), rated = ids.filter(function (k) { return P.itemScore(items[k]) !== null; }).length;
+    justSaved = n ? o.id : null;
+    s.apply(P.saveUpdates(s.state, s.now()));     // the flight closes, so its stamps show now, all at once
     s.flush();
     if (n) {
       S.track('visit_saved', { oysters: n, varieties: ids.length, rated: rated });
       toast('Saved. ' + plural(n, 'oyster') + ' added to your passport.');
     }
-    go('#overview');
+    go(n ? '#history' : '#overview');             // the saved visit, top of History (03/11/2026)
   }
 
   // ── Log a past visit (5.4) ────────────────────────────────────────────────
@@ -838,12 +989,12 @@
         var it = items[oid];
         ul.appendChild(el('li', {}, [
           el('span', { class: 'tl-name', text: nameOf(oid) + ' ×' + it.qty }),
-          it.rating ? el('span', { class: 'tl-stars', 'aria-label': plural(it.rating, 'star'), text: ' ' + '★★★★★'.slice(0, it.rating) }) : null,
+          P.itemScore(it) !== null ? el('span', { class: 'tl-score', 'aria-label': 'rated ' + P.formatRating(P.itemScore(it)) + ' out of 10', text: ' ' + P.formatRating(P.itemScore(it)) + '/10' }) : null,
           it.twoWords ? el('span', { class: 'tl-words', text: ' “' + it.twoWords + '”' }) : null,
           it.note ? el('div', { class: 'tl-note', text: it.note }) : null
         ]));
       });
-      view.appendChild(el('a', { class: 'visit-card', href: '#visit/' + id, 'aria-label': fmtDate(v.date) + ', ' + plural(P.visitTotal(v), 'oyster') + '. Edit or delete.' }, [
+      view.appendChild(el('a', { class: 'visit-card' + (id === justSaved ? ' just-saved' : ''), href: '#visit/' + id, 'aria-label': fmtDate(v.date) + ', ' + plural(P.visitTotal(v), 'oyster') + '. Edit or delete.' }, [
         el('div', { class: 'vc-head' }, [el('span', { class: 'date', text: fmtDate(v.date) + (v.closedAt ? '' : ' · open') }),
           el('span', { class: 'sub', text: plural(P.visitTotal(v), 'oyster') })]), ul
       ]));
@@ -966,7 +1117,7 @@
         var ul = el('ul', { class: 'palate' });
         Object.keys(st.oysters).sort(function (a, b) { return st.oysters[b].qty - st.oysters[a].qty || (nameOf(a) < nameOf(b) ? -1 : 1); }).forEach(function (oid) {
           var x = st.oysters[oid];
-          ul.appendChild(el('li', {}, [nameOf(oid), el('small', { text: plural(x.qty, 'oyster') + (x.rating ? ' · your rating ★ ' + P.formatRating(x.rating) : '') })]));
+          ul.appendChild(el('li', {}, [nameOf(oid), el('small', { text: plural(x.qty, 'oyster') + (x.rating ? ' · your rating ' + P.formatRating(x.rating) + '/10' : '') })]));
         });
         box.appendChild(ul);
         var stp = ev['region-' + ui.region];
@@ -992,7 +1143,7 @@
       view.appendChild(ol);
     }
     var rated = Object.keys(agg).sort(function (a, b) { return agg[b].rating - agg[a].rating || qty[b] - qty[a] || (a < b ? -1 : 1); }).slice(0, 5);
-    if (rated.length) list('Top rated', rated, function (id) { return '★ ' + P.formatRating(agg[id].rating); });
+    if (rated.length) list('Top rated', rated, function (id) { return P.formatRating(agg[id].rating) + '/10'; });
     else { view.appendChild(el('div', { class: 'field-label', text: 'Top rated' })); view.appendChild(el('p', { class: 'hint', text: 'Rate an oyster and it shows up here.' })); }
     list('Most eaten', Object.keys(qty).sort(function (a, b) { return qty[b] - qty[a] || (a < b ? -1 : 1); }).slice(0, 5), function (id) { return String(qty[id]); });
 
@@ -1246,13 +1397,14 @@
     var data = { exported: new Date(s.now()).toISOString(), profile: st.profile || {}, cards: st.cards || {},
       visits: st.visits || {}, stamps: st.stamps || {}, hereOn: st.hereOn || {} };
     download('half-shell-passport-' + day + '.json', 'application/json', JSON.stringify(data, null, 2));
-    var rows = [['date', 'oyster id', 'oyster', 'qty', 'rating', 'two words', 'note']];
+    var rows = [['date', 'oyster id', 'oyster', 'qty', 'rating (out of 10)', 'two words', 'note']];
     var visits = st.visits || {};
     Object.keys(visits).sort(function (a, b) { return visits[a].date.localeCompare(visits[b].date); }).forEach(function (vid) {
       var items = visits[vid].items || {};
       Object.keys(items).forEach(function (oid) {
         var it = items[oid];
-        rows.push([visits[vid].date, oid, nameOf(oid), it.qty, it.rating || '', it.twoWords || '', it.note || '']);
+        var sc = P.itemScore(it);
+        rows.push([visits[vid].date, oid, nameOf(oid), it.qty, sc === null ? '' : sc, it.twoWords || '', it.note || '']);
       });
     });
     setTimeout(function () {

@@ -106,21 +106,53 @@ function visitsFor(m, n, region) {
 }
 const ctx = (visits, extra) => Object.assign({ visits, oysters: OYSTERS, regions: REGIONS, dob: '1995-06-14', today: '2026-10-20' }, extra || {});
 
-// ── Ratings (6.3) ──────────────────────────────────────────────────────────
-check('aggregate rating: 5★×6 and 2★×1 → 4.13', () => {
-  const r = P.aggregateRatings(visitsOf([['a', 6, 5], ['a', 1, 2]]));
-  near(Math.round(r.a.rating * 100) / 100, 4.13, 1e-9);
+// ── Ratings (6.3; out of 10 from 03/11/2026) ───────────────────────────────
+// visitsOf() writes the old 1–5 `rating`, so these also check that old
+// ratings count double. withScores() rewrites them as new `score`s.
+const withScores = v => { Object.values(v).forEach(x => Object.values(x.items).forEach(it => { if (it.rating) { it.score = it.rating * 2; delete it.rating; } })); return v; };
+check('aggregate rating: 10×6 and 4×1 → 8.26 (old stars: 5★×6 and 2★×1, doubled)', () => {
+  near(Math.round(P.aggregateRatings(visitsOf([['a', 6, 5], ['a', 1, 2]])).a.rating * 100) / 100, 8.26, 1e-9);
+  near(Math.round(P.aggregateRatings(withScores(visitsOf([['a', 6, 5], ['a', 1, 2]]))).a.rating * 100) / 100, 8.26, 1e-9);
 });
-check('aggregate rating: 5★×12 and 2★×1 three times → 3.61', () => {
-  const r = P.aggregateRatings(visitsOf([['a', 12, 5], ['a', 1, 2], ['a', 1, 2], ['a', 1, 2]]));
-  near(Math.round(r.a.rating * 100) / 100, 3.61, 1e-9);
+check('aggregate rating: 10×12 and 4×1 three times → 7.22', () => {
+  const r = P.aggregateRatings(withScores(visitsOf([['a', 12, 5], ['a', 1, 2], ['a', 1, 2], ['a', 1, 2]])));
+  near(Math.round(r.a.rating * 100) / 100, 7.22, 1e-9);
 });
-check('aggregate rating: 4★×3 → 4.0; unrated visits ignored; none → no entry', () => {
-  const r = P.aggregateRatings(visitsOf([['a', 3, 4], ['a', 5], ['b', 2]]));
-  assert.strictEqual(P.formatRating(r.a.rating), '4.0');
+check('aggregate rating: 8×3 → 8.0; unrated visits ignored; none → no entry', () => {
+  const r = P.aggregateRatings(withScores(visitsOf([['a', 3, 4], ['a', 5], ['b', 2]])));
+  assert.strictEqual(P.formatRating(r.a.rating), '8.0');
   assert.strictEqual(r.a.visits, 1);
   assert.strictEqual(r.b, undefined);
   assert.strictEqual(P.formatRating(null), '');
+});
+check('aggregate rating: an old 4★ and a new 7.5 on the same oyster → 7.75', () => {
+  const v = visitsOf([['a', 1, 4], ['a', 1]]);
+  v.v1.items.a.score = 7.5;
+  near(P.aggregateRatings(v).a.rating, 7.75);
+});
+check('score: 0.5 to 10 in 0.5 steps', () => {
+  [0.5, 1, 7.5, 9.5, 10].forEach(x => assert.ok(P.validScore(x), x));
+  [0, 0.25, 7.3, 10.5, -1, NaN, Infinity, '8', null].forEach(x => assert.ok(!P.validScore(x), String(x)));
+});
+check('itemScore: new score first, old rating doubled, otherwise null', () => {
+  assert.strictEqual(P.itemScore({ qty: 1, score: 6.5 }), 6.5);
+  assert.strictEqual(P.itemScore({ qty: 1, rating: 4 }), 8);
+  assert.strictEqual(P.itemScore({ qty: 1, rating: 2, score: 9 }), 9);
+  assert.strictEqual(P.itemScore({ qty: 1 }), null);
+  assert.strictEqual(P.itemScore({ qty: 1, score: 7.3 }), null);
+  assert.strictEqual(P.itemScore(null), null);
+});
+check('scoreUpdates: sets or clears score and drops the old rating', () => {
+  assert.deepStrictEqual(P.scoreUpdates('visits/v1/items/a', 8.5), { 'visits/v1/items/a/score': 8.5, 'visits/v1/items/a/rating': null });
+  assert.deepStrictEqual(P.scoreUpdates('visits/v1/items/a', null), { 'visits/v1/items/a/score': null, 'visits/v1/items/a/rating': null });
+});
+check('formatRating: one decimal; a perfect 10 is "10"', () => {
+  assert.deepStrictEqual([0.5, 7, 8.26, 9.96, 10].map(P.formatRating), ['0.5', '7.0', '8.3', '10', '10']);
+});
+check('Critic counts rated items, old and new', () => {
+  const v = visitsOf([['a', 1, 4], ['b', 1], ['c', 1]]);
+  v.v2.items.c.score = 0.5;
+  assert.strictEqual(P.measures(v, OYSTERS, REGIONS).rated, 2);
 });
 
 // ── Visit lifecycle (6.1) ──────────────────────────────────────────────────
@@ -307,11 +339,12 @@ check('stamp ids fit the rules (≤ 60 chars, slug)', () => {
   defs.forEach(d => assert.ok(/^[a-z0-9-]{1,60}$/.test(d.id), d.id));
   assert.strictEqual(new Set(defs.map(d => d.id)).size, defs.length);
 });
-check('thresholds match the Build Sheet table (6.5)', () => {
-  const want = { volume: [12, 60, 300, 1500], variety: [5, 15, 30, 'all'], atlas: [3, 6, 10, 'all'],
-    regular: [3, 10, 25, 50], critic: [10, 50, 150, 500], 'salt-lover': [6, 24, 72, 200], 'sweet-tooth': [6, 24, 72, 200] };
+check('thresholds match the owners\' table (03/11/2026)', () => {
+  const want = { volume: [36, 180, 900, 4500], variety: [5, 15, 30, 'all'], atlas: [5, 9, 12, 'all'],
+    regular: [6, 20, 50, 100], critic: [30, 150, 450, 1500], 'salt-lover': [18, 72, 216, 600], 'sweet-tooth': [18, 72, 216, 600] };
   assert.deepStrictEqual(Object.fromEntries(S.LADDERS.map(l => [l.id, l.thresholds])), want);
-  assert.deepStrictEqual(S.REGION.thresholds, [1, 12, 36, 100]);
+  assert.deepStrictEqual(S.REGION.thresholds, [3, 36, 108, 300]);
+  assert.strictEqual(S.FEATURED, 'volume');
   assert.deepStrictEqual(S.SINGLES.map(x => x.id),
     ['first-slurp', 'coast-to-coast', 'home-waters', 'passport-stamp', 'flight-crew', 'birthday-shuck']);
   assert.deepStrictEqual(S.TIER_COLORS, { bronze: '#9a6a3a', silver: '#8a9aa3', gold: '#c8962e', pearl: ['#e8e4f0', '#cfe3e6', '#f3e6d8'] });
@@ -332,11 +365,11 @@ defs.filter(d => d.kind !== 'single').forEach(d => {
     });
   });
 });
-check('next tier and progress ("24 / 36 to Gold")', () => {
-  const e = P.evaluateStamps(ctx(visitsOf([[NC, 24]])))['region-nc'];
+check('next tier and progress ("72 / 108 to Gold")', () => {
+  const e = P.evaluateStamps(ctx(visitsOf([[NC, 72]])))['region-nc'];
   assert.strictEqual(e.tier, 'silver');
-  assert.deepStrictEqual(e.next, { tier: 'gold', at: 36 });
-  const top = P.evaluateStamps(ctx(visitsOf([[NC, 100]])))['region-nc'];
+  assert.deepStrictEqual(e.next, { tier: 'gold', at: 108 });
+  const top = P.evaluateStamps(ctx(visitsOf([[NC, 300]])))['region-nc'];
   assert.strictEqual(top.next, null);
 });
 check('single stamps: First Slurp, Home Waters, Passport Stamp, Coast to Coast', () => {
@@ -371,7 +404,7 @@ check('retired oysters count toward Volume, Regular and Critic only', () => {
   const m = P.measures(visitsOf([['retired-oyster', 12, 4]]), OYSTERS, REGIONS);
   assert.deepStrictEqual([m.eaten, m.visits, m.rated, m.varieties, m.regions, m.briny, m.mild], [12, 1, 1, 0, 0, 0, 0]);
   assert.strictEqual(m.allVarieties, 1);
-  const e = P.evaluateStamps(ctx(visitsOf([['retired-oyster', 12, 4]])));
+  const e = P.evaluateStamps(ctx(visitsOf([['retired-oyster', 36, 4]])));
   assert.strictEqual(e.volume.tier, 'bronze');
   assert.strictEqual(e['first-slurp'].tier, 'single');
 });
@@ -386,7 +419,7 @@ check('Regular counts days: two visits on one date are one', () => {
   assert.strictEqual(P.measures(v, OYSTERS, REGIONS).visits, 1);
 });
 check('stamp writes: new tiers with seen: false and every tier passed', () => {
-  const e = P.evaluateStamps(ctx(visitsOf([[NC, 12]])));
+  const e = P.evaluateStamps(ctx(visitsOf([[NC, 36]])));
   const u = P.stampUpdates({}, e, 1000);
   assert.strictEqual(u['stamps/region-nc/tier'], 'silver');
   assert.strictEqual(u['stamps/region-nc/seen'], false);
@@ -399,7 +432,7 @@ check('stamp writes: new tiers with seen: false and every tier passed', () => {
 });
 check('tiers never go backwards: deleting logs writes nothing and keeps the shown tier', () => {
   const stored = { 'region-nc': { tier: 'silver', seen: true, tierEarnedAt: { bronze: 1, silver: 1 } } };
-  const e = P.evaluateStamps(ctx(visitsOf([[NC, 2]])));
+  const e = P.evaluateStamps(ctx(visitsOf([[NC, 5]])));
   assert.strictEqual(e['region-nc'].tier, 'bronze');
   assert.ok(!Object.keys(P.stampUpdates(stored, e, 5)).some(k => k.startsWith('stamps/region-nc/')));
   assert.strictEqual(P.shownTier(stored['region-nc'], e['region-nc']), 'silver');
@@ -414,7 +447,7 @@ check('catalog growth does not revoke a Pearl', () => {
 });
 check('an upgrade writes only the new tier and asks for a new celebration', () => {
   const stored = { 'region-nc': { tier: 'silver', seen: true, tierEarnedAt: { bronze: 1, silver: 2 } } };
-  const u = P.stampUpdates(stored, P.evaluateStamps(ctx(visitsOf([[NC, 36]]))), 9);
+  const u = P.stampUpdates(stored, P.evaluateStamps(ctx(visitsOf([[NC, 108]]))), 9);
   assert.strictEqual(u['stamps/region-nc/tier'], 'gold');
   assert.strictEqual(u['stamps/region-nc/seen'], false);
   assert.strictEqual(u['stamps/region-nc/tierEarnedAt/gold'], 9);
@@ -492,6 +525,12 @@ check('You might like: untried, on tonight\'s menu, score > 0.3, top 2, with the
   assert.strictEqual(r[1].because, 'a');
   assert.ok(!r.some(x => x.id === 'y' || x.id === 'a'));
   assert.strictEqual(P.recommendations(P.aggregateRatings(visitsOf([['a', 1, 5]])), {}, ['x'], FIX, REGIONS), null);
+});
+check('You might like: the same picks from 10-point scores as from the old stars', () => {
+  const v = withScores(visitsOf([['a', 1, 5], ['b', 2, 5], ['c', 1, 1], ['d', 1, 2], ['e', 3, 3]]));
+  const r = P.recommendations(P.aggregateRatings(v), v, ['y', 'x', 'a', 'z'], FIX, REGIONS);
+  assert.deepStrictEqual(r.map(x => [x.id, Math.round(x.score * 1e6) / 1e6, x.because]),
+    P.recommendations(fixAgg, fixVisits, ['y', 'x', 'a', 'z'], FIX, REGIONS).map(x => [x.id, Math.round(x.score * 1e6) / 1e6, x.because]));
 });
 
 console.log(failed ? `\n${failed} of ${passed + failed} checks failed.` : `\nAll ${passed} checks passed.`);

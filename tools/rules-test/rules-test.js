@@ -198,6 +198,14 @@ function visit(extra) {
     await assertFails(r(0)); await assertFails(r(6)); await assertFails(r(3.5));
     await assertSucceeds(r(5)); await assertSucceeds(r(null));
   });
+  await check('score is 0.5-10 in 0.5 steps, removable; set with the old rating removed in one update (03/11/2026)', async () => {
+    const base = 'users/' + A + '/visits/v1/items/beach-plum/';
+    const r = (v) => custA.ref(base + 'score').set(v);
+    await assertFails(r(0)); await assertFails(r(0.25)); await assertFails(r(10.5)); await assertFails(r(7.3)); await assertFails(r('8'));
+    await assertSucceeds(r(0.5)); await assertSucceeds(r(10)); await assertSucceeds(r(7.5)); await assertSucceeds(r(null));
+    await assertSucceeds(custA.ref(base + 'rating').set(4));
+    await assertSucceeds(custA.ref(base.slice(0, -1)).update({ score: 8.5, rating: null }));
+  });
   await check('two words <= 40 chars, note <= 280 chars', async () => {
     const base = 'users/' + A + '/visits/v1/items/beach-plum/';
     await assertSucceeds(custA.ref(base + 'twoWords').set('briny, buttery'));

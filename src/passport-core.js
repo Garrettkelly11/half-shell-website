@@ -15,8 +15,11 @@
  *
  * Shapes (Build Sheet section 3):
  *   visits    { visitId: { date, startedAt, lastChangedAt, closedAt?,
- *               closeReason?, source, items: { oysterId: { qty, rating?,
- *               twoWords?, note?, addedAt } }, flightsLogged? } }
+ *               closeReason?, source, items: { oysterId: { qty, score?,
+ *               rating? (legacy), twoWords?, note?, addedAt } },
+ *               flightsLogged? } }
+ *             score: 0.5–10 in 0.5 steps (from 03/11/2026). rating: the old
+ *             1–5 stars, read as score = rating × 2 (itemScore).
  *   oysters   the catalog (OYSTERS), current oysters only
  *   regions   HS_REGIONS
  * Functions that change data return a multi-path update relative to
@@ -34,6 +37,7 @@
   var NAME_MAX = 60, EMAIL_MAX = 120, TWO_WORDS_MAX = 40, NOTE_MAX = 280;
   var MIN_AGE = 18, PROMO_AGE = 21;
   var UNLOCK_RATED = 5;                 // palate and "You might like"
+  var SCORE_MIN = 0.5, SCORE_MAX = 10, SCORE_STEP = 0.5;   // ratings out of 10 (03/11/2026)
   var CARD_BRANDS = [
     { code: 'VISA', label: 'Visa' },
     { code: 'MASTERCARD', label: 'Mastercard' },
@@ -282,9 +286,31 @@
   }
 
   // ── Ratings ───────────────────────────────────────────────────────────────
+  /** A rating out of 10: 0.5 to 10 in steps of 0.5. */
+  function validScore(v) {
+    return typeof v === 'number' && isFinite(v) && v >= SCORE_MIN && v <= SCORE_MAX && (v * 2) % 1 === 0;
+  }
   /**
-   * A guest's rating of each oyster: square-root-weighted by quantity across
-   * visits; unrated visits ignored (6.3). { oysterId: { rating, visits, qty } }
+   * An item's rating out of 10, or null if unrated. Items rated before
+   * 03/11/2026 have the old 1–5 `rating`; it counts double (4 stars = 8.0).
+   */
+  function itemScore(x) {
+    if (!x) return null;
+    if (validScore(x.score)) return x.score;
+    if (typeof x.rating === 'number' && x.rating >= 1 && x.rating <= 5) return x.rating * 2;
+    return null;
+  }
+  /** Writes that rate an item (or clear it with null), dropping any old 1–5 rating. */
+  function scoreUpdates(base, score) {
+    var u = {};
+    u[base + '/score'] = score === null ? null : score;
+    u[base + '/rating'] = null;
+    return u;
+  }
+  /**
+   * A guest's rating of each oyster, out of 10: square-root-weighted by
+   * quantity across visits; unrated visits ignored (6.3).
+   * { oysterId: { rating, visits, qty } }
    */
   function aggregateRatings(visits) {
     var acc = {};
@@ -292,9 +318,10 @@
       var it = items(visits[vid]);
       Object.keys(it).forEach(function (oid) {
         var x = it[oid];
-        if (!(x.rating >= 1)) return;
+        var sc = itemScore(x);
+        if (sc === null) return;
         var w = Math.sqrt(x.qty || 1), a = acc[oid] || (acc[oid] = { sw: 0, swr: 0, visits: 0, qty: 0 });
-        a.sw += w; a.swr += w * x.rating; a.visits++; a.qty += x.qty || 0;
+        a.sw += w; a.swr += w * sc; a.visits++; a.qty += x.qty || 0;
       });
     });
     var out = {};
@@ -304,7 +331,12 @@
     });
     return out;
   }
-  function formatRating(r) { return r == null ? '' : (Math.round(r * 10) / 10).toFixed(1); }
+  /** A rating out of 10 for display, to one decimal: "8.3", "7.0"; a perfect 10 is "10". */
+  function formatRating(r) {
+    if (r == null) return '';
+    var x = Math.round(r * 10) / 10;
+    return x === 10 ? '10' : x.toFixed(1);
+  }
 
   // ── Counting (stats and stamps) ───────────────────────────────────────────
   function catalogIndex(oysters) {
@@ -344,7 +376,7 @@
       ids.forEach(function (oid) {
         var x = it[oid], q = x.qty || 0, o = cat[oid];
         m.eaten += q;
-        if (x.rating >= 1) m.rated++;
+        if (itemScore(x) !== null) m.rated++;
         seenAll[oid] = true;
         if (!o) return;                       // retired: its facts are gone
         seen[oid] = true;
@@ -575,7 +607,8 @@
       var me = { sal: R.sal(o), size: R.size(o), region: o.region || null };
       var num = 0, den = 0, top = null, topC = 0;
       rated.forEach(function (r) {
-        var sim = similarity(me, r), c = (r.rating - 3) * sim;
+        // (score − 6) / 2 on the 10-point scale is (stars − 3) on the old 5-star one.
+        var sim = similarity(me, r), c = ((r.rating - 6) / 2) * sim;
         num += c; den += sim;
         if (c > topC) { topC = c; top = r.id; }
       });
@@ -588,6 +621,7 @@
     OPENING_DAY: OPENING_DAY, TIMEOUT_MS: TIMEOUT_MS, MAX_QTY: MAX_QTY, CARD_BRANDS: CARD_BRANDS,
     NAME_MAX: NAME_MAX, EMAIL_MAX: EMAIL_MAX, TWO_WORDS_MAX: TWO_WORDS_MAX, NOTE_MAX: NOTE_MAX,
     MIN_AGE: MIN_AGE, UNLOCK_RATED: UNLOCK_RATED,
+    SCORE_MIN: SCORE_MIN, SCORE_MAX: SCORE_MAX, SCORE_STEP: SCORE_STEP,
     // dates
     nyDate: nyDate, businessDay: businessDay, isRealDate: isRealDate, addDays: addDays, isVisitDate: isVisitDate,
     // age and birthday
@@ -603,6 +637,7 @@
     logFlightUpdates: logFlightUpdates, backdatedUpdates: backdatedUpdates, hereOnCarry: hereOnCarry,
     flightSlug: flightSlug,
     // ratings, stats, stamps
+    validScore: validScore, itemScore: itemScore, scoreUpdates: scoreUpdates,
     aggregateRatings: aggregateRatings, formatRating: formatRating, measures: measures,
     catalogRegions: catalogRegions, stampDefs: stampDefs, evaluateStamps: evaluateStamps, shownTier: shownTier,
     stampUpdates: stampUpdates, unseenStamps: unseenStamps, recentStamps: recentStamps, stampLine: stampLine,

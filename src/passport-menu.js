@@ -13,7 +13,8 @@
  * icon with a count while a flight is open, both pinned top-right once the
  * header scrolls away; on each oyster card + / - n +, "Your rating" or
  * "Tried · Rate it", and "You might like"; "Log this flight" on each flight;
- * "here today" for the business day (menu only); the stamp celebration.
+ * "here today" for the business day (menu only); the stamp celebration
+ * (held while a flight is open, so it comes all at once on Save Entry).
  * Signed in without a profile, or the passport can't be read: the page
  * stays exactly as it is for everyone else.
  */
@@ -123,7 +124,7 @@
       if (old) old.parentNode.removeChild(old);
       var info = el('div', { class: 'pp-info' });
       if (agg[id]) {
-        info.appendChild(el('span', { class: 'pp-mine' }, ['Your rating ', el('b', { text: '★ ' + P.formatRating(agg[id].rating) })]));
+        info.appendChild(el('span', { class: 'pp-mine' }, ['Your rating ', el('b', { text: P.formatRating(agg[id].rating) }), '/10']));
       } else {
         var where = lastVisitWith(id);
         if (where) {

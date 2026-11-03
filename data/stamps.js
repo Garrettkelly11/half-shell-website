@@ -13,12 +13,18 @@
  * {n:word} is "word" or "words" to match, {region} the region's name.
  *
  * To reword a stamp or change a threshold, edit it here.
+ *
+ * Thresholds raised 03/11/2026 (owners, before launch): oyster counts x3,
+ * Regular x2, Atlas 5/9/12/all (only 14 regions exist), Variety unchanged.
+ * Tiers already earned are kept (tiers never go backwards).
  */
 (function (root) {
   'use strict';
 
   var HS_STAMPS = {
     TIERS: ['bronze', 'silver', 'gold', 'pearl'],
+    // The big medal at the top of Overview (owners, 03/11/2026).
+    FEATURED: 'volume',
     TIER_NAMES: { single: '', bronze: 'Bronze', silver: 'Silver', gold: 'Gold', pearl: 'Pearl' },
     TIER_COLORS: {
       bronze: '#9a6a3a',
@@ -30,25 +36,25 @@
     REGION: {
       idPrefix: 'region-',
       measure: 'region',
-      thresholds: [1, 12, 36, 100],
+      thresholds: [3, 36, 108, 300],
       description: 'Oysters from {region}.',
       line: '{n} {n:oyster} from {region}'
     },
 
     LADDERS: [
-      { id: 'volume', name: 'Volume', measure: 'eaten', thresholds: [12, 60, 300, 1500],
+      { id: 'volume', name: 'Volume', measure: 'eaten', thresholds: [36, 180, 900, 4500],
         description: 'Every oyster you log.', line: '{n} {n:oyster}' },
       { id: 'variety', name: 'Variety', measure: 'varieties', thresholds: [5, 15, 30, 'all'],
         description: 'Different oysters on our list you have tried.', line: '{n} different {n:oyster}' },
-      { id: 'atlas', name: 'Atlas', measure: 'regions', thresholds: [3, 6, 10, 'all'],
+      { id: 'atlas', name: 'Atlas', measure: 'regions', thresholds: [5, 9, 12, 'all'],
         description: 'Regions you have tasted from.', line: 'Oysters from {n} {n:region}' },
-      { id: 'regular', name: 'Regular', measure: 'visits', thresholds: [3, 10, 25, 50],
+      { id: 'regular', name: 'Regular', measure: 'visits', thresholds: [6, 20, 50, 100],
         description: 'Days you have logged oysters.', line: '{n} {n:visit}' },
-      { id: 'critic', name: 'Critic', measure: 'rated', thresholds: [10, 50, 150, 500],
+      { id: 'critic', name: 'Critic', measure: 'rated', thresholds: [30, 150, 450, 1500],
         description: 'Oysters you have rated, one per oyster per visit.', line: '{n} {n:rating}' },
-      { id: 'salt-lover', name: 'Salt Lover', measure: 'briny', thresholds: [6, 24, 72, 200],
+      { id: 'salt-lover', name: 'Salt Lover', measure: 'briny', thresholds: [18, 72, 216, 600],
         description: 'High and very high salinity oysters.', line: '{n} briny {n:oyster}' },
-      { id: 'sweet-tooth', name: 'Sweet Tooth', measure: 'mild', thresholds: [6, 24, 72, 200],
+      { id: 'sweet-tooth', name: 'Sweet Tooth', measure: 'mild', thresholds: [18, 72, 216, 600],
         description: 'Low salinity oysters.', line: '{n} mild {n:oyster}' }
     ],
 
