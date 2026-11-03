@@ -6,7 +6,7 @@ If the code contradicts one of these, that contradiction is itself worth reporti
 ## How it runs
 
 - **Hosting:** GitHub Pages, served from the root of `main`. No build step. A push to `main` is
-  a production deploy. No agent ever pushes.
+  a production deploy. No agent ever commits or pushes.
 - **Live menu data:** `.github/workflows/sync-oysters.yml` runs `tools/sync-toast-to-firebase.js`
   on a schedule. It writes the in-stock list to the Realtime Database at `/menu/serving`.
   Pages read it with the Firebase JS SDK.
@@ -20,6 +20,21 @@ If the code contradicts one of these, that contradiction is itself worth reporti
   suggest running it.
 - **Customers** sign in with phone numbers (Oyster Passport). **Staff** are users listed
   under `/staff/<uid>` in the database.
+
+## Running code during the audit
+
+The audit runs in Garrett's working copy, which has real Toast credentials in `.env` and
+may have Firebase admin credentials set on the machine. So:
+
+- Never read `.env` or `functions/.env`. `.env.example` files are fine.
+- Never run `tools/toast-*.js`, `tools/sync-toast-to-firebase.js`, `sync.js`, or anything in
+  `functions/`. They call Toast or write to the live database. Read them; don't run them.
+- Never run `firebase`, `gcloud`, or any git command that changes files or history.
+- Fine to run: `node cloud/test.js`, `node tools/*-test.js`, `node -e` one-liners that read
+  files, and verifier scratch scripts under `audit/runs/<run-id>/scratch/` that call pure
+  logic only.
+- The working copy may contain Garrett's uncommitted work. Audit it as it is; never revert,
+  restore or "clean up" anything.
 
 ## Things that look like bugs but aren't
 

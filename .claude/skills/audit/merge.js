@@ -4,11 +4,17 @@
  * agent's file into its own context.
  *
  * Terminal, from the repo root:
+ *   node .claude/skills/audit/merge.js <run folder> snapshot start
+ *   node .claude/skills/audit/merge.js <run folder> snapshot end
  *   node .claude/skills/audit/merge.js <run folder> coverage
  *   node .claude/skills/audit/merge.js <run folder> findings
  *   node .claude/skills/audit/merge.js <run folder> apply
  *   node .claude/skills/audit/merge.js <run folder> report
  *
+ * snapshot  start: hashes every file git tracks or would track (plus .env files), so the
+ *           audit can run in a working copy with uncommitted work. end: hashes again and
+ *           writes outside.txt listing anything an agent changed, added or deleted.
+ *           It never restores or reverts anything.
  * coverage  map.json + agents/*.json  -> coverage.json, coverage.md
  *           Prints the coverage % and the unreviewed cells grouped by area (for sweeps).
  * findings  agents/*.json              -> findings-all.json, findings-index.md
@@ -141,6 +147,62 @@ function unionFind(n) {
 
 function cell(s) {
   return String(s ?? '').replace(/\|/g, '\\|').replace(/\n+/g, ' ');
+}
+
+// ---------- snapshot ----------
+
+function hashTree() {
+  const { execFileSync } = require('child_process');
+  const crypto = require('crypto');
+  const root = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+  // Tracked files plus untracked files that aren't ignored: covers uncommitted work but
+  // skips node_modules, lockfiles and audit/runs, which are gitignored.
+  const listed = execFileSync('git', ['ls-files', '-co', '--exclude-standard', '-z'], { cwd: root, encoding: 'utf8' })
+    .split('\0').filter(Boolean);
+  for (const extra of ['.env', 'functions/.env']) {
+    if (fs.existsSync(path.join(root, extra))) listed.push(extra);
+  }
+  const files = {};
+  for (const rel of [...new Set(listed)].sort()) {
+    if (rel.startsWith('audit/runs/')) continue;
+    const abs = path.join(root, rel);
+    try {
+      files[rel] = crypto.createHash('sha256').update(fs.readFileSync(abs)).digest('hex');
+    } catch (e) {
+      // Tracked but deleted from disk: leave it out, so a deletion shows as "deleted".
+      if (e.code !== 'ENOENT') files[rel] = `unreadable: ${e.code}`;
+    }
+  }
+  return files;
+}
+
+function snapshot() {
+  const phase = process.argv[4];
+  if (phase === 'start') {
+    const files = hashTree();
+    writeOut('snapshot-start.json', { time: new Date().toISOString(), files });
+    console.log(`Snapshot taken: ${Object.keys(files).length} files.`);
+    return;
+  }
+  if (phase !== 'end') throw new Error('Use: snapshot start | snapshot end');
+  const before = readJson('snapshot-start.json').files;
+  const after = hashTree();
+  writeOut('snapshot-end.json', { time: new Date().toISOString(), files: after });
+  const lines = [];
+  for (const [f, h] of Object.entries(after)) {
+    if (!(f in before)) lines.push(`added:   ${f}`);
+    else if (before[f] !== h) lines.push(`changed: ${f}`);
+  }
+  for (const f of Object.keys(before)) if (!(f in after)) lines.push(`deleted: ${f}`);
+  const outside = path.join(runDir, 'outside.txt');
+  if (lines.length) {
+    fs.writeFileSync(outside, lines.join('\n') + '\n');
+    console.log(`${lines.length} files changed outside the run folder during the audit. Nothing was reverted.`);
+    for (const l of lines) console.log(l);
+  } else {
+    if (fs.existsSync(outside)) fs.unlinkSync(outside);
+    console.log('No files changed outside the run folder.');
+  }
 }
 
 // ---------- coverage ----------
@@ -371,7 +433,10 @@ function report() {
   const b = run.budgets || {};
 
   let md = `# Half Shell site audit — ${run.run_id || path.basename(runDir)}\n\n`;
-  md += `Commit \`${run.commit || '?'}\` · Areas: ${(run.areas || ['all']).join(', ')} · No site code was changed.\n\n`;
+  md += `Commit \`${run.commit || '?'}\` · Areas: ${(run.areas || ['all']).join(', ')} · No site code was changed by the audit.\n\n`;
+  if (run.uncommitted && run.uncommitted.length) {
+    md += `Audited the working copy as it was, including ${run.uncommitted.length} uncommitted or untracked files: ${run.uncommitted.map((u) => `\`${u}\``).join(', ')}.\n\n`;
+  }
 
   md += '## Summary\n\nConfirmed findings (plus automated check failures):\n\n';
   md += `| | ${SEVERITIES.map((s) => s[0].toUpperCase() + s.slice(1)).join(' | ')} |\n|---|${SEVERITIES.map(() => '---').join('|')}|\n`;
@@ -442,7 +507,9 @@ function report() {
 
   md += '\n## Agent changes outside the run folder\n\n';
   const outside = path.join(runDir, 'outside.txt');
-  md += fs.existsSync(outside) ? '```\n' + fs.readFileSync(outside, 'utf8').trim() + '\n```\n' : 'None.\n';
+  md += fs.existsSync(outside)
+    ? 'Changed while the audit ran. Nothing was reverted: check each one, since some may be your own edits made during the run.\n\n```\n' + fs.readFileSync(outside, 'utf8').trim() + '\n```\n'
+    : 'None.\n';
 
   md += '\n## Appendix: rejected findings\n\nCopy any you agree with into `.claude/skills/audit/decisions.md` so later audits skip them.\n\n';
   const rej = is('rejected');
@@ -461,9 +528,9 @@ function report() {
 
 // ---------- main ----------
 
-const commands = { coverage, findings, apply, report };
+const commands = { snapshot, coverage, findings, apply, report };
 if (!commands[command]) {
-  console.error(`Unknown command "${command}". Use coverage, findings, apply or report.`);
+  console.error(`Unknown command "${command}". Use snapshot, coverage, findings, apply or report.`);
   process.exit(2);
 }
 try {

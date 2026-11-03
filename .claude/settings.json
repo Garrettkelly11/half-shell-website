@@ -6,12 +6,17 @@
   "permissions": {
     "allow": [
       "Edit(/audit/runs/**)",
-      "Bash(node *)",
+      "Bash(node cloud/test.js)",
+      "Bash(node tools/*-test.js)",
+      "Bash(node .claude/skills/audit/merge.js *)",
+      "Bash(node audit/runs/*)",
+      "Bash(node -e *)",
       "Bash(git status *)",
       "Bash(git rev-parse *)",
       "Bash(git ls-files *)",
       "Bash(git log *)",
       "Bash(git show *)",
+      "Bash(git diff *)",
       "Bash(mkdir *)",
       "Bash(wc *)",
       "Bash(java -version)"
@@ -20,10 +25,21 @@
       "Bash(git push *)",
       "Bash(git commit *)",
       "Bash(git reset *)",
+      "Bash(git checkout *)",
+      "Bash(git restore *)",
+      "Bash(git stash *)",
+      "Bash(git clean *)",
       "Bash(firebase *)",
       "Bash(npx firebase *)",
+      "Bash(gcloud *)",
+      "Bash(*node*toast-*)",
+      "Bash(*node*sync-toast*)",
+      "Bash(*node*sync.js*)",
+      "Bash(*node*functions/*)",
+      "Bash(*GOOGLE_APPLICATION_CREDENTIALS*)",
       "Read(/.env)",
-      "Read(/functions/.env)"
+      "Read(/functions/.env)",
+      "Read(/**/.env)"
     ]
   }
 }

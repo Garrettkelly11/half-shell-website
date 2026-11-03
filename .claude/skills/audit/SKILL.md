@@ -16,7 +16,8 @@ Supporting files in this folder:
 - `known-context.md` — facts that look like bugs but aren't, and how the site deploys
 - `finding-schema.md` — the one format every agent reports in, and the severity scale
 - `decisions.md` — findings Garrett already ruled on; never re-raise these
-- `merge.js` — does the bookkeeping: coverage grid, finding index, merges, verifier groups, report
+- `merge.js` — does the bookkeeping: change snapshot, coverage grid, finding index, merges,
+  verifier groups, report
 
 Read the first four before step 3. You don't need to read `merge.js`; run it.
 
@@ -65,15 +66,18 @@ what you have, and the report lists what went unreviewed.
 
 ## Steps
 
-### 0. Preconditions — stop if any fail
+### 0. Where you are running
 
-1. `git rev-parse --show-toplevel` succeeds and `git status --porcelain` is empty (ignore
-   `audit/runs/`). A dirty tree means someone's unsaved work; stop and say so.
-2. The repo path should not be inside OneDrive. If it is, stop and tell Garrett to run from
-   a fresh clone (see `audit/README.md`): the OneDrive copy has served truncated files
-   before, and syncing hundreds of agent files is slow.
-3. There is no `.env` file. A fresh clone has no secrets, which is what keeps agents from
-   reaching Toast or the live database with write access. If `.env` exists, stop.
+The audit runs in Garrett's own working copy (inside OneDrive), not a clone. That copy has
+real Toast credentials in `.env` and may hold uncommitted work. Read the "Running code during
+the audit" section of `known-context.md` now; it applies to you and every agent.
+`.claude/settings.json` denies the dangerous commands, but the rules there are the backstop,
+not the plan.
+
+1. `git rev-parse --show-toplevel` must succeed and be the current directory. If not, stop.
+2. Record `git status --porcelain` (ignore `audit/runs/`). Uncommitted files don't stop the
+   audit; they are audited as they are and listed in the report.
+3. Never revert, restore, stash or clean anything, at any step.
 
 ### 1. Run folder
 
@@ -82,8 +86,12 @@ Run id = local time `YYYY-MM-DD-HHMM`. Create `audit/runs/<run-id>/` with `reque
 
 ```json
 {"run_id": "", "commit": "<git rev-parse HEAD>", "started": "", "areas": ["all"],
+ "uncommitted": ["paths from git status --porcelain"],
  "budgets": {"discovery": 25, "verifiers": 15, "group_size": 6, "verify_low": false}}
 ```
+
+Then run `node .claude/skills/audit/merge.js <run folder> snapshot start`. It records a hash
+of every file so step 8 can tell what changed during the run.
 
 Every agent writes only its own file. No agent edits another agent's file, so parallel
 agents never overwrite each other.
@@ -154,11 +162,12 @@ Then run `merge.js <run folder> apply`. Fix anything it prints as a PROBLEM and 
 For each group, spawn `audit-verifier` with the run folder, the group id and the finding ids.
 Run up to 10 at a time. Verifiers get no request file; `verify-groups.json` is the record.
 
-### 8. Clean tree
+### 8. What changed during the run
 
-Run `git status --porcelain`. Anything outside `audit/runs/` was changed by an agent that
-shouldn't have. Restore tracked files with `git checkout -- <file>`, list untracked ones
-(don't delete them), and write what you found to `<run folder>/outside.txt`.
+Run `merge.js <run folder> snapshot end`. It compares every file against the step 1 snapshot
+and writes `outside.txt` if anything outside the run folder changed. Do not revert anything:
+a change could be an agent's mistake, or Garrett editing files while the audit ran, and you
+can't tell which. The report lists them for him to check.
 
 ### 9. Report
 

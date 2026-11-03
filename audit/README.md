@@ -42,26 +42,33 @@ commit a report or paste one anywhere public.
 
 ## Running it
 
-Run it from a fresh clone **outside OneDrive**. A clone has no `.env`, so no agent can reach
-Toast or write to the live database, and OneDrive has served truncated files to tools before.
-The audit refuses to start if the working tree has uncommitted changes, so commit these audit
-files to `main` first.
+It runs in this folder, your normal working copy. Three things make that safe:
+
+- **Credentials:** this folder has real Toast credentials in `.env`. Agents are told never to
+  read `.env` or run the scripts that call Toast or write to the live database, and
+  `.claude/settings.json` denies those commands and reads outright.
+- **Your uncommitted work:** the audit reads the files as they are, including uncommitted
+  edits, and lists those files in the report. It never reverts, restores or stashes anything.
+- **Change check:** at the start it hashes every file; at the end it hashes again and lists
+  anything that changed during the run. It doesn't undo those changes; you check them.
+
+Avoid editing site files while it runs, so anything in that list is clearly an agent's doing.
 
 1. **Terminal (PowerShell):** check Claude Code is recent enough for nested agents:
    `claude --version` (needs 2.1.219 or later; update with `claude update`)
-2. **Terminal (PowerShell):** make a clone in a folder OneDrive doesn't sync, for example:
+2. **Terminal (PowerShell):** go to this folder and start Claude Code:
    ```
-   mkdir C:\dev -Force; cd C:\dev
-   git clone https://github.com/Garrettkelly11/half-shell-website.git hs-audit
-   cd hs-audit
+   cd "$env:USERPROFILE\OneDrive\Career\Half Shell\Oyster Management\Oyster Website"
+   claude
    ```
-   (Already have one? `cd C:\dev\hs-audit; git pull` instead.)
-3. **Terminal (PowerShell), same folder:** start Claude Code with `claude`
-4. **Claude Code:** type `/audit` for everything, or `/audit passport server` for chosen areas.
-5. **Claude Code:** approve the prompts it shows. Writes inside `audit/runs/` and `node`
-   commands are pre-approved; anything else asks. If an agent asks to edit a site file,
-   decline. The audit never needs to.
-6. **File Explorer or any editor:** open `audit\runs\<run-id>\report.md`.
+3. **Claude Code:** type `/audit` for everything, or `/audit passport server` for chosen areas.
+4. **Claude Code:** approve the prompts it shows. Writes inside `audit/runs/`, the repo's
+   tests and `merge.js` are pre-approved; anything else asks. If an agent asks to edit a site
+   file, read `.env`, or run a Toast or sync script, decline.
+5. **File Explorer or any editor:** open `audit\runs\<run-id>\report.md`.
+
+OneDrive syncs the run folder while the audit writes to it. If you see "file in use" or
+write errors, pause OneDrive syncing (tray icon > Pause syncing > 2 hours) and run again.
 
 Java 21+ is needed only for the database rules test (`tools/rules-test`). Without it the
 report lists that check as "not run". It doesn't fail the audit.

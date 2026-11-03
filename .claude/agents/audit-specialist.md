@@ -23,7 +23,8 @@ yours, the files to start from, the categories, and when to stop.
 - Write only `<run folder>/agents/<your id>.json` and requests for your own children in
   `<run folder>/requests/`. Never edit site files.
 - Bash: read-only commands and existing tests only. No installs, no git writes, nothing that
-  calls Toast or writes to Firebase.
+  calls Toast or writes to Firebase. Never read `.env` files. What you may and may not run is listed under "Running code during
+  the audit" in `known-context.md`.
 - Stay on your question. Follow the code into other files when the answer depends on them,
   but don't start reviewing unrelated things. If you trip over something serious and
   unrelated, report it as one finding and move on.

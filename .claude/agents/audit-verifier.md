@@ -46,6 +46,8 @@ use it for all of them. Don't read whole files unless a finding is about the who
 
 - Write only `<run folder>/verdicts/<group id>.json` and files under `<run folder>/scratch/`.
 - Bash: read-only commands, existing tests, and your scratch scripts. No installs, no git writes.
+- Never read `.env` files. What you may and may not run is listed under "Running code during
+  the audit" in `known-context.md`.
 
 ## Your file
 
