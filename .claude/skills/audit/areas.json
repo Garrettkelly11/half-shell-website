@@ -1,0 +1,152 @@
+{
+  "_note": "Seed areas for /audit. The scout may move files between areas; update this file when the repo's layout changes. Every git-tracked non-image file should appear exactly once.",
+  "areas": [
+    {
+      "id": "passport",
+      "name": "Oyster Passport / customer accounts",
+      "risk": "critical",
+      "files": [
+        "passport.html", "user.html", "privacy.html",
+        "src/passport-core.js", "src/passport-store.js", "src/passport-ui.js", "src/passport-menu.js",
+        "src/stamp-svg.js", "data/stamps.js", "tools/passport-test.js"
+      ],
+      "focus": [
+        "Phone sign-in flow: what happens on failed, expired or repeated codes",
+        "Can one customer read or write another customer's /users or /toastOrders data",
+        "Personal data (name, phone, email, date of birth): where it is shown, stored, logged, and whether the privacy page matches what the code does",
+        "Delete-my-account: does it remove everything the privacy page says it does",
+        "innerHTML / template strings built from customer-entered text",
+        "Birthday reward and stamp logic: can it be claimed twice or edited by the customer"
+      ]
+    },
+    {
+      "id": "staff",
+      "name": "Employee page and manager tools",
+      "risk": "high",
+      "files": [
+        "employee.html", "src/catalog-editor.js", "src/menu-manager.js", "src/merroir-signin.js",
+        "tools/catalog-editor-test.js", "tools/signin-test.js"
+      ],
+      "focus": [
+        "Who can reach each staff action, and is that enforced on the server (rules or cloud functions) or only hidden in the page",
+        "Merroir sign-in: session handling, sign-out, what a non-staff signed-in user can see",
+        "Catalog editing: input validation, what a bad save does to data/oysters.js",
+        "Menu overrides and happy hour: what the page sends vs what cloud functions accept",
+        "employee.html size (1,800+ lines): duplicated logic, dead code, how hard it is to change safely"
+      ]
+    },
+    {
+      "id": "server",
+      "name": "Database rules and cloud functions",
+      "risk": "high",
+      "files": [
+        "database.rules.json", "firebase.json", ".firebaserc",
+        "cloud/index.js", "cloud/lib.js", "cloud/menu-logic.js", "cloud/price-logic.js", "cloud/test.js", "cloud/package.json",
+        "tools/rules-test/rules-test.js", "tools/rules-test/firebase.json", "tools/rules-test/package.json"
+      ],
+      "focus": [
+        "Every rule: is it as narrow as it can be; is any path open to unauthenticated writes",
+        "Staff check (root.child('staff')): who can add themselves to /staff",
+        "Each callable function: auth check, input validation, what a malicious caller could send",
+        "GH_DISPATCH_TOKEN: scope, where it is used, whether any response leaks it",
+        "Do rules-test.js and cloud/test.js cover the paths and functions that matter; what is untested",
+        "firebase.json: legacy hosting/functions config that a bare `firebase deploy` would publish"
+      ]
+    },
+    {
+      "id": "toast-sync",
+      "name": "Toast to Firebase sync",
+      "risk": "medium",
+      "files": [
+        "tools/sync-toast-to-firebase.js", "sync.js", "public/oysters.json",
+        "functions/index.js", "functions/sync-toast-endpoint.js", "functions/toast-mapping.js",
+        "functions/build-catalog.js", "functions/package.json", "functions/README.md",
+        "functions/.env.example", "functions/.gitignore",
+        ".github/workflows/sync-oysters.yml", "tools/oyster-source-diff.js"
+      ],
+      "focus": [
+        "Which sync path is live (see known-context.md) and which files are dead",
+        "Failure behaviour: Toast down, token expired, partial or malformed response — does the menu go blank or keep the last good list",
+        "Toast item to catalog matching: GUID overrides, name collisions, oysters with the same name from different farms",
+        "Workflow: secret handling (the credentials file written to /tmp), permissions, the business-hours check across daylight saving",
+        "Number of Toast API calls per run"
+      ]
+    },
+    {
+      "id": "public-menu",
+      "name": "Customer-facing menu pages",
+      "risk": "medium",
+      "files": [
+        "index.html", "oyster.html", "curated-flights.html", "wifi.html",
+        "src/price-display.js", "src/firebase-config.js",
+        "data/oysters.js", "data/regions.js", "data/flights.js",
+        "tools/flights-test.js", "tools/price-display-test.js", "tools/regions-test.js"
+      ],
+      "focus": [
+        "What a customer sees when the database is slow, unreachable, or /menu/serving is empty",
+        "Prices and happy hour: does the page always agree with cloud/price-logic.js",
+        "innerHTML built from catalog or database text",
+        "Load weight on a phone: script count, image sizes, number of database listeners",
+        "Third-party scripts and where they load from",
+        "Accessibility basics on the main menu: text contrast, tap targets, alt text"
+      ]
+    },
+    {
+      "id": "library-build",
+      "name": "Library page and build tooling",
+      "risk": "medium",
+      "files": [
+        "Oyster Overview.html", "tools/build-library.js", "tools/library-template.html", "tools/library-test.js",
+        ".github/workflows/build-library.yml", "tools/build-map-na.js", "data/map-na.js",
+        "tools/consolidate-catalog.js", "tools/photo-check.js"
+      ],
+      "focus": [
+        "build-library.yml has contents: write and pushes to main: what input could make it commit something wrong",
+        "Generator escaping: catalog text going into the generated page",
+        "One-off scripts (consolidate-catalog.js, photo-check.js): still needed or dead"
+      ]
+    },
+    {
+      "id": "dev-tools",
+      "name": "Toast probes and repo housekeeping",
+      "risk": "low",
+      "files": [
+        "tools/toast-api-explorer.js", "tools/toast-jwt-decode.js", "tools/toast-list-restaurants.js",
+        "tools/toast-match-preview.js", "tools/toast-price-printout.js", "tools/toast-probe.js", "tools/toast-stock-probe.js",
+        ".env.example", ".gitignore", "README.md", "migration-checklist.md", "CNAME"
+      ],
+      "focus": [
+        "Hardcoded credentials, tokens, GUIDs that should be secrets, or real customer data",
+        "Scripts that write to anything (files, Toast, Firebase) when someone expects a read-only probe",
+        ".gitignore: anything secret or generated that is not ignored",
+        "README and migration-checklist: accurate for how the site works today"
+      ]
+    },
+    {
+      "id": "seams",
+      "name": "Contracts between areas",
+      "risk": "high",
+      "files": [],
+      "focus": [
+        "Every database path: who writes it, who reads it, what rule guards it (start from map.json db_paths)",
+        "Catalog schema: data/oysters.js as written by Merroir vs as read by the sync, the pages, the library builder and the tests",
+        "Price logic: cloud/price-logic.js vs src/price-display.js — same answers for the same inputs?",
+        "src/firebase-config.js and shared helpers: every page that loads them, and any page that does its own setup instead",
+        "86 status: does every reader treat it as 'not currently offered'"
+      ]
+    },
+    {
+      "id": "conventions",
+      "name": "Repo-wide conventions for future developers",
+      "risk": "low",
+      "files": [],
+      "focus": [
+        "Naming, file layout, and module style: where the repo is inconsistent",
+        "Two ways of doing the same thing (e.g. Firebase setup, escaping, date handling)",
+        "Comments and docs that no longer match the code",
+        "How to run each test and tool: is it written down anywhere a new developer would look",
+        "Draft a short style guide from what the code already does most often"
+      ]
+    }
+  ]
+}

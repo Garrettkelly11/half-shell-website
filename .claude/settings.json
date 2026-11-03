@@ -1,0 +1,29 @@
+{
+  "env": {
+    "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "5",
+    "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS": "30"
+  },
+  "permissions": {
+    "allow": [
+      "Edit(/audit/runs/**)",
+      "Bash(node *)",
+      "Bash(git status *)",
+      "Bash(git rev-parse *)",
+      "Bash(git ls-files *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(mkdir *)",
+      "Bash(wc *)",
+      "Bash(java -version)"
+    ],
+    "deny": [
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(git reset *)",
+      "Bash(firebase *)",
+      "Bash(npx firebase *)",
+      "Read(/.env)",
+      "Read(/functions/.env)"
+    ]
+  }
+}
