@@ -38,3 +38,6 @@ netlify.toml
 # Generated build artifacts (regenerated on every deploy / probe run)
 functions/oyster-catalog.json
 tools/toast-menu-dump.json
+tools/toast-api-explorer-dump.json
+tools/toast-api-explorer-report.txt
+tools/toast-stock-dump.json
