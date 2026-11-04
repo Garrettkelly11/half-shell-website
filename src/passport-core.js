@@ -578,7 +578,8 @@
   // Medium reads as medium, not mild (Garrett, 03/11/2026).
   var SAL_LEAN = { 1: 'mild', 2: 'medium', 3: 'medium-high', 4: 'briny', 5: 'briny' };
   var SAL_TEXT = { mild: 'You lean mild', medium: 'You lean medium', 'medium-high': 'You lean medium-high', briny: 'You lean briny' };
-  var SIZE_WORD = { 1: 'small', 2: 'medium', 3: 'large' };
+  // "medium-sized", so the size line can't be mistaken for the salinity line ("You lean medium").
+  var SIZE_WORD = { 1: 'small', 2: 'medium-sized', 3: 'large' };
   /**
    * "Your palate" (6.6). Null until 5 varieties are rated. Each line is null
    * without enough data; each says what it is based on (`basis`).
@@ -598,7 +599,7 @@
         basis: east.length + west.length };
     } else out.coast = null;
     var z = bestGroup(f, function (x) { return x.size; }, 2);
-    out.size = z && { rank: Number(z.key), text: 'You lean ' + SIZE_WORD[z.key],
+    out.size = z && { rank: Number(z.key), text: 'You lean toward ' + SIZE_WORD[z.key] + ' oysters',
       basis: f.filter(function (x) { return !isNaN(x.size); }).length };
     var r = bestGroup(f, function (x) { return x.region; }, 2);
     out.region = r && { code: r.key, name: (reg[r.key] && reg[r.key].name) || r.key, mean: r.mean, basis: r.count };

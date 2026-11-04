@@ -773,8 +773,9 @@
     } else {
       var ul = el('ul', { class: 'palate' });
       if (pal.salinity) {
-        var dots = el('span', { class: 'dots', 'aria-label': 'Salinity ' + pal.salinity.band + ' of 5' });
-        for (var i = 1; i <= 5; i++) dots.appendChild(el('i', { class: i === pal.salinity.band ? 'on' : '' }));
+        // Filled up to the band, like the salinity dots on the menu cards (low 1 … very high 5).
+        var dots = el('span', { class: 'dots', role: 'img', 'aria-label': 'Salinity ' + pal.salinity.band + ' of 5' });
+        for (var i = 1; i <= 5; i++) dots.appendChild(el('i', { class: i <= pal.salinity.band ? 'on' : '' }));
         ul.appendChild(el('li', {}, [pal.salinity.text, dots, el('small', { text: 'From ' + plural(pal.salinity.basis, 'rated oyster') })]));
       }
       if (pal.coast) ul.appendChild(el('li', {}, [pal.coast.text, el('small', { text: 'From ' + plural(pal.coast.basis, 'rated oyster') })]));

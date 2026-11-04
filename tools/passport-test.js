@@ -494,7 +494,7 @@ check('palate: salinity, coast, size and region, each with its basis', () => {
   assert.deepStrictEqual(p.salinity, { band: 4, lean: 'briny', text: 'You lean briny', basis: 5 });
   assert.strictEqual(p.coast.lean, 'east');
   assert.strictEqual(p.coast.basis, 5);
-  assert.deepStrictEqual(p.size, { rank: 2, text: 'You lean medium', basis: 5 });
+  assert.deepStrictEqual(p.size, { rank: 2, text: 'You lean toward medium-sized oysters', basis: 5 });
   assert.strictEqual(p.region.code, 'ma');
   assert.strictEqual(p.region.basis, 2);
 });
@@ -544,7 +544,7 @@ check('palate size reads the size text the way Curated Flights does', () => {
   ];
   assert.strictEqual(F._internals.sizeRank(fix[0]), 1);
   const agg = P.aggregateRatings(visitsOf([['p', 1, 5], ['q', 1, 5], ['r', 1, 1], ['s', 1, 2], ['t', 1, 3]]));
-  assert.strictEqual(P.palate(agg, fix, REGIONS).size.text, 'You lean small');
+  assert.strictEqual(P.palate(agg, fix, REGIONS).size.text, 'You lean toward small oysters');
 });
 check('similarity: same oyster 1; salinity unknown drops that term', () => {
   const R = o => ({ sal: F._internals.salinityRank(o), size: F._internals.sizeRank(o), region: o.region });
