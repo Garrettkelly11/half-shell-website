@@ -43,7 +43,7 @@ The prompt gives you the run folder (`audit/runs/<run-id>/`). Read first:
 ```
 
 Coverage of `files` must equal `git ls-files` minus images (`.png .jpg .jpeg .webp .avif .svg
-.ico .gif .pdf .woff .woff2`). Check this with a command before you finish and say if it
+.ico .gif .pdf .woff .woff2`) and minus the audit tool itself (`.claude/`, `audit/`). Check this with a command before you finish and say if it
 doesn't match.
 
 `db_paths` matters most: grep every `ref(`, `child(`, `.json` URL and admin-SDK path in pages,
@@ -60,6 +60,8 @@ workflows, other scripts, `cloud/index.js`). Say what you searched for in `evide
 {"id": "scout", "parent": "root", "role": "scout", "status": "done",
  "coverage": [], "findings": [], "notes": "anything the root should know"}
 ```
+
+Leave `coverage` empty: the scout maps files, it doesn't review them.
 
 Return to the root in 10 lines or fewer: file count, area sizes, proposed area changes,
 anything unassigned, and whether coverage matched `git ls-files`.

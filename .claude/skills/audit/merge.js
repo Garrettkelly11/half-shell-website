@@ -207,9 +207,21 @@ function snapshot() {
 
 // ---------- coverage ----------
 
+// The audit tool's own files are never audited.
+const OUT_OF_SCOPE = ['.claude/', 'audit/'];
+
+function inScopeFiles(map, run) {
+  const areas = run.areas && !run.areas.includes('all') ? new Set(run.areas) : null;
+  return (map.files || []).filter((f) =>
+    f && f.path
+    && !OUT_OF_SCOPE.some((p) => f.path.startsWith(p))
+    && (!areas || areas.has(f.area)));
+}
+
 function coverage() {
   const map = readJson('map.json');
-  const files = map.files || [];
+  const run = readJson('run.json', {});
+  const files = inScopeFiles(map, run);
   const grid = {};
   for (const f of files) {
     grid[f.path] = {};
@@ -223,10 +235,14 @@ function coverage() {
   }
 
   const unknown = new Set();
+  const malformed = [];
   for (const a of agents()) {
     for (const e of a.coverage || []) {
+      if (!e || typeof e !== 'object' || !e.file || !CATEGORIES.includes(e.category)) {
+        malformed.push(a.id || '?');
+        continue;
+      }
       if (!grid[e.file]) { unknown.add(e.file); continue; }
-      if (!CATEGORIES.includes(e.category)) continue;
       const cur = grid[e.file][e.category];
       const curRank = cur.by === 'scout' ? 2.5 : RESULT_RANK[cur.result]; // agent results beat scout defaults
       if ((RESULT_RANK[e.result] ?? 9) <= curRank) {
@@ -254,7 +270,7 @@ function coverage() {
     categories: [...new Set(Object.values(fm).flat())],
   }));
 
-  writeOut('coverage.json', { total, done, pct, unreviewed, unknown_files: [...unknown], grid });
+  writeOut('coverage.json', { scope: run.areas || ['all'], files: files.length, total, done, pct, unreviewed, unknown_files: [...unknown], grid });
 
   const short = { findings: 'F', cleared: 'ok', 'n/a': 'n/a', unreviewed: '—' };
   let md = `# Coverage\n\n${done} of ${total} cells (${pct}%). F = findings, ok = cleared, — = unreviewed.\n\n`;
@@ -264,7 +280,12 @@ function coverage() {
   }
   writeOut('coverage.md', md);
 
-  console.log(`Coverage: ${done}/${total} cells (${pct}%).`);
+  const scope = run.areas && !run.areas.includes('all') ? `areas ${run.areas.join(', ')}` : 'all areas';
+  console.log(`Coverage (${scope}, ${files.length} files): ${done}/${total} cells (${pct}%).`);
+  if (malformed.length) {
+    const by = [...new Set(malformed)];
+    console.log(`PROBLEM: ${malformed.length} coverage entries not in {file, category, result} form, from ${by.join(', ')}; ignored.`);
+  }
   if (unknown.size) console.log(`Coverage entries for files not in map.json: ${[...unknown].join(', ')}`);
   if (!unreviewed.length) console.log('No unreviewed cells.');
   for (const u of unreviewed) {
@@ -409,8 +430,15 @@ function report() {
   const checks = readJson('checks.json', []);
   const requests = readDir('requests').map((r) => r.data);
   const verdicts = new Map();
+  const verdictProblems = [];
   for (const v of readDir('verdicts')) {
-    for (const x of v.data.verdicts || []) verdicts.set(x.finding, { ...x, group: v.data.id });
+    for (const x of v.data.verdicts || []) {
+      // Accept near-miss field names so one sloppy verifier doesn't blank the report.
+      const reason = x.reason || x.note || x.notes || x.explanation || x.comment || '';
+      if (!reason) verdictProblems.push(`${v.data.id}: no reason for ${x.finding}`);
+      if (!['confirmed', 'rejected', 'needs-human'].includes(x.verdict)) verdictProblems.push(`${v.data.id}: unknown verdict "${x.verdict}" for ${x.finding}`);
+      verdicts.set(x.finding, { ...x, reason, group: v.data.id });
+    }
   }
 
   for (const f of merged) {
@@ -445,7 +473,7 @@ function report() {
   }
   md += `\nAlso: ${is('needs-human').length} need a human check · ${is('skipped-low').length} low not verified · `;
   md += `${is('skipped-budget').length + is('unverified').length} not verified (budget or missing verdict) · ${is('rejected').length} rejected.\n\n`;
-  md += `Coverage: ${cov.done} of ${cov.total} cells (${cov.pct}%).\n\n`;
+  md += `Coverage: ${cov.done} of ${cov.total} cells (${cov.pct}%), ${(cov.scope || ['all']).includes('all') ? 'all areas' : 'areas ' + cov.scope.join(', ')}.\n\n`;
   md += `Agents: ${discovery}/${b.discovery ?? '?'} discovery, ${verifierCount}/${b.verifiers ?? '?'} verifier. By layer: ${layers}.\n\n`;
 
   md += '## Automated checks\n\n| Check | Result | Detail |\n|---|---|---|\n';
@@ -519,10 +547,13 @@ function report() {
     md += '\nDropped by the root before verification:\n\n';
     md += dropped.map((d) => `- ${d.id} · ${d.title} — ${d.reason}`).join('\n') + '\n';
   }
-  md += '\n## Appendix: conventions draft\n\nSee `conventions-draft.md` in this run folder.\n';
+  if (fs.existsSync(path.join(runDir, 'conventions-draft.md'))) {
+    md += '\n## Appendix: conventions draft\n\nSee `conventions-draft.md` in this run folder.\n';
+  }
 
   writeOut('report.md', md);
   console.log(`report.md written: ${confirmed.length} confirmed, ${nh.length} needs-human, ${low.length} low unverified, ${rej.length} rejected, coverage ${cov.pct}%.`);
+  for (const p of verdictProblems) console.log(`PROBLEM: ${p}`);
   console.log('Finish the "Proposed fix batches" section.');
 }
 

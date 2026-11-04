@@ -59,4 +59,7 @@ use it for all of them. Don't read whole files unless a finding is about the who
                "repro": "scratch file path, or empty"}]}
 ```
 
+Use exactly these field names. `reason` and `severity` are required for every verdict; the
+report is built from them by a script, and a missing field shows up as a blank.
+
 Return in 5 lines or fewer: the verdict for each finding id.

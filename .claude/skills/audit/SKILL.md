@@ -21,6 +21,8 @@ Supporting files in this folder:
 
 Read the first four before step 3. You don't need to read `merge.js`; run it.
 
+The audit tool's own files (`.claude/`, `audit/`) are never audited.
+
 Arguments: `$ARGUMENTS`. If empty, audit every area. If it names areas, audit only those
 (plus `seams` if two or more areas are named) and say so at the top of the report.
 
@@ -104,9 +106,12 @@ Run each from the repo root:
 - `node tools/<name>-test.js` for every `tools/*-test.js`
   (`flights-test.js` reads the live public menu over the internet — read-only; if offline,
   record "not run: offline", not a failure)
-- Parse check: load each `data/*.js` with `node -e` inside a `vm` context; any throw is a failure
-- `tools/rules-test`: needs Java 21+ and `npm install` there. Try `java -version`; if Java is
-  missing, record "not run: no Java" and move on.
+- Parse check: load each `data/*.js` with `node -e` inside one `vm` context, `data/regions.js`
+  first (`data/flights.js` needs it); any throw is a failure
+- `tools/rules-test`: needs Java 21+. Run `npm install` then `npm test` in that folder; `npm test`
+  starts the database emulator against the demo project "demo-hs-rules", never the live
+  database. Running `node rules-test.js` directly fails because no emulator is running. If Java
+  is missing, record "not run: no Java" and move on.
 
 Write `checks.json`: `[{"check": "", "result": "pass|fail|not run", "detail": "last lines or reason"}]`.
 For each failure, also write a finding (id `CHK-NN`, category from what broke) into
