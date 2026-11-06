@@ -142,6 +142,7 @@ async function importDrinks(auth, data, deps) {
   Object.keys(incoming).forEach((id) => {
     const old = Object.prototype.hasOwnProperty.call(current, id) ? current[id] : undefined;
     const d = Object.assign({}, mode === 'merge' ? D.mergeFields(old, incoming[id], fields) : incoming[id], { by: actor, at: now });
+    delete d.keep;
     if (old && old.photo) d.photo = old.photo;
     if (d.sort == null && old && old.sort != null) d.sort = old.sort;
     updates[id] = d;

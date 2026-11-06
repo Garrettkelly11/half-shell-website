@@ -299,6 +299,7 @@ window.hsDrinksAdmin = (function () {
       if (r.fatal) { out.appendChild(make('div', { class: 'cat-note error' }, r.problems[0].errors[0])); return; }
       var diff = D.diffImport(drinks, r.drinks, mode, r.fields);
       var unmatched = r.drinks.filter(function (d) { return !toast[D.toastKey(d.name)]; });
+      if (r.unknownColumns && r.unknownColumns.length) out.appendChild(make('div', { class: 'cat-note warn' }, 'Columns not used (not recognised): ' + r.unknownColumns.join(', ') + '. Recognised: Name, Size, Description, ABV, Tags, Allergens, Available, Sort.'));
       if (r.ignored && r.ignored.length) out.appendChild(make('div', { class: 'cat-note' }, 'Ignored (Toast owns these): ' + r.ignored.join(', ') + '.'));
       if (unmatched.length && Object.keys(toast).length) out.appendChild(make('div', { class: 'cat-note warn' }, unmatched.length + ' name' + (unmatched.length === 1 ? '' : 's') + ' not in Toast right now (they will not show until Toast has them): ' + unmatched.slice(0, 8).map(function (d) { return d.name; }).join(', ') + (unmatched.length > 8 ? '…' : '') + '.'));
       out.appendChild(make('div', { class: 'cat-note' + (r.problems.length ? ' warn' : ' ok') },
@@ -314,6 +315,7 @@ window.hsDrinksAdmin = (function () {
       if (mode === 'replace' && diff.removed.length) {
         out.appendChild(make('div', { class: 'cat-note warn' }, 'Clearing details for: ' + diff.removed.slice(0, 15).map(function (id) { return drinks[id].name; }).join(', ') + (diff.removed.length > 15 ? '…' : '') + '. Their details and photos are cleared; the drinks still show from Toast.'));
       }
+      if (mode === 'merge') out.appendChild(make('div', { class: 'hint' }, 'Blank cells leave what is already there unchanged. Only columns in your file are touched.'));
       var t = make('table', { class: 'dx-table' }), hr = make('tr');
       ['Name', 'In Toast?', 'Status'].forEach(function (h) { hr.appendChild(make('th', {}, h)); }); t.appendChild(hr);
       r.drinks.slice(0, 8).forEach(function (d) {
@@ -332,7 +334,11 @@ window.hsDrinksAdmin = (function () {
       if (/\.xlsx$/i.test(f.name)) f.arrayBuffer().then(X.readRows).then(done, fail);
       else if (/\.xls$/i.test(f.name)) fail(new Error('Older .xls files are not supported. In Excel choose Save As, then .xlsx or CSV.'));
       else if (f.size > 2 * 1024 * 1024) fail(new Error('That file is over 2 MB.'));
-      else f.text().then(function (t) { done(D.parseCSV(t)); }, fail);
+      else f.arrayBuffer().then(function (buf) {
+        var t; // Excel's plain "CSV" is often Windows-1252, not UTF-8: fall back so accents (Crémant) survive
+        try { t = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { t = new TextDecoder('windows-1252').decode(buf); }
+        done(D.parseCSV(t));
+      }, fail);
     });
     function onGo() {
       if (!parsed || !parsed.result) return;

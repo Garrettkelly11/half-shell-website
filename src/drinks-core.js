@@ -27,7 +27,12 @@
   var LIMITS = { drinks: 500, specials: 100, nightlyItems: 25, name: 80, description: 400, size: 40, category: 30, note: 200, ingredients: 300 };
   var STORAGE_HOST = 'https://firebasestorage.googleapis.com/';
 
-  function str(v) { return v == null ? '' : String(v).trim(); }
+  /** Text from any source, cleaned: invisible characters dropped, no-break spaces and stray control characters become plain spaces, trimmed. */
+  function str(v) {
+    return v == null ? '' : String(v).replace(/[\u200b-\u200d\u2060\ufeff\u00ad]/g, '').replace(/[\u00a0\u2007\u202f\t\v\f]/g, ' ').replace(/[\u0000-\u0008\u000e-\u001f\u007f]/g, '').trim();
+  }
+  /** One line: any line breaks and runs of spaces become a single space. */
+  function oneLine(v) { return str(v).replace(/\s+/g, ' '); }
   function isInt(n) { return typeof n === 'number' && isFinite(n) && Math.floor(n) === n; }
 
   // ── Money ──
@@ -99,8 +104,11 @@
   }
   function matchList(values, allowed) {
     var out = [], bad = [];
+    var norm = function (x) { return String(x).toLowerCase().replace(/[^a-z0-9]/g, '').replace(/s$/, ''); };
+    var alias = { dairy: 'milk', egg: 'eggs', nut: 'treenuts', nuts: 'treenuts', treenut: 'treenuts', peanut: 'peanuts', shellfish: 'shellfish', crustaceans: 'shellfish', gf: 'glutenfree', glutenfree: 'glutenfree', nonalc: 'nonalcoholic', na: 'nonalcoholic', zeroproof: 'nonalcoholic', alcoholfree: 'nonalcoholic', sulfite: 'sulfites', sulphites: 'sulfites', sulphite: 'sulfites', lowabv: 'lowabv', local: 'local' };
     values.forEach(function (v) {
-      var hit = allowed.filter(function (a) { return a.toLowerCase() === v.toLowerCase(); })[0];
+      var n = norm(v), want = alias[n] || alias[n + 's'] || n;
+      var hit = allowed.filter(function (a) { return a.toLowerCase() === v.toLowerCase() || norm(a) === want || norm(a) === n; })[0];
       if (!hit) bad.push(v); else if (out.indexOf(hit) < 0) out.push(hit);
     });
     return { ok: out, bad: bad };
@@ -124,19 +132,23 @@
   function validateDrink(input) {
     var errors = [], d = {};
     var src = input || {};
-    d.name = str(src.name);
+    d.name = oneLine(src.name);
+    if (/\ufffd|\u00c3[\u0080-\u00bf]|\u00e2\u20ac/.test(d.name)) errors.push('Name has unreadable characters (the file is not saved as UTF-8).');
     if (!d.name) errors.push('Name is required.');
     else if (d.name.length > LIMITS.name) errors.push('Name is over ' + LIMITS.name + ' characters.');
     d.id = str(src.id) || slug(cleanName(d.name));
     if (!/^[a-z0-9-]{1,60}$/.test(d.id)) errors.push('Name needs letters or numbers.');
-    if (!toastKey(d.name)) errors.push('Name needs letters or numbers.');
-    d.size = str(src.size).slice(0, LIMITS.size);
-    d.description = str(src.description);
+    if (d.name && !toastKey(d.name) && errors.indexOf('Name needs letters or numbers.') < 0) errors.push('Name needs letters or numbers.');
+    d.size = oneLine(src.size).slice(0, LIMITS.size);
+    d.description = oneLine(src.description);
+    if (/\ufffd/.test(d.description)) errors.push('Description has unreadable characters (the file is not saved as UTF-8).');
     if (d.description.length > LIMITS.description) errors.push('Description is over ' + LIMITS.description + ' characters.');
-    var abv = str(src.abv);
+    var abv = str(src.abv).replace(/\s*(abv|alc\.?(\/vol\.?)?)\s*$/i, '').replace(/\s*%\s*$/, '').replace(/^(\d+),(\d{1,2})$/, '$1.$2');
     if (abv) {
-      var a = parseFloat(abv.replace('%', ''));
-      if (!(a >= 0 && a <= 100)) errors.push('ABV must be 0 to 100.'); else d.abv = Math.round(a * 10) / 10;
+      var a = /^\d*\.?\d+$/.test(abv) ? parseFloat(abv) : NaN;
+      if (!(a >= 0 && a <= 100)) errors.push('ABV "' + str(src.abv) + '" is not a number from 0 to 100 (write 5.5 or 5.5%).');
+      else if (a > 0 && a < 1 && !/%/.test(str(src.abv))) errors.push('ABV "' + str(src.abv) + '" looks like a fraction (Excel percent cell?). Write it as ' + Math.round(a * 1000) / 10 + ' or ' + Math.round(a * 1000) / 10 + '%.');
+      else d.abv = Math.round(a * 10) / 10;
     }
     var t = matchList(splitList(src.tags), TAGS);
     if (t.bad.length) errors.push('Unknown tag: ' + t.bad.join(', ') + '.');
@@ -144,7 +156,11 @@
     var al = matchList(splitList(src.allergens), ALLERGENS);
     if (al.bad.length) errors.push('Unknown allergen: ' + al.bad.join(', ') + '.');
     d.allergens = al.ok;
-    d.available = src.available === false || /^(n|no|false|0|86|off)$/i.test(str(src.available)) ? false : true;
+    var av = str(src.available);
+    if (src.available === false || /^(n|no|false|0|86|off|hide|hidden)$/i.test(av)) d.available = false;
+    else if (src.available === true || av === '' || /^(y|yes|true|1|on|show|shown)$/i.test(av)) d.available = true;
+    else { d.available = true; errors.push('Available "' + av + '" should be yes or no.'); }
+    if (Array.isArray(src.keep)) d.keep = src.keep.filter(function (f) { return typeof f === 'string' && FIELDS.indexOf(f) >= 0 && f !== 'name'; });
     if (src.photo) {
       if (!validPhotoUrl(src.photo)) errors.push('Photo must be one uploaded here.'); else d.photo = src.photo;
     }
@@ -182,12 +198,15 @@
   function parseCSV(text) {
     text = String(text).replace(/^﻿/, '');
     var rows = [], row = [], cur = '', q = false, i = 0, c;
+    // Excel in many regions saves "CSV" with semicolons, and some tools save tabs: pick the one the header line uses.
+    var delim = ',', firstLine = text.split(/\r\n|\n|\r/).filter(function (l) { return l.trim() !== ''; })[0] || '';
+    (function () { var best = 0, inq = false, counts = { ',': 0, ';': 0, '\t': 0 }; for (var k = 0; k < firstLine.length; k++) { var ch = firstLine[k]; if (ch === '"') inq = !inq; else if (!inq && counts[ch] !== undefined) counts[ch]++; } [',', ';', '\t'].forEach(function (d) { if (counts[d] > best) { best = counts[d]; delim = d; } }); })();
     for (; i < text.length; i++) {
       c = text[i];
       if (q) {
         if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c;
       } else if (c === '"') q = true;
-      else if (c === ',') { row.push(cur); cur = ''; }
+      else if (c === delim) { row.push(cur); cur = ''; }
       else if (c === '\n' || c === '\r') {
         if (c === '\r' && text[i + 1] === '\n') i++;
         row.push(cur); cur = '';
@@ -227,6 +246,8 @@
       var o = {}, rowNo = r.__row || idx + 2;
       Object.keys(map).forEach(function (f) { o[f] = typeof r[map[f]] === 'string' ? r[map[f]].replace(/^'(?=[=+\-@])/, '') : r[map[f]]; });
       if (!Object.keys(o).some(function (k) { return str(o[k]) !== ''; })) return; // blank line
+      var keep = Object.keys(o).filter(function (f) { return f !== 'id' && f !== 'name' && str(o[f]) === ''; });
+      o.keep = keep;
       var v = validateDrink(o);
       if (!v.ok) { problems.push({ row: rowNo, errors: v.errors }); return; }
       var k = toastKey(v.drink.name);
@@ -235,7 +256,10 @@
       drinks.push(v.drink);
     });
     var fields = Object.keys(map).filter(function (f) { return f !== 'id'; });
-    return { drinks: drinks, problems: problems, duplicates: dupes, fatal: false, fields: fields, ignored: ignored };
+    var used = Object.keys(map).map(function (f) { return map[f]; });
+    var unknown = Object.keys(rows[0]).filter(function (h) { return str(h) && used.indexOf(h) < 0 && ignored.indexOf(h) < 0; });
+    if (drinks.length > LIMITS.drinks) problems.push({ row: 1, errors: ['A file can have at most ' + LIMITS.drinks + ' drinks (this one has ' + drinks.length + ').'] });
+    return { drinks: drinks, problems: problems, duplicates: dupes, fatal: false, fields: fields, ignored: ignored, unknownColumns: unknown };
   }
 
   var FIELDS = ['name', 'size', 'description', 'abv', 'tags', 'allergens', 'available', 'sort'];
@@ -246,10 +270,10 @@
    */
   function mergeFields(old, d, fields) {
     if (!old || !fields) return d;
-    var out = Object.assign({}, d);
+    var out = Object.assign({}, d); delete out.keep;
     FIELDS.forEach(function (f) {
       if (f === 'name') return;
-      if (fields.indexOf(f) < 0) { if (old[f] === undefined) delete out[f]; else out[f] = old[f]; }
+      if (fields.indexOf(f) < 0 || (d.keep && d.keep.indexOf(f) >= 0 && old[f] !== undefined)) { if (old[f] === undefined) delete out[f]; else out[f] = old[f]; }
     });
     return out;
   }

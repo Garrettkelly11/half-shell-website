@@ -214,6 +214,30 @@ t('listRows / findToast: every Toast drink is listed; records are optional', () 
   assert.strictEqual(m[0].items.find(i => i.id === 'not-profiled-beer').price, 400, 'specials work on drinks with no record');
 });
 
+t('csv cleaning: delimiters, invisible characters, forgiving tags, strict ABV and availability, blanks keep old values', () => {
+  const rows = txt => C.drinksFromRows(C.parseCSV(txt));
+  assert.strictEqual(rows('Name;Description;Tags\nA;Nice;Local\n').drinks[0].tags[0], 'Local', 'semicolon files (Excel in other regions)');
+  assert.strictEqual(rows('Name\tDescription\nA\tNice\n').drinks[0].description, 'Nice', 'tab files');
+  assert.strictEqual(rows('Name,Description\n"A\u00a0B\u200b","  hi\u00a0 there \n x "\n').drinks[0].name, 'A B');
+  assert.strictEqual(rows('Name,Description\nA,"l1\nl2"\n').drinks[0].description, 'l1 l2', 'line breaks become spaces');
+  const f = rows('Name,Tags,Allergens\nA,"local, Gluten Free; non alcoholic","tree nut, shell fish, dairy"\n').drinks[0];
+  assert.deepStrictEqual(f.tags, ['Local', 'Gluten-free', 'Non-alcoholic']); assert.deepStrictEqual(f.allergens, ['Tree nuts', 'Shellfish', 'Milk']);
+  assert.ok(rows('Name,Tags\nA,bogus\n').problems.length, 'unknown tags still stop the import');
+  const abv = rows('Name,ABV\nA,5.5% ABV\nB,"5,5"\nC,abc\nD,0.055\nE,0.5%\nF,5.55.5\n');
+  assert.deepStrictEqual(abv.drinks.map(d => [d.name, d.abv]), [['A', 5.5], ['B', 5.5], ['E', 0.5]]);
+  assert.deepStrictEqual(abv.problems.map(p => p.row), [4, 5, 7], 'bad numbers and fractions are rejected, not guessed');
+  const av = rows('Name,Available\nA,Yes\nB,no\nC,Sold out\nD,\n');
+  assert.deepStrictEqual(av.drinks.map(d => d.available), [true, false, true]); assert.strictEqual(av.problems[0].row, 4);
+  assert.ok(rows('Name\nCr\ufffdmant\n').problems.length && rows('Name\nCr\u00c3\u00a9mant\n').problems.length, 'wrong-encoding names are refused');
+  assert.deepStrictEqual(rows('Name,Notes2,Price\nA,x,5\n').unknownColumns, ['Notes2']);
+  assert.deepStrictEqual(rows('Name,Notes2,Price\nA,x,5\n').ignored, ['Price']);
+  // blank cells keep what is there in a merge
+  const old = { id: 'a', name: 'A', description: 'Keep me', tags: ['Local'], allergens: ['Milk'], available: false };
+  const r2 = rows('Name,Description,Tags,Available\nA,,Vegan,\n');
+  const m = C.mergeFields(old, r2.drinks[0], r2.fields);
+  assert.deepStrictEqual([m.description, m.tags, m.available, 'keep' in m], ['Keep me', ['Vegan'], false, false]);
+});
+
 t('matchStatus', () => {
   assert.strictEqual(C.matchStatus({ name: 'Lager' }, TOAST), 'live');
   assert.strictEqual(C.matchStatus({ name: 'dft lager!' }, TOAST), 'live');
@@ -254,7 +278,7 @@ t('review fixes: merge import keeps columns the file does not have', () => {
   assert.deepStrictEqual([merged.description, merged.allergens, merged.tags, merged.available, merged.size], ['Better', ['Wheat'], ['Local'], false, '16oz']);
   const full = C.drinksFromRows(C.parseCSV('Name,Description,Allergens,Available\nA,Nice,,yes\n'));
   const m2 = C.mergeFields(old, full.drinks[0], full.fields);
-  assert.deepStrictEqual([m2.allergens, m2.available, m2.tags], [[], true, ['Local']], 'present columns do overwrite');
+  assert.deepStrictEqual([m2.allergens, m2.available, m2.tags], [['Wheat'], true, ['Local']], 'present columns overwrite, but a blank cell keeps what is there');
   assert.deepStrictEqual(C.diffImport({ a: old }, file.drinks, 'merge', file.fields), { added: [], changed: ['a'], same: [], removed: [] });
   const same = C.drinksFromRows(C.parseCSV('Name,Description\nA,Nice\n'));
   assert.deepStrictEqual(C.diffImport({ a: old }, same.drinks, 'merge', same.fields).same, ['a']);
