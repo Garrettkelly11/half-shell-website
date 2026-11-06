@@ -18,6 +18,22 @@
       "happyHour": {
         ".read": true,
         ".write": false
+      },
+      "drinks": {
+        ".read": "(auth != null && root.child('staff').child(auth.uid).exists()) || root.child('config').child('drinksPublic').val() === true",
+        ".write": false
+      },
+      "toastDrinks": {
+        ".read": "(auth != null && root.child('staff').child(auth.uid).exists()) || root.child('config').child('drinksPublic').val() === true",
+        ".write": false
+      },
+      "drinkSpecials": {
+        ".read": "(auth != null && root.child('staff').child(auth.uid).exists()) || root.child('config').child('drinksPublic').val() === true",
+        ".write": false
+      },
+      "nightlySpecials": {
+        ".read": "auth != null && root.child('staff').child(auth.uid).exists()",
+        ".write": false
       }
     },
     "audit-log": {
@@ -26,6 +42,10 @@
     },
     "config": {
       "birthdayReward": {
+        ".read": true,
+        ".write": false
+      },
+      "drinksPublic": {
         ".read": true,
         ".write": false
       }

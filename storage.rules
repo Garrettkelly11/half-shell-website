@@ -1,0 +1,19 @@
+// Firebase Storage rules. Only drink photos live here (path drinks/...).
+// Anyone with a photo's link can open it, but nobody can list the folder
+// (the link carries a long random token, and the drink list itself stays
+// hidden until config/drinksPublic is true). Browsers can not write at all: the uploadDrinkPhoto function
+// (cloud/drinks-lib.js) checks the manager's rank and the image, then saves
+// it with the admin SDK, which these rules do not apply to.
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /drinks/{file} {
+      allow get: if true;     // a photo link works; the folder can not be listed
+      allow list: if false;
+      allow write: if false;
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -10,7 +10,7 @@ const path = require('path');
 
 const FROM = path.join(__dirname, '..');
 const TO = path.join(__dirname, 'site');
-const FILES = ['src/passport-core.js', 'data/stamps.js', 'data/flights.js', 'data/regions.js', 'data/oysters.js'];
+const FILES = ['src/passport-core.js', 'src/drinks-core.js', 'data/stamps.js', 'data/flights.js', 'data/regions.js', 'data/oysters.js'];
 
 fs.rmSync(TO, { recursive: true, force: true });
 for (const f of FILES) {

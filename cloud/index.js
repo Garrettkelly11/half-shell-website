@@ -12,7 +12,9 @@
  *
  * Functions: startToastSync (S4), setMenuOverride (S6), setHappyHour (S5),
  * deletePassport (Oyster Passport, delete my account), awardStamps
- * (Oyster Passport stamps, 05/11/2026).
+ * (Oyster Passport stamps, 05/11/2026), and the drinks set: uploadDrinkPhoto, saveDrink,
+ * removeDrink, importDrinks, saveSpecial, removeSpecial, saveNightly
+ * (employee page Drinks and Specials tabs, managers and above; drinks-lib.js).
  * The logic lives in lib.js, menu-logic.js, price-logic.js and stamps.js
  * (tested by `node test.js`). Deploying runs vendor-site.js first
  * (firebase.json predeploy), which copies the stamp code into cloud/site/.
@@ -25,8 +27,10 @@ const { defineSecret } = require('firebase-functions/params');
 const { initializeApp } = require('firebase-admin/app');
 const { getDatabase } = require('firebase-admin/database');
 const { getAuth } = require('firebase-admin/auth');
+const { getStorage } = require('firebase-admin/storage');
 const lib = require('./lib');
 const stamps = require('./stamps');
+const drinks = require('./drinks-lib');
 
 initializeApp();
 const GH_DISPATCH_TOKEN = defineSecret('GH_DISPATCH_TOKEN');
@@ -116,3 +120,28 @@ exports.awardStamps = onCall(
     }
   },
 );
+
+// Drinks and Specials tabs (managers and above; drinks-lib.js checks rank and
+// validates). One callable per action; each logs to audit-log.
+const STORAGE_BUCKET = (() => {
+  try { return JSON.parse(process.env.FIREBASE_CONFIG).storageBucket; } catch (e) { return null; }
+})() || 'half-shell-oyster-menu.firebasestorage.app';
+
+function drinksCallable(name, fallback) {
+  return onCall({ region: 'us-east1', maxInstances: 2 }, async (request) => {
+    try {
+      return await drinks[name](request.auth, request.data, { db: getDatabase(), bucket: STORAGE_BUCKET, files: getStorage().bucket(STORAGE_BUCKET) });
+    } catch (e) {
+      if (e instanceof lib.SyncError) throw new HttpsError(e.code, e.message, e.details);
+      console.error(name + ' failed', e);
+      throw new HttpsError('internal', fallback);
+    }
+  });
+}
+exports.uploadDrinkPhoto = drinksCallable('uploadDrinkPhoto', 'Something went wrong uploading the photo.');
+exports.saveDrink = drinksCallable('saveDrink', 'Something went wrong saving the drink.');
+exports.removeDrink = drinksCallable('removeDrink', 'Something went wrong removing the drink.');
+exports.importDrinks = drinksCallable('importDrinks', 'Something went wrong importing the drinks.');
+exports.saveSpecial = drinksCallable('saveSpecial', 'Something went wrong saving the special.');
+exports.removeSpecial = drinksCallable('removeSpecial', 'Something went wrong removing the special.');
+exports.saveNightly = drinksCallable('saveNightly', 'Something went wrong saving tonight\'s specials.');

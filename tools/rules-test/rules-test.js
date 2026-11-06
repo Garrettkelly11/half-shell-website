@@ -100,6 +100,40 @@ function visit(extra) {
     await assertFails(custA.ref('server').once('value'));
   });
 
+  // ── Drinks (bar menu): hidden from guests until config/drinksPublic is true ──
+  await check('drinks and drink specials: staff only until drinksPublic, then everyone reads; nobody writes', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.database().ref('menu').update({ drinks: { gin: { name: 'Gin' } }, toastDrinks: { gin: { name: 'Gin', price: 900 } }, drinkSpecials: { s1: { kind: 'price' } },
+        nightlySpecials: { '2026-11-06': { items: [{ name: 'Bisque' }] } } });
+      await ctx.database().ref('config/drinksPublic').remove();
+    });
+    for (const p of ['menu/drinks', 'menu/toastDrinks', 'menu/drinkSpecials']) {
+      await assertSucceeds(staff.ref(p).once('value'));
+      await assertFails(anon.ref(p).once('value'));
+      await assertFails(custA.ref(p).once('value'));
+    }
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.database().ref('config/drinksPublic').set(false); });
+    await assertFails(anon.ref('menu/drinks').once('value'));
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.database().ref('config/drinksPublic').set(true); });
+    for (const p of ['menu/drinks', 'menu/toastDrinks', 'menu/drinkSpecials']) {
+      await assertSucceeds(anon.ref(p).once('value'));
+      await assertSucceeds(custA.ref(p).once('value'));
+    }
+    for (const db of [anon, custA, staff]) {
+      await assertFails(db.ref('menu/drinks/gin/price').set(1));
+      await assertFails(db.ref('menu/toastDrinks/gin/price').set(1)); // only the Toast sync (Admin SDK) writes Toast's drink list
+      await assertFails(db.ref('menu/drinkSpecials/s1').set(null));
+      await assertFails(db.ref('config/drinksPublic').set(true));
+    }
+  });
+  await check('nightly specials: staff read only, even when drinks are public; nobody writes', async () => {
+    await assertSucceeds(staff.ref('menu/nightlySpecials').once('value'));
+    await assertFails(anon.ref('menu/nightlySpecials').once('value'));
+    await assertFails(custA.ref('menu/nightlySpecials/2026-11-06').once('value'));
+    await assertFails(staff.ref('menu/nightlySpecials/2026-11-07').set({ items: [] }));
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.database().ref('config/drinksPublic').remove(); });
+  });
+
   // ── config ──
   await check('config/birthdayReward is public read, no writes', async () => {
     await assertSucceeds(anon.ref('config/birthdayReward').once('value'));

@@ -372,6 +372,7 @@ async function deletePassport(auth, deps) {
 }
 
 module.exports = {
+  staffEntry, auditEntry,
   deletePassport,
   setHappyHour, MANAGER_RANK,
   startToastSync, setMenuOverride, SyncError, DISPATCH_URL, MIN_GAP_MS, LAST_TRIGGER_PATH,

@@ -143,6 +143,79 @@ function priceUpdates(prices, current, now) {
   return { updates, changed };
 }
 
+// ─── Drinks (bar menu) ──────────────────────────────────────────────────────
+
+/** Where the bar menu's drinks are read from: every group in the Drinks menu. */
+const DRINKS_MENU = 'Drinks';
+
+/** A Toast price in dollars to whole cents; null if it isn't a usable number. */
+function cents(n) { return typeof n === 'number' && isFinite(n) && n >= 0 ? Math.round(n * 100) : null; }
+
+/**
+ * Every item in the Drinks menu, for menu/toastDrinks: what the bar menu
+ * takes from Toast (name, section, order, price or sizes, 86 status).
+ *   keyOf(name)  the key drink records match on (HS_DRINKS.toastKey)
+ *   outOfStock   Set of 86'd item GUIDs
+ * A wine sold by the glass and bottle has price SIZE_PRICE: its sizes come
+ * from the item's "Size" modifier group. Open-priced items have no price.
+ * Two items with the same key: the one in stock wins, else the first.
+ * Returns { items: {key: {name, group, path, order, strategy, inStock,
+ * price?, sizes?}}, scanned, duplicates: [names] }.
+ */
+function scanDrinks(menuData, outOfStock, keyOf, menuName = DRINKS_MENU) {
+  const groupRefs = (menuData && menuData.modifierGroupReferences) || {};
+  const optionRefs = (menuData && menuData.modifierOptionReferences) || {};
+  const items = {}, duplicates = [];
+  let scanned = 0, order = 0;
+  const sizesOf = (item) => {
+    for (const gid of item.modifierGroupReferences || []) {
+      const g = groupRefs[gid];
+      if (!g || !/size/i.test(g.name || '')) continue;
+      const out = [];
+      for (const oid of g.modifierOptionReferences || []) {
+        const o = optionRefs[oid], c = o && cents(o.price);
+        if (c !== null && String(o.name || '').trim()) out.push({ name: String(o.name).trim(), price: c });
+      }
+      if (out.length) return out;
+    }
+    return null;
+  };
+  for (const menu of (menuData && menuData.menus) || []) {
+    if ((menu.name || '') !== menuName) continue;
+    const stack = (menu.menuGroups || []).map((g) => ({ g, path: [] }));
+    while (stack.length) {
+      const { g, path } = stack.shift();
+      const here = [...path, g.name || ''];
+      for (const item of g.menuItems || []) {
+        if (!item || !item.name) continue;
+        scanned++;
+        const key = keyOf(item.name);
+        if (!key) continue;
+        const rec = {
+          name: String(item.name).trim(), group: g.name || 'Drinks', path: here.join(' › '), order: order++,
+          strategy: item.pricingStrategy || null,
+          inStock: !(item.guid && outOfStock.has(item.guid)),
+        };
+        if (rec.strategy === 'SIZE_PRICE') { const z = sizesOf(item); if (z) rec.sizes = z; }
+        else if (rec.strategy !== 'OPEN_PRICE') { const c = cents(item.price); if (c !== null) rec.price = c; }
+        if (items[key]) {
+          duplicates.push(rec.name);
+          if (items[key].inStock || !rec.inStock) continue;
+        }
+        items[key] = rec;
+      }
+      stack.unshift(...(g.menuGroups || []).map((c) => ({ g: c, path: here }))); // depth first: Toast's own order
+    }
+  }
+  return { items, scanned, duplicates };
+}
+
+/** True when the stored menu/toastDrinks already equals what Toast has now. */
+function sameDrinks(current, items) {
+  const norm = (o) => JSON.stringify(Object.keys(o || {}).sort().map((k) => [k, o[k]]));
+  return norm(current) === norm(items);
+}
+
 // ─── Happy hour setting ─────────────────────────────────────────────────────
 
 /** Validates the standing rule. Returns it tidied, or throws Error(message). */
@@ -196,6 +269,6 @@ function gameDayChange(action, now, current, cap) {
 }
 
 module.exports = {
-  DAYS, FOOD_MENU, RAW_BAR, itemsWithMenu, scanMenu, collectPrices, priceUpdates, validateSchedule, describeSchedule,
+  DAYS, FOOD_MENU, RAW_BAR, DRINKS_MENU, scanDrinks, sameDrinks, itemsWithMenu, scanMenu, collectPrices, priceUpdates, validateSchedule, describeSchedule,
   GAME_DAY_PERCENT, gameDayChange,
 };

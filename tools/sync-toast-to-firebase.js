@@ -17,7 +17,11 @@
  *   6. Writes Toast's regular price for every matched oyster, 86'd or not,
  *      to /menu/prices (step S5; cloud/price-logic.js). Only changes are
  *      written; entries are never deleted.
- *   7. Logs why each oyster is on the menu: the Toast item(s) that are in
+ *   7. Writes every item in the Drinks menu (name, section, order, price or
+ *      sizes, 86 status) to /menu/toastDrinks, so the bar menu's name, price
+ *      and 86 status come from Toast. Replaced only when it changed. A Toast
+ *      read with no Drinks items leaves the old list in place.
+ *   8. Logs why each oyster is on the menu: the Toast item(s) that are in
  *      stock for it, any employee-page override, and any 86'd copies.
  *
  * If Food Menu › Raw Bar has no items (menu or group renamed in Toast), the
@@ -87,6 +91,7 @@ try {
 // menu the same way.
 const menuLogic = require(path.join(__dirname, '..', 'cloud', 'menu-logic.js'));
 const priceLogic = require(path.join(__dirname, '..', 'cloud', 'price-logic.js'));
+const drinksCore = require(path.join(__dirname, '..', 'src', 'drinks-core.js'));
 
 // ─── Load GUID override table ───────────────────────────────────────────────
 let guidToSlug = {};
@@ -249,10 +254,11 @@ function logWhy(plan, sources, outside, overrides, now, scope) {
     // Tonight's menu = Toast's in-stock oysters, plus employee-page overrides
     // forced on, minus ones forced off, until 4 AM (step S6; the rules are
     // in cloud/menu-logic.js, shared with the setMenuOverride function).
-    const [servingSnap, overridesSnap, pricesSnap] = await Promise.all([
+    const [servingSnap, overridesSnap, pricesSnap, drinksSnap] = await Promise.all([
       db.ref('menu/serving').once('value'),
       db.ref('menu/overrides').once('value'),
       db.ref('menu/prices').once('value'),
+      db.ref('menu/toastDrinks').once('value'),
     ]);
     const plan = menuLogic.planSync(matched, servingSnap.val(), overridesSnap.val(), now);
     const { added, refreshed: updated, removed } = plan;
@@ -267,14 +273,33 @@ function logWhy(plan, sources, outside, overrides, now, scope) {
         `${c.id} ${c.from === undefined ? 'new' : c.from === null ? 'MP' : '$' + c.from.toFixed(2)} → ` +
         `${c.to === null ? 'MP' : '$' + c.to.toFixed(2)}`).join(', ') : '') + '.');
 
+    // Drinks (bar menu): the whole Drinks menu from Toast, replaced only when it changed.
+    const drinkUpdates = {};
+    const drinkScan = priceLogic.scanDrinks(menuData, outOfStockGuids, drinksCore.toastKey);
+    const drinkKeys = Object.keys(drinkScan.items);
+    if (!drinkKeys.length) {
+      console.log(`Drinks: no items found in the "${priceLogic.DRINKS_MENU}" menu; the stored drinks list is left as it was.`);
+    } else {
+      const out86 = drinkKeys.filter((k) => !drinkScan.items[k].inStock).length;
+      const unpriced = drinkKeys.filter((k) => drinkScan.items[k].price === undefined && !drinkScan.items[k].sizes).length;
+      console.log(`Drinks: ${drinkKeys.length} items (${out86} 86'd, ${unpriced} with no usable price)` +
+        (drinkScan.duplicates.length ? `; same name twice, one kept: ${drinkScan.duplicates.join(', ')}` : '') + '.');
+      if (priceLogic.sameDrinks(drinksSnap.val(), drinkScan.items)) console.log('Drinks: unchanged.');
+      else {
+        drinkUpdates.toastDrinks = drinkScan.items;
+        drinkUpdates.toastDrinksMeta = { at: now, count: drinkKeys.length };
+      }
+    }
+
     if (DRY_RUN) {
       console.log('\nDRY RUN — nothing written. These writes under menu/ would be made:');
       for (const [k, v] of Object.entries({ ...plan.updates, ...priced.updates })) {
         console.log(`  ${k} = ${JSON.stringify(v)}`);
       }
+      if (drinkUpdates.toastDrinks) console.log(`  toastDrinks = (${drinkKeys.length} items; first: ${JSON.stringify(drinkScan.items[drinkKeys[0]])})`);
       process.exit(0);
     }
-    await db.ref('menu').update({ ...plan.updates, ...priced.updates });
+    await db.ref('menu').update({ ...plan.updates, ...priced.updates, ...drinkUpdates });
     console.log(`Firebase updated: +${added} added, ~${updated} refreshed, -${removed} removed. ` +
       `Overrides: ${plan.forcedOn} on, ${plan.forcedOff} off, ${plan.expired} expired cleared` +
       (plan.migrated.length ? `, carried over from the old page: ${plan.migrated.join(', ')}` : '') + '.');
@@ -283,7 +308,7 @@ function logWhy(plan, sources, outside, overrides, now, scope) {
     await db.ref('audit-log').push({
       timestamp: now,
       action: 'toast_sync',
-      details: `added:${added} updated:${updated} removed:${removed} unmatched:${unmatched.length} skipped_86d:${skipped} overrides_on:${plan.forcedOn} overrides_off:${plan.forcedOff} expired:${plan.expired} prices_changed:${priced.changed.length}`,
+      details: `added:${added} updated:${updated} removed:${removed} unmatched:${unmatched.length} skipped_86d:${skipped} overrides_on:${plan.forcedOn} overrides_off:${plan.forcedOff} expired:${plan.expired} prices_changed:${priced.changed.length} drinks:${drinkKeys.length}${drinkUpdates.toastDrinks ? ' updated' : ''}`,
       actor: 'GitHub Actions (scheduled)',
       readable_timestamp: new Date(now).toISOString(),
     });
