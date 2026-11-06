@@ -23,7 +23,6 @@
     ],
     "deny": [
       "Bash(git push *)",
-      "Bash(git commit *)",
       "Bash(git reset *)",
       "Bash(git checkout *)",
       "Bash(git restore *)",
@@ -40,6 +39,20 @@
       "Read(/.env)",
       "Read(/functions/.env)",
       "Read(/**/.env)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/audit-guard.js\"",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

@@ -1,0 +1,32 @@
+{
+  "_note": "Goals for /audit. The first argument picks one (default: full). merge.js init copies the chosen goal into run.json, and every agent reads it from there. To add a goal, copy an entry and change it.",
+  "goals": {
+    "full": {
+      "name": "Full audit",
+      "categories": ["functionality", "security", "optimization", "format"],
+      "skip_areas": [],
+      "verify_low": false,
+      "brief": "Review every file for all four categories.",
+      "checklist": []
+    },
+    "security": {
+      "name": "Security audit",
+      "categories": ["security"],
+      "skip_areas": ["conventions"],
+      "verify_low": true,
+      "brief": "Find every way someone could read or change data, use staff powers, take the menu down, or get a secret they shouldn't. Think like an attacker, not a code reviewer: a logged-out visitor, a signed-in customer using the Firebase SDK straight from the browser console, a second customer, a demoted staff member, someone with a stolen staff password, a malicious catalog edit, a fork or pull request against the public repo. Report only security findings. If you trip over a serious non-security bug, report it once with its real category; the report lists it separately and it is not verified.",
+      "checklist": [
+        "database.rules.json: for every path in map.json db_paths, who can read and who can write - logged-out visitor, signed-in customer, another customer, staff, demoted staff. Is the root default-deny? Can anyone add themselves to /staff?",
+        "Values the server trusts from the client: dates, stamps, scores, prices, ranks, anything a rule only format-checks",
+        "Cloud functions (cloud/): auth required, rank read from the database or from a stale token claim, input validation, what a malicious caller can send, what errors reveal",
+        "Injection: innerHTML, outerHTML, insertAdjacentHTML, document.write, href and src built from catalog data, database data, URL parameters (location.search, hash) or localStorage",
+        "Secrets: keys, tokens or service-account JSON in tracked files or in git history (read-only: git log -p -S<pattern>, git grep). Probe-script dumps covered by .gitignore. Workflows that could print a secret",
+        "GitHub Actions: permissions block, actions pinned to a version, secrets reachable from pull_request runs, what GH_DISPATCH_TOKEN can do",
+        "Third-party scripts: CDN scripts without integrity attributes, versions, what analytics receives",
+        "Customer privacy: does privacy.html match what the code stores and sends; does delete-my-account remove the user node, toastOrders and the Auth record; what export includes",
+        "Staff sign-in (employee.html, Merroir): session length, sign-out, what a signed-in non-staff user can see or call",
+        "Phone sign-in abuse: SMS cost abuse, App Check or reCAPTCHA, rate limits"
+      ]
+    }
+  }
+}

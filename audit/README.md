@@ -1,7 +1,11 @@
 # Site audit
 
-A read-only audit of the whole site by a tree of Claude Code agents. It writes a ranked
-report and changes no site code. Fixing is a separate step, after you triage the report.
+A read-only audit of the site by a tree of Claude Code agents. It writes a ranked report
+and changes no site code. Fixing is a separate step, after you triage the report.
+
+A run has a **goal**: `full` (default: functionality, security, optimization, format) or
+`security` (security only, attacker checklist, low findings verified too). Goals live in
+`.claude/skills/audit/goals.json`; add one by copying an entry.
 
 ## What runs
 
@@ -32,7 +36,9 @@ index, the verifier groups and the report; the root only decides merges and fix 
 | `.claude/skills/audit/known-context.md` | Facts that look like bugs but aren't | When how the site works changes |
 | `.claude/skills/audit/decisions.md` | Findings you've ruled won't-fix / false positive | You, after each triage |
 | `.claude/skills/audit/finding-schema.md` | Finding format and severity scale | Rarely |
-| `.claude/skills/audit/merge.js` | Bookkeeping script: coverage, merges, verifier groups, report | When the report format changes |
+| `.claude/skills/audit/goals.json` | Goals: categories, checklist, what gets verified | When you want a new kind of run |
+| `.claude/skills/audit/merge.js` | Bookkeeping script: run setup, output validation, coverage, merges, verifier groups, report | When the report format changes |
+| `.claude/hooks/audit-guard.js` | Blocks writes outside the run folder while an audit runs | Rarely |
 | `audit/runs/<run-id>/` | One folder per run; `report.md` is the result | Nobody. Not committed. |
 
 ## Keep reports out of git
@@ -49,8 +55,14 @@ It runs in this folder, your normal working copy. Three things make that safe:
   `.claude/settings.json` denies those commands and reads outright.
 - **Your uncommitted work:** the audit reads the files as they are, including uncommitted
   edits, and lists those files in the report. It never reverts, restores or stashes anything.
+- **Write guard:** while a run is active (`audit/runs/.active` exists), the hook in
+  `.claude/hooks/audit-guard.js` blocks any write outside the run folder, git commands that
+  change anything, `firebase` and `sed -i`. Outside an audit it does nothing. If a run crashes
+  and leaves `.active` behind, the guard ignores it after 6 hours, or delete it by hand.
 - **Change check:** at the start it hashes every file; at the end it hashes again and lists
   anything that changed during the run. It doesn't undo those changes; you check them.
+- **Output check:** every agent validates its own JSON with `merge.js validate` before it
+  returns, and the root validates everything again; problems are listed in the report.
 
 Avoid editing site files while it runs, so anything in that list is clearly an agent's doing.
 
@@ -61,7 +73,12 @@ Avoid editing site files while it runs, so anything in that list is clearly an a
    cd "$env:USERPROFILE\OneDrive\Career\Half Shell\Oyster Management\Oyster Website"
    claude
    ```
-3. **Claude Code:** type `/audit` for everything, or `/audit passport server` for chosen areas.
+3. **Claude Code:** type one of:
+   - `/audit` — full audit, every area
+   - `/audit security` — security only, every area
+   - `/audit security passport server` — security only, chosen areas
+   - `/audit passport` — full audit of one area
+   - add `focus: <text>` to any of them, e.g. `/audit security focus: phone sign-in abuse`
 4. **Claude Code:** approve the prompts it shows. Writes inside `audit/runs/`, the repo's
    tests and `merge.js` are pre-approved; anything else asks. If an agent asks to edit a site
    file, read `.env`, or run a Toast or sync script, decline.
@@ -75,8 +92,8 @@ report lists that check as "not run". It doesn't fail the audit.
 
 ## After a run
 
-1. Read `report.md`. Check the **Needs a human check** items yourself (Firebase console,
-   GitHub settings).
+1. Read `report.md`. If the top says files changed outside the run folder, check those
+   first. Check the **Needs a human check** items yourself (Firebase console, GitHub settings).
 2. For rejected findings you agree with, and confirmed ones you won't fix, add a line to
    `decisions.md` so later audits skip them.
 3. Pick the fix batches you want. Fixing is a separate step: one fixer per batch, on a
@@ -100,3 +117,12 @@ Low = 8 specialists, 8 verifiers, small contexts. High = the full budget (15 spe
 15 verifiers). Leads are now the largest share: reading every file in full is the floor for
 a full audit. Calibrate with
 `/audit dev-tools` (the smallest area) before a full run.
+
+## Checking the write guard works
+
+Once, after updating Claude Code or changing `.claude/settings.json`:
+
+1. **Terminal (PowerShell), in this folder:** `New-Item audit\runs\.active -Value '{"run":"audit/runs/guard-test"}'`
+2. **Claude Code:** ask it to add a blank line to `README.md`. It should be blocked with
+   "Blocked by audit-guard".
+3. **Terminal (PowerShell):** `Remove-Item audit\runs\.active`

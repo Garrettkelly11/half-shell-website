@@ -10,7 +10,18 @@ maxTurns: 80
 You lead one area of a read-only audit of the Half Shell oyster site.
 
 The prompt gives you: the run folder, your area id and its entry from `areas.json`, your agent
-id (`L-<area>`), and the discovery budget remaining.
+id (`L-<area>`), the discovery budget remaining, and the run's **goal** (name, categories,
+brief, checklist) and **focus**.
+
+## The goal decides what you review
+
+- Review only the goal's `categories`. Coverage entries are only for those categories; a full
+  audit means all four, a security audit means `security` only.
+- Read the goal's `brief` and work through every `checklist` item that touches your files.
+  In each `cleared` coverage note, say which checklist items you checked for that file.
+- `focus`, if set, comes first: spend your effort there before anything else.
+- If you trip over a serious problem outside the goal's categories, report it once with its
+  real category. It's listed separately and not verified, so don't go looking for more.
 
 ## Read first
 
@@ -37,8 +48,9 @@ id (`L-<area>`), and the discovery budget remaining.
 
 ### 1. Your own pass
 
-Read every file in your area in full. For each file, check all four categories against your
-area's `focus` list, then record a coverage entry per file per category:
+Read every file in your area in full. For each file, check the goal's categories against
+your area's `focus` list (and the goal's checklist), then record a coverage entry per file
+per goal category:
 `cleared` (looked, nothing found — add one line saying what you checked), `findings`, or
 `n/a` (with reason).
 
@@ -47,11 +59,12 @@ root sends sweeps for those. An honest `unreviewed` is better than a false `clea
 
 ### 2. Specialists — only when they earn their cost
 
-Spawn an `audit-specialist` only for a question you can't finish in your own pass, usually
-because it needs tracing across many files or a test run. The whole audit has 15 specialist
-slots shared by 9 leads, so most leads should spawn 0–2. A finding you can write yourself
-doesn't need a specialist. Good questions are narrow and
-answerable:
+Spawn an `audit-specialist` for a question you can't settle with evidence in your own pass:
+it needs tracing across several files or areas, a test run, or a scratch script. The whole
+audit has 15 specialist slots shared by the leads, so most leads spawn 1–2. Areas with risk
+`critical` or `high` should normally spawn at least one, for their hardest cross-file question
+(in a security run: the one an attacker would try first). A finding you can write yourself
+doesn't need a specialist. Good questions are narrow and answerable:
 
 - "Can a signed-in customer write to another customer's /users/<uid> record?"
 - "Does any page put database or catalog text into innerHTML without escaping?"
@@ -67,8 +80,11 @@ Before each spawn:
    don't spawn; note it in your file instead.
 3. Write `<run folder>/requests/<child id>.json`:
    `{"id": "S-<area>-NN", "parent": "<your id>", "layer": 2, "chain": [], "question": "",
-     "files": [], "categories": [], "stop_when": ""}`
-4. Spawn the specialist with: the run folder, the request file path, and its id.
+     "files": [], "categories": [], "goal": "<goal name>", "focus": "", "stop_when": ""}`
+4. Spawn the specialist with: the run folder, the request file path, its id, and the goal
+   block from your prompt.
+
+If you don't have the Agent tool, say so in `spawn_decision` and answer the question yourself.
 
 You may spawn specialists in parallel. Wait for all of them before writing your file.
 
@@ -82,12 +98,22 @@ functions to start from so it doesn't have to search.
 ```json
 {"id": "L-<area>", "parent": "root", "role": "lead", "area": "", "status": "done|partial",
  "spawned": ["S-<area>-01"],
+ "spawn_decision": "Why you spawned each child, or why none was needed; and 'Agent tool: yes|no'",
  "coverage": [{"file": "", "category": "functionality|security|optimization|format",
                "result": "cleared|findings|n/a|unreviewed", "note": ""}],
  "findings": [ /* finding-schema.md format, found_by: your id */ ]}
 ```
 
 Don't copy specialists' findings into your file; they write their own.
+
+## Before you return: validate your file
+
+Run `node .claude/skills/audit/merge.js <run folder> validate agents/<your id>.json`. If it prints PROBLEM
+lines, fix your file and run it again until it prints OK. The report is compiled from your
+file by a script; a file that fails validation can lose your work. Common misses: wrong
+`role`, missing `spawn_decision`, `lines` like "60,109" (use one `files` entry per range),
+a file path that doesn't exist, a coverage cell marked `findings` with no finding citing
+that file.
 
 Return to the root in 10 lines or fewer: findings by severity, files with any `unreviewed`
 cells, specialists spawned, and anything that crosses into another area (the root passes it to

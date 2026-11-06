@@ -54,9 +54,9 @@ may have Firebase admin credentials set on the machine. So:
 
 ## Known open items (report status, don't rediscover)
 
-- As of September 2026, the digital menu had no posted shellfish consumer advisory, which
-  North Carolina requires. Check whether it is still missing and report it once, under
-  `public-menu`, with severity high if missing.
+- North Carolina requires a posted shellfish consumer advisory. It was added to `index.html`
+  and `curated-flights.html` after September 2026. Report it only if a public page that shows
+  raw oysters is missing it, or it can't reasonably be read, once, under `public-menu`.
 
 ## House rules that affect proposed fixes
 

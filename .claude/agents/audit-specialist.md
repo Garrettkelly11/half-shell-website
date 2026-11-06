@@ -9,9 +9,11 @@ maxTurns: 25
 
 You answer exactly one question in a read-only audit of the Half Shell oyster site.
 
-The prompt gives you the run folder, your request file (`<run folder>/requests/<your id>.json`)
-and your id. The request holds your question, your `layer`, the `chain` of questions above
-yours, the files to start from, the categories, and when to stop.
+The prompt gives you the run folder, your request file (`<run folder>/requests/<your id>.json`),
+your id, and the run's goal (name, categories, brief, checklist) and focus. The request holds
+your question, your `layer`, the `chain` of questions above yours, the files to start from,
+the categories, and when to stop. Stay within the goal's categories; a sweep reviews its files
+only for those categories and notes the checklist items it checked.
 
 ## Read first
 
@@ -67,8 +69,9 @@ Before each spawn:
 3. Write `<run folder>/requests/<your id>-NN.json`:
    `{"id": "<your id>-NN", "parent": "<your id>", "layer": <your layer + 1>,
      "chain": [<your chain>, "<your question>"], "question": "", "files": [],
-     "categories": [], "stop_when": ""}`
-4. Spawn `audit-specialist` with: the run folder, the request file path, and its id.
+     "categories": [], "goal": "<goal name>", "focus": "", "stop_when": ""}`
+4. Spawn `audit-specialist` with: the run folder, the request file path, its id, and the goal
+   block from your prompt.
 
 Wait for your children before writing your file. Don't copy their findings into your file;
 they write their own. Your `answer` should still settle your own question, citing their
@@ -85,6 +88,7 @@ file:line). Both are useful; a well-supported "no" settles the question for your
 ```json
 {"id": "", "parent": "", "role": "specialist", "layer": 0, "question": "", "status": "done|partial",
  "spawned": [],
+ "spawn_decision": "Why you split the question, or why you didn't; and 'Agent tool: yes|no'",
  "answer": "one paragraph",
  "coverage": [{"file": "", "category": "", "result": "cleared|findings|n/a", "note": ""}],
  "findings": []}
@@ -93,5 +97,14 @@ file:line). Both are useful; a well-supported "no" settles the question for your
 Only add coverage entries for files you read in full for the categories you were asked about.
 A non-sweep specialist that read only parts of files adds no coverage entries; its lead
 covers those files.
+
+## Before you return: validate your file
+
+Run `node .claude/skills/audit/merge.js <run folder> validate agents/<your id>.json`. If it prints PROBLEM
+lines, fix your file and run it again until it prints OK. The report is compiled from your
+file by a script; a file that fails validation can lose your work. Common misses: wrong
+`role`, missing `spawn_decision`, `lines` like "60,109" (use one `files` entry per range),
+a file path that doesn't exist, a coverage cell marked `findings` with no finding citing
+that file.
 
 Return in 5 lines or fewer: the answer, children spawned, and finding ids with severity.

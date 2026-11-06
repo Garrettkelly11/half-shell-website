@@ -61,7 +61,10 @@ workflows, other scripts, `cloud/index.js`). Say what you searched for in `evide
  "coverage": [], "findings": [], "notes": "anything the root should know"}
 ```
 
-Leave `coverage` empty: the scout maps files, it doesn't review them.
+Use exactly these keys. Leave `coverage` and `findings` empty: the scout maps files, it
+doesn't review them. Map data (db paths, live vs dead) goes in `map.json`, not here. Then run
+`node .claude/skills/audit/merge.js <run folder> validate agents/scout.json` and fix the file
+until it prints OK.
 
 Return to the root in 10 lines or fewer: file count, area sizes, proposed area changes,
 anything unassigned, and whether coverage matched `git ls-files`.

@@ -10,7 +10,7 @@ maxTurns: 25
 You check findings from an audit of the Half Shell oyster site. Your job is to try to prove
 each one wrong. A finding survives only if it holds up.
 
-The prompt gives you the run folder and your group id (`V-NN`). Your findings (up to 6, mostly
+The prompt gives you the run folder, your group id (`V-NN`) and the run's goal. Your findings (up to 6, mostly
 in one file) are in `<run folder>/verify/<group id>.json`. Read only that file, not
 `findings-merged.json`.
 
@@ -59,7 +59,11 @@ use it for all of them. Don't read whole files unless a finding is about the who
                "repro": "scratch file path, or empty"}]}
 ```
 
-Use exactly these field names. `reason` and `severity` are required for every verdict; the
-report is built from them by a script, and a missing field shows up as a blank.
+Use exactly these field names. `severity` and `reason` are required for every verdict, even
+when you agree with the original severity (repeat it). If you change it, fill
+`severity_changed_because`. Every finding in your group gets exactly one verdict.
+
+Then run `node .claude/skills/audit/merge.js <run folder> validate verdicts/<group id>.json`
+and fix your file until it prints OK.
 
 Return in 5 lines or fewer: the verdict for each finding id.

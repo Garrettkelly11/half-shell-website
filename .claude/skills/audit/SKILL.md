@@ -1,8 +1,8 @@
 ---
-description: Full read-only audit of the Half Shell site by a tree of agents (scout, area leads, specialists, verifiers). Writes a ranked report; changes no site code.
-argument-hint: "[area ...]  (optional: limit to these areas from areas.json)"
+description: Read-only audit of the Half Shell site by a tree of agents (scout, area leads, specialists, verifiers). Full audit by default, or a goal such as security. Writes a ranked report; changes no site code.
+argument-hint: "[goal] [area ...] [focus: text]   e.g.  security   |   security passport server   |   focus: phone sign-in"
 disable-model-invocation: true
-allowed-tools: Bash(git *) Bash(node *) Bash(npm install*) Bash(mkdir *) Bash(ls *) Read Grep Glob Write
+allowed-tools: Bash(git status *) Bash(git rev-parse *) Bash(git log *) Bash(git show *) Bash(git diff *) Bash(git ls-files *) Bash(git grep *) Bash(node *) Bash(npm install*) Bash(npm test*) Bash(mkdir *) Bash(ls *) Read Grep Glob Write
 ---
 
 # /audit — root of the audit tree
@@ -16,15 +16,35 @@ Supporting files in this folder:
 - `known-context.md` — facts that look like bugs but aren't, and how the site deploys
 - `finding-schema.md` — the one format every agent reports in, and the severity scale
 - `decisions.md` — findings Garrett already ruled on; never re-raise these
-- `merge.js` — does the bookkeeping: change snapshot, coverage grid, finding index, merges,
-  verifier groups, report
+- `goals.json` — what each goal (full, security) reviews, its checklist and verify rules
+- `merge.js` — does the bookkeeping: run setup, write guard, output validation, change
+  snapshot, coverage grid, finding index, merges, verifier groups, report
 
 Read the first four before step 3. You don't need to read `merge.js`; run it.
 
 The audit tool's own files (`.claude/`, `audit/`) are never audited.
 
-Arguments: `$ARGUMENTS`. If empty, audit every area. If it names areas, audit only those
-(plus `seams` if two or more areas are named) and say so at the top of the report.
+Arguments: `$ARGUMENTS`, passed unchanged to `merge.js init` (step 1), which parses them:
+
+- an optional **goal** first, from `goals.json` (`full` if omitted; `security` reviews only
+  security, skips `conventions`, verifies low findings too, and gives every agent an
+  attacker checklist);
+- optional **areas** (only those, plus `seams` if two or more are named);
+- optional **`focus:`** followed by free text, passed to every agent as a priority.
+
+`init` writes the goal into `run.json` as `goal` (categories, brief, checklist) and the area
+leads to spawn as `leads`. Every prompt you write below includes the goal block and focus.
+
+## Hard rules
+
+- **You never change a site file, at any step, for any reason.** A failing test or an
+  obvious one-line fix is a finding with a `proposed_fix`, not something to do. The same
+  goes for every agent you spawn.
+- `.claude/hooks/audit-guard.js` enforces this while `audit/runs/.active` exists: it blocks
+  writes outside the run folder, git commands that change anything, `firebase` and `sed -i`.
+  If it blocks you, don't look for another way round; record a finding.
+- Only say "no site code was changed" if `merge.js report` printed no WARNING about changes
+  outside the run folder.
 
 ## Keep your own context small
 
@@ -83,17 +103,16 @@ not the plan.
 
 ### 1. Run folder
 
-Run id = local time `YYYY-MM-DD-HHMM`. Create `audit/runs/<run-id>/` with `requests/`,
-`agents/`, `verdicts/` and `scratch/`, and write `run.json`:
+Run id = local time `YYYY-MM-DD-HHMM`. Run:
 
-```json
-{"run_id": "", "commit": "<git rev-parse HEAD>", "started": "", "areas": ["all"],
- "uncommitted": ["paths from git status --porcelain"],
- "budgets": {"discovery": 25, "verifiers": 15, "group_size": 6, "verify_low": false}}
+```
+node .claude/skills/audit/merge.js audit/runs/<run-id> init $ARGUMENTS
 ```
 
-Then run `node .claude/skills/audit/merge.js <run folder> snapshot start`. It records a hash
-of every file so step 8 can tell what changed during the run.
+It creates the folder (`requests/`, `agents/`, `verdicts/`, `scratch/`), writes `run.json`
+(commit, uncommitted files, budgets, goal, areas, leads, focus), turns the write guard on and
+takes the start snapshot. If it prints an ERROR (unknown goal or area), stop and show it to
+Garrett. Don't write `run.json` by hand.
 
 Every agent writes only its own file. No agent edits another agent's file, so parallel
 agents never overwrite each other.
@@ -111,12 +130,18 @@ Run each from the repo root:
 - `tools/rules-test`: needs Java 21+. Run `npm install` then `npm test` in that folder; `npm test`
   starts the database emulator against the demo project "demo-hs-rules", never the live
   database. Running `node rules-test.js` directly fails because no emulator is running. If Java
-  is missing, record "not run: no Java" and move on.
+  is missing, record "not run: no Java" and move on. If the emulator can't start because a
+  port (9000, 4400, 4500) is in use, record "not run: port <n> in use" — never retry by
+  killing processes, and never treat it as a pass.
+
+A security goal runs every check too: a broken test can hide a security regression.
 
 Write `checks.json`: `[{"check": "", "result": "pass|fail|not run", "detail": "last lines or reason"}]`.
 For each failure, also write a finding (id `CHK-NN`, category from what broke) into
-`agents/checks.json` as `{"id": "checks", "role": "checks", "coverage": [], "findings": [...]}`.
-A check that could not run is never counted as a pass.
+`agents/checks.json` as `{"id": "checks", "role": "checks", "coverage": [], "findings": [...]}`,
+then run `merge.js <run folder> validate agents/checks.json` and fix it until it prints OK.
+A check that could not run is never counted as a pass. **Don't fix what failed** — not even
+when the fix is one line and you're sure of it. Write the fix in `proposed_fix`.
 
 ### 3. Scout
 
@@ -125,8 +150,11 @@ run folder path and wait for it.
 
 ### 4. Area leads
 
+Run `merge.js <run folder> validate agents/scout.json`; if it fails, give the scout's
+problems to a new `audit-scout` with "fix only your files" and validate again (one retry).
 Read only these fields of `map.json`: `area_changes`, `unassigned`, `area_sizes`. Apply the
-changes to the areas. Then for each area — including `seams` and `conventions` — write
+changes to the areas. Then for each area in `run.json` `leads` (which already leaves out any
+area the goal skips) write
 `requests/L-<area>.json` (`{"id": "L-<area>", "layer": 1, "area": "<area>"}`) and spawn one
 `audit-area-lead`, all in parallel. Each prompt contains exactly:
 
@@ -134,18 +162,29 @@ changes to the areas. Then for each area — including `seams` and `conventions`
 - the area id and its entry from `areas.json` (with the scout's changes applied)
 - the agent id `L-<area>`
 - the discovery budget from `run.json`
+- the goal: its `name`, `categories`, `brief`, the `checklist` items that apply to this area,
+  and `focus` if set — copied from `run.json`
 
-Wait for every lead to finish.
+Wait for every lead to finish. Then go to "Validate outputs" below.
+
+### Validate outputs (after step 4, after sweeps in step 5, after step 7)
+
+Run `merge.js <run folder> validate`. Every agent already ran it on its own file, so this
+should print OK. For each file it lists, spawn one fresh agent of the same type with: the run
+folder, the file path, the PROBLEM lines, and "Fix only the format of this file so validate
+passes. Don't re-review code, don't add or drop findings." Validate again. After one retry,
+leave it: the report lists remaining problems under "Agent output problems".
 
 ### 5. Coverage
 
 Run `node .claude/skills/audit/merge.js <run folder> coverage`. It writes `coverage.json` and
 `coverage.md`, and prints the coverage % and the unreviewed cells by area.
 
-For unreviewed cells, spawn sweep agents (`audit-specialist`, id `SW-NN`, request
-`{"id": "SW-NN", "layer": 1, "question": "Review these files for <categories>", "files": [...],
-"categories": [...], "stop_when": "every listed file is reviewed"}`), one per area's group of
-files, while budget lasts. Then run `coverage` again.
+Coverage counts only the goal's categories. For unreviewed cells, spawn sweep agents
+(`audit-specialist`, id `SW-NN`, request `{"id": "SW-NN", "parent": "root", "layer": 1,
+"question": "Review these files for <categories>", "files": [...], "categories": [...],
+"goal": <run.json goal>, "focus": "", "stop_when": "every listed file is reviewed"}`), one per
+area's group of files, while budget lasts. Validate, then run `coverage` again.
 
 ### 6. Merge
 
@@ -164,8 +203,10 @@ Then run `merge.js <run folder> apply`. Fix anything it prints as a PROBLEM and 
 ### 7. Verify
 
 `verify-groups.json` lists the verifier groups (by file, most severe first, within budget).
-For each group, spawn `audit-verifier` with the run folder, the group id and the finding ids.
-Run up to 10 at a time. Verifiers get no request file; `verify-groups.json` is the record.
+For each group, spawn `audit-verifier` with the run folder, the group id, the finding ids and
+the goal name. Run up to 10 at a time. Verifiers get no request file; `verify-groups.json` is
+the record. Findings outside the goal's categories are not verified; the report lists them
+separately. Then validate (verdicts must include `severity` for every finding).
 
 ### 8. What changed during the run
 
@@ -176,10 +217,16 @@ can't tell which. The report lists them for him to check.
 
 ### 9. Report
 
-Run `merge.js <run folder> report`. It writes `report.md` with every section filled except
-**Proposed fix batches**, which holds candidate batches grouped only by shared files. Read
-that section, regroup by root cause, name each batch, and replace the `ROOT:` comment.
-Don't touch the rest of the report.
+Run `merge.js <run folder> validate`, then `merge.js <run folder> report`. It writes
+`report.md` with every section filled except **Proposed fix batches**, which holds candidate
+batches grouped only by shared files. Read that section, regroup by root cause, name each
+batch, and replace the `ROOT:` comment. Don't touch the rest of the report.
 
-Then tell Garrett in chat: the line `merge.js report` printed, the path of the report, and
-that no site code was changed. Nothing is fixed in this command.
+### 10. Finish
+
+Run `merge.js <run folder> finish`. It turns the write guard off. Always run it, even if the
+audit stopped early.
+
+Then tell Garrett in chat: the goal, the line `merge.js report` printed, the path of the
+report, any PROBLEM or WARNING lines, and either "no site code was changed" or the list of
+files changed outside the run folder. Nothing is fixed in this command.

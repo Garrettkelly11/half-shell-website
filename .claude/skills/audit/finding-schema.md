@@ -20,6 +20,14 @@ scenario and quoted evidence is not a finding; leave it out.
 }
 ```
 
+Rules a script checks (`merge.js validate`), so the report can be compiled:
+
+- Every key above is required. `files` has one entry per location: `"lines"` is `"120"` or
+  `"120-134"`, never `"60,109"`; add a second entry for a second range.
+- Every `path` must be a real file in the repo, relative to the repo root.
+- `category`, `severity` and `confidence` use exactly the values listed.
+- `title` is under 100 characters.
+
 IDs: `<agent id>-F<NN>`, e.g. `L-passport-F01`, `S-passport-02-01-F03`, `SW-04-F01`.
 Automated checks use `CHK-NN`.
 
