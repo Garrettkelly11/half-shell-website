@@ -57,21 +57,12 @@ function getMenuServingRef(db) {
 }
 
 /**
- * Get the audit log reference
- * Used by employee.html to log changes
- */
-function getAuditLogRef(db) {
-  return db ? db.ref('audit-log') : null;
-}
-
-/**
  * Export for use in other scripts
  */
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     firebaseConfig,
     initializeFirebase,
-    getMenuServingRef,
-    getAuditLogRef
+    getMenuServingRef
   };
 }

@@ -24,7 +24,7 @@
       "name": "Employee page and manager tools",
       "risk": "high",
       "files": [
-        "employee.html", "src/catalog-editor.js", "src/menu-manager.js", "src/merroir-signin.js",
+        "employee.html", "src/catalog-editor.js", "src/merroir-signin.js",
         "tools/catalog-editor-test.js", "tools/signin-test.js"
       ],
       "focus": [
@@ -41,7 +41,7 @@
       "risk": "high",
       "files": [
         "database.rules.json", "firebase.json", ".firebaserc",
-        "cloud/index.js", "cloud/lib.js", "cloud/menu-logic.js", "cloud/price-logic.js", "cloud/test.js", "cloud/package.json",
+        "cloud/index.js", "cloud/lib.js", "cloud/menu-logic.js", "cloud/price-logic.js", "cloud/stamps.js", "cloud/vendor-site.js", "cloud/test.js", "cloud/package.json",
         "tools/rules-test/rules-test.js", "tools/rules-test/firebase.json", "tools/rules-test/package.json"
       ],
       "focus": [
@@ -58,10 +58,8 @@
       "name": "Toast to Firebase sync",
       "risk": "medium",
       "files": [
-        "tools/sync-toast-to-firebase.js", "sync.js", "public/oysters.json",
-        "functions/index.js", "functions/sync-toast-endpoint.js", "functions/toast-mapping.js",
-        "functions/build-catalog.js", "functions/package.json", "functions/README.md",
-        "functions/.env.example", "functions/.gitignore",
+        "tools/sync-toast-to-firebase.js",
+        "functions/toast-mapping.js",
         ".github/workflows/sync-oysters.yml", "tools/oyster-source-diff.js"
       ],
       "focus": [
@@ -98,12 +96,12 @@
       "files": [
         "Oyster Overview.html", "tools/build-library.js", "tools/library-template.html", "tools/library-test.js",
         ".github/workflows/build-library.yml", "tools/build-map-na.js", "data/map-na.js",
-        "tools/consolidate-catalog.js", "tools/photo-check.js"
+        "tools/photo-check.js"
       ],
       "focus": [
         "build-library.yml has contents: write and pushes to main: what input could make it commit something wrong",
         "Generator escaping: catalog text going into the generated page",
-        "One-off scripts (consolidate-catalog.js, photo-check.js): still needed or dead"
+        "photo-check.js: still needed or dead"
       ]
     },
     {

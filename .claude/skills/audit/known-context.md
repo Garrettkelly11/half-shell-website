@@ -10,14 +10,16 @@ If the code contradicts one of these, that contradiction is itself worth reporti
 - **Live menu data:** `.github/workflows/sync-oysters.yml` runs `tools/sync-toast-to-firebase.js`
   on a schedule. It writes the in-stock list to the Realtime Database at `/menu/serving`.
   Pages read it with the Firebase JS SDK.
-- **Older sync path:** `sync.js` writes `public/oysters.json`. The README still describes it.
-  The scout should confirm whether anything still reads `public/oysters.json`.
-- **`functions/`** is mostly legacy. Its Firebase Functions are not deployed. But
-  `functions/toast-mapping.js` IS live: the sync script requires it for Toast GUID overrides.
-- **`cloud/`** is the current Cloud Functions codebase (startToastSync, setMenuOverride,
-  setHappyHour, deletePassport). It deploys only with `firebase deploy --only functions:cloud`.
-  A bare `firebase deploy` would also publish the legacy config in `firebase.json`; never
-  suggest running it.
+- **`functions/`** holds one live file, `functions/toast-mapping.js` (Toast GUID overrides,
+  required by the sync script). The old sync (`sync.js`, `public/oysters.json`, the Gen 1
+  functions) was deleted on 05/11/2026, and `firebase.json` lists only the `cloud` codebase
+  and the database rules (no hosting).
+- **`cloud/`** is the Cloud Functions codebase (startToastSync, setMenuOverride,
+  setHappyHour, deletePassport, awardStamps). Deploy with
+  `firebase deploy --only functions:cloud`; its predeploy step (`cloud/vendor-site.js`)
+  copies the stamp code into `cloud/site/`, which is generated and gitignored.
+- **Stamps** are awarded by the `awardStamps` function from saved visits. The database rules
+  refuse a stamp tier written by a guest; guests may only set `seen`.
 - **Customers** sign in with phone numbers (Oyster Passport). **Staff** are users listed
   under `/staff/<uid>` in the database.
 

@@ -796,7 +796,6 @@
 <script src="./data/oysters.js?v=2"></script>
 <script src="./data/regions.js"></script>
 <script src="src/firebase-config.js"></script>
-<script src="src/menu-manager.js"></script>
 <script src="src/merroir-signin.js"></script>
 <script src="src/catalog-editor.js"></script>
 <script src="src/price-display.js"></script>
@@ -950,7 +949,7 @@ const DOTS_MAP = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5
 
 // ── Firebase setup ──────────────────────────────────────────────────────────
 let db = null;
-let menuManager = null;
+let firebaseReady = false;
 let serving = new Set();
 let pendingServing = new Set();
 let overrides = {};        // menu/overrides: {id: {state, until, by, at}} (staff can read)
@@ -958,7 +957,8 @@ let overridesRef = null;
 let lastSyncTime = null;
 let isSyncing = false;
 
-// Initialize Firebase and MenuManager
+// Initialize Firebase. The page reads the menu here; it never writes it
+// (Save Menu goes through the setMenuOverride Cloud Function).
 (async function initFirebase() {
   db = firebase.database();
   if (!db) {
@@ -966,11 +966,15 @@ let isSyncing = false;
     return;
   }
   const servingRef = getMenuServingRef(db);
-  const auditLogRef = getAuditLogRef(db);
-  menuManager = new MenuManager(servingRef, auditLogRef);
+  firebaseReady = true;
 
   // Load current menu
-  const currentMenu = await menuManager.getCurrentMenu();
+  let currentMenu = {};
+  try {
+    currentMenu = (await servingRef.once('value')).val() || {};
+  } catch (error) {
+    console.error('Failed to fetch current menu:', error);
+  }
   serving = new Set(Object.keys(currentMenu));
   pendingServing = new Set(serving);
 
@@ -1246,7 +1250,7 @@ function updateSyncTimeDisplay() {
 // Delay initialization until page is loaded and Firebase is ready
 document.addEventListener('DOMContentLoaded', () => {
   const checkReady = setInterval(() => {
-    if (menuManager) {
+    if (firebaseReady) {
       clearInterval(checkReady);
       initPage();
     }
@@ -1254,8 +1258,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fallback timeout
   setTimeout(() => {
     clearInterval(checkReady);
-    if (!menuManager) {
-      console.warn('MenuManager not ready after 5s, initializing anyway');
+    if (!firebaseReady) {
+      console.warn('Firebase not ready after 5s, initializing anyway');
       initPage();
     }
   }, 5000);
@@ -1290,9 +1294,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Re-apply filter whenever syncCounter updates the table (after a checkbox click)
-  const origSyncCounter = window.syncCounter || null;
-
   // Hook into DOM mutations on the table body to keep filter live
   const observer = new MutationObserver(() => applyFilter());
 
@@ -1310,8 +1311,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applyFilter();
   });
 
-  // Run initial filter after the table is built (initPage fires after Firebase load)
-  const origInitPage = window.initPage;
+  // Run initial filter after the table is built (initPage fires after Firebase load).
   // We patch via a slight delay to ensure table rows exist when page first loads
   const filterInterval = setInterval(() => {
     if (document.querySelectorAll('#table-body tr').length > 0) {
