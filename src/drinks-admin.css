@@ -54,3 +54,9 @@
   #dx-print .dx-print-all { font-size: 10pt; font-weight: 700; margin-top: 0.04in; }
   #dx-print .dx-print-fine { font-size: 8.5pt; margin-top: 0.35in; padding-top: 0.12in; border-top: 1px solid #000; text-align: left; }
 }
+
+.dx-cat { display: flex; align-items: center; gap: 0.5rem; }
+.dx-cat .dx-sec-btn { margin-left: auto; padding: 0.25rem 0.6rem; min-height: 32px; font-size: 0.7rem; }
+.dx-cat .dx-sec-btn + .dx-sec-btn { margin-left: 0; }
+.dx-bulk { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.55rem 0.9rem; background: #e8f2ef; border-bottom: 1px solid #bcd4ce; }
+.dx-row input[type=checkbox] { width: 20px; height: 20px; flex: none; }

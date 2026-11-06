@@ -413,7 +413,7 @@
   /**
    * Everything the manager list shows: every Toast drink (with its details
    * record if it has one), then records Toast has no drink for.
-   * status: 'live' | 'hidden' (hidden by a manager) | '86' | 'missing'.
+   * status: 'off' (not on the bar menu: no record yet, or switched off) | '86' (on the menu but Toast has it 86'd) | 'live' | 'missing'.
    * Returns [{ id, key, name, rec, t, status }].
    */
   function listRows(drinks, toast) {
@@ -424,7 +424,7 @@
         var k = e[0], t = e[1], hit = byKey[k], rec = hit ? hit.rec : null;
         seen[k] = true;
         out.push({ id: hit ? hit.id : slug(cleanName(t.name)), key: k, name: cleanName(t.name), rec: rec, t: t,
-          status: rec && rec.available === false ? 'hidden' : t.inStock === false ? '86' : 'live' });
+          status: !rec || rec.available === false ? 'off' : t.inStock === false ? '86' : 'live' });
       });
     Object.keys(drinks || {}).forEach(function (id) {
       var d = drinks[id], k = d && toastKey(d.name);
@@ -435,10 +435,11 @@
   }
 
   /**
-   * The bar menu as a guest sees it now. Every Toast drink shows on its own
-   * (name, price(s), section and order come from Toast); a details record
-   * with the same name adds the description, photo, tags, allergens and
-   * so on. A drink is left off when Toast has it 86'd or a manager hid it.
+   * The bar menu as a guest sees it now. A Toast drink is on the menu only
+   * when a manager added it (a record with the same name exists and is not
+   * switched off); name, price(s), section and order come from Toast, and the
+   * record adds the description, photo, tags, allergens and so on. A drink is
+   * left off while Toast has it 86'd.
    *   drinks:  {id: record}      (menu/drinks)
    *   specials:{id: special}     (menu/drinkSpecials)
    *   toast:   {key: item}       (menu/toastDrinks: name, group, order, price in cents or null, sizes [{name, price}] or null, inStock)
@@ -463,8 +464,9 @@
       var t = toast[key];
       if (!usableToast(t) || t.inStock === false) return;
       var hit = byKey[key], rec = hit ? hit.rec : null;
-      if (rec && rec.available === false) return;
       var id = hit ? hit.id : slug(cleanName(t.name));
+      if (rec && rec.available === false) return;       // switched off by a manager
+      if (!rec && !live[id]) return;                    // not added to the menu (a live limited-time special does add it for its window)
       if (!id || (limitedIds[id] && !live[id])) return;
       var sizes = Array.isArray(t.sizes) ? t.sizes.filter(function (z) { return z && str(z.name) && isInt(z.price); }) : [];
       var it = Object.assign({ tags: [], allergens: [] }, rec || {}, { id: id, name: cleanName(t.name), category: str(t.group) || 'Drinks', order: isInt(t.order) ? t.order : 1e9 });

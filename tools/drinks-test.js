@@ -163,9 +163,7 @@ t('buildMenu: Toast supplies name, price and section; records supply extras', ()
   assert.strictEqual(lager.name, 'Lager', 'the Toast prefix is not shown'); assert.strictEqual(lager.price, 300); assert.strictEqual(lager.was, 600); assert.ok(lager.special);
   assert.strictEqual(lager.description, 'Crisp');
   assert.ok(!m.some(g => g.items.some(i => ['gone', 'sold-out', 'ghost'].includes(i.id))), 'hidden, 86d in Toast and not-in-Toast drinks stay off');
-  const np = m[0].items.find(i => i.name === 'Not Profiled Beer');
-  assert.ok(np && np.price === 600 && !np.description, 'a Toast drink without a record shows on its own, plain');
-  assert.strictEqual(np.id, 'not-profiled-beer');
+  assert.ok(!m.some(g => g.items.some(i => i.name === 'Not Profiled Beer' || i.name === 'Old Fashioned Twin')), 'a Toast drink nobody added to the menu does not show');
   const cocktails = m[1].items;
   assert.strictEqual(cocktails[0].id, 'pumpkin-martini', 'limited-time first'); assert.ok(cocktails[0].limited); assert.strictEqual(cocktails[0].price, 1500, "limited drinks use Toast's price");
   assert.strictEqual(cocktails[1].id, 'old-fashioned'); assert.strictEqual(cocktails[1].price, 1400, 'a future special is not applied');
@@ -186,32 +184,34 @@ t('buildMenu: a limited-time drink shows only while its special is live; toast c
   assert.ok(has(C.buildMenu(drinks, {}, TOAST, at('2026-11-06', '12:00'))), 'with no special it is an ordinary drink');
   const bare = C.buildMenu({}, lim('2026-10-01', '2026-10-31'), TOAST, at('2026-11-06', '12:00'));
   assert.ok(!has(bare), 'limited gating works with no record too');
+  assert.ok(has(C.buildMenu({}, lim('2026-11-01', '2026-11-30'), TOAST, at('2026-11-06', '12:00'))), 'a live limited-time special puts a drink on the menu for its window, record or not');
+  assert.ok(!has(C.buildMenu({ 'pumpkin-martini': rec({ name: 'Pumpkin Martini', available: false }) }, lim('2026-11-01', '2026-11-30'), TOAST, at('2026-11-06', '12:00'))), 'but a manager switching it off wins');
   const repriced = Object.assign({}, TOAST, { pumpkinmartini: toastItem('Pumpkin Martini', 'House Cocktails', 21, { price: 1600 }) });
   const rp = C.buildMenu(drinks, {}, repriced, Date.now()).find(g => g.category === 'House Cocktails').items.find(i => i.id === 'pumpkin-martini');
   assert.strictEqual(rp.price, 1600, 'the Toast price is read live');
   assert.strictEqual(C.buildMenu(drinks, {}, {}, Date.now()).length, 0, 'empty Toast list: nothing shows');
-  assert.ok(C.buildMenu({}, {}, TOAST, Date.now()).length > 0, 'no records at all: the whole Toast list shows');
+  assert.deepStrictEqual(C.buildMenu({}, {}, TOAST, Date.now()), [], 'no records at all: nothing is on the menu until a manager adds drinks');
   assert.deepStrictEqual(C.buildMenu(drinks, {}, null, Date.now()), [], 'no toast list at all');
 });
 
 t('listRows / findToast: every Toast drink is listed; records are optional', () => {
-  const drinks = { lager: rec({ name: 'Lager' }), gone: rec({ name: 'Gone', available: false }), ghost: rec({ name: 'Ghost Drink' }) };
+  const drinks = { lager: rec({ name: 'Lager' }), gone: rec({ name: 'Gone', available: false }), ghost: rec({ name: 'Ghost Drink' }), 'sold-out': rec({ name: 'Sold Out' }) };
   const toast = Object.assign({ junk: toastItem('# of Glasses', 'Wine', 99, { price: 0 }) }, TOAST);
   const rows = C.listRows(drinks, toast);
   assert.ok(!rows.some(r => r.name.indexOf('Glasses') >= 0), 'non-drink modifier rows are skipped');
   assert.strictEqual(rows.filter(r => r.t).length, Object.keys(TOAST).length, 'every usable Toast drink is listed');
   const by = n => rows.find(r => r.name === n);
   assert.strictEqual(by('Lager').status, 'live'); assert.ok(by('Lager').rec);
-  assert.strictEqual(by('Gone').status, 'hidden'); assert.strictEqual(by('Sold Out').status, '86');
-  assert.ok(by('Not Profiled Beer').rec === null && by('Not Profiled Beer').status === 'live');
+  assert.strictEqual(by('Gone').status, 'off'); assert.strictEqual(by('Sold Out').status, '86');
+  assert.ok(by('Not Profiled Beer').rec === null && by('Not Profiled Beer').status === 'off', 'no record = not on the menu');
   assert.strictEqual(by('Ghost Drink').status, 'missing');
   assert.strictEqual(rows[rows.length - 1].name, 'Ghost Drink', 'orphan records come last');
   assert.ok(C.findToast('lager', drinks, toast).t.price === 600, 'by record id');
   assert.ok(C.findToast('not-profiled-beer', drinks, toast).rec === null, 'by Toast name slug when no record');
   assert.strictEqual(C.findToast('ghost', drinks, toast), null); assert.strictEqual(C.findToast('nope', drinks, toast), null);
-  const sp = { s: { kind: 'price', drinkId: 'not-profiled-beer', price: 400, startDate: '2026-11-01', endDate: '2026-11-30', days: [] } };
+  const sp = { s: { kind: 'limited', drinkId: 'not-profiled-beer', startDate: '2026-11-01', endDate: '2026-11-30', days: [] } };
   const m = C.buildMenu({}, sp, TOAST, at('2026-11-06', '19:00'));
-  assert.strictEqual(m[0].items.find(i => i.id === 'not-profiled-beer').price, 400, 'specials work on drinks with no record');
+  assert.strictEqual(m[0].items[0].id, 'not-profiled-beer', 'a limited-time special works on a drink with no record');
 });
 
 t('csv cleaning: delimiters, invisible characters, forgiving tags, strict ABV and availability, blanks keep old values', () => {

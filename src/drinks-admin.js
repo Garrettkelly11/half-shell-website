@@ -139,7 +139,7 @@ window.hsDrinksAdmin = (function () {
   }
 
   // ═══════════ DRINKS TAB ═══════════
-  var dr = {};
+  var dr = { sel: {} };
   function buildDrinks() {
     var root = document.getElementById('tab-drinks');
     dr.status = make('div', { class: 'cat-note' });
@@ -166,7 +166,7 @@ window.hsDrinksAdmin = (function () {
   }
   /** Every Toast drink as a spreadsheet row (details filled in where they exist), ready to fill in and import. */
   function csvRecords() {
-    return rows().filter(function (r) { return r.t; }).map(function (r) { return Object.assign({}, r.rec || {}, { id: r.id, name: r.name }); });
+    return rows().filter(function (r) { return r.t; }).map(function (r) { return Object.assign({}, r.rec || {}, { id: r.id, name: r.name, available: !!(r.rec && r.rec.available !== false) }); });
   }
   function drawStatus() {
     var rs = rows(), toastRows = rs.filter(function (r) { return r.t; }), synced = toastRows.length > 0;
@@ -176,17 +176,17 @@ window.hsDrinksAdmin = (function () {
       ? 'The bar menu is live: guests can see it at bar.html. '
       : 'The bar menu is hidden from guests until the owners approve it. You can preview it at bar.html while signed in. ') +
       (synced
-        ? 'Every drink in Toast shows here and on the menu on its own; names, prices, sections and 86s come from Toast. Add descriptions, photos and tags with Edit, or Hide what should not show. ' +
-          n('live') + ' showing, ' + n('hidden') + ' hidden by you, ' + n('86') + ' 86’d in Toast' + (n('missing') ? ', ' + n('missing') + ' with a name Toast does not have.' : '.')
+        ? 'Toast’s whole drink list is here. Tick the drinks that belong on the bar menu and press Add to menu (names, prices, sections and 86s always come from Toast). ' +
+          (n('live') + n('86')) + ' on the menu (' + n('86') + ' of them 86’d in Toast right now), ' + n('off') + ' not on the menu' + (n('missing') ? ', ' + n('missing') + ' with a name Toast does not have.' : '.')
         : 'Toast’s drink list has not been copied over yet (it happens with the Toast sync: use Sync Toast on the Menu tab), so nothing can show yet.');
   }
-  var FILTERS = [['all', 'All drinks'], ['plain', 'No details added yet'], ['hidden', 'Hidden by you'], ['86', '86’d in Toast'], ['missing', 'Not in Toast']];
+  var FILTERS = [['all', 'All Toast drinks'], ['on', 'On the bar menu'], ['off', 'Not on the menu'], ['86', '86’d in Toast'], ['missing', 'Not in Toast']];
   function drawDrinks() {
     drawStatus();
     var q = dr.search.value.trim().toLowerCase(), f = dr.filter.value;
     var list = rows().filter(function (r) {
-      if (f === 'plain' && !(r.t && !r.rec)) return false;
-      if (f === 'hidden' && r.status !== 'hidden') return false;
+      if (f === 'on' && !(r.status === 'live' || r.status === '86')) return false;
+      if (f === 'off' && r.status !== 'off') return false;
       if (f === '86' && r.status !== '86') return false;
       if (f === 'missing' && r.status !== 'missing') return false;
       return !q || (r.name + ' ' + (r.t ? r.t.group : '') + ' ' + ((r.rec && r.rec.description) || '')).toLowerCase().indexOf(q) >= 0;
@@ -197,34 +197,62 @@ window.hsDrinksAdmin = (function () {
       return;
     }
     var last = null;
+    var bySection = {}; list.forEach(function (r) { if (r.t) (bySection[r.t.group] = bySection[r.t.group] || []).push(r); });
+    var picked = Object.keys(dr.sel);
+    if (picked.length) {
+      var ids = function () { return Object.keys(dr.sel); };
+      dr.list.appendChild(kids(make('div', { class: 'dx-bulk', role: 'region', 'aria-label': 'Selected drinks' }), [make('strong', {}, picked.length + ' selected'),
+        button('Add to menu', '', function () { setOnMenu(ids(), true); }), button('Take off menu', 'secondary', function () { setOnMenu(ids(), false); }),
+        button('Clear selection', 'secondary quiet', function () { dr.sel = {}; drawDrinks(); })]));
+    }
     list.forEach(function (r) {
       var sec = r.t ? r.t.group : 'Not in Toast';
-      if (sec !== last) { last = sec; dr.list.appendChild(make('div', { class: 'dx-cat' }, sec)); }
+      if (sec !== last) {
+        last = sec;
+        var head = make('div', { class: 'dx-cat' }, sec);
+        if (r.t) {
+          var grp = bySection[sec], allIds = grp.map(function (x) { return x.id; });
+          head.appendChild(button('Add all ' + grp.length, 'secondary quiet dx-sec-btn', function () { setOnMenu(allIds, true); }));
+          head.appendChild(button('Take all off', 'secondary quiet dx-sec-btn', function () { setOnMenu(allIds, false); }));
+        }
+        dr.list.appendChild(head);
+      }
       var rec = r.rec || {};
       var row = make('div', { class: 'cat-row dx-row' + (r.status === 'live' ? '' : ' off') });
+      var pick = make('input', { type: 'checkbox', 'aria-label': 'Select ' + r.name }); pick.checked = !!dr.sel[r.id]; pick.hidden = !r.t;
+      pick.addEventListener('change', function () { if (pick.checked) dr.sel[r.id] = true; else delete dr.sel[r.id]; drawDrinks(); });
       var thumb = rec.photo && D.validPhotoUrl(rec.photo) ? make('img', { class: 'dx-mini', src: rec.photo, alt: '', width: '40', height: '40', loading: 'lazy' }) : make('span', { class: 'dx-mini blank', 'aria-hidden': 'true' });
       var name = make('div', { class: 'dx-name' }); name.appendChild(make('strong', {}, r.name));
       name.appendChild(make('span', { class: 'cat-row-meta' }, ' ' + [r.t ? toastPrice(r.t) : '', rec.size].filter(Boolean).join(' · ')));
-      var why = { live: '', hidden: 'hidden by you', '86': '86’d in Toast', missing: 'not in Toast: won’t show' }[r.status];
+      var why = { live: '', off: '', '86': 'on the menu, but 86’d in Toast', missing: 'not in Toast: won’t show' }[r.status];
       if (why) name.appendChild(make('span', { class: 'dx-pill ' + (r.status === 'missing' ? 'ended' : 'idle') }, why));
-      if (r.t && !r.rec) name.appendChild(make('span', { class: 'dx-pill' }, 'Toast info only'));
+      if (r.status === 'live') name.appendChild(make('span', { class: 'dx-pill live' }, 'on menu'));
+      else if (r.t) name.appendChild(make('span', { class: 'dx-pill idle' }, 'not on menu'));
       var live = Object.keys(specials).some(function (k) { var s = specials[k]; return s.drinkId === r.id && D.specialStatus(s, Date.now()) === 'live'; });
       if (live) name.appendChild(make('span', { class: 'dx-pill live' }, 'special now'));
-      var hidden = rec.available === false;
-      var hide = button(hidden ? 'Show' : 'Hide', 'secondary', function () { quickSave(r, { available: hidden }); });
-      hide.setAttribute('aria-label', (hidden ? 'Show on the bar menu: ' : 'Hide from the bar menu: ') + r.name);
-      var kidsList = [thumb, name, hide, button('Edit', 'secondary', function () { openDrinkForm(r); })];
-      if (r.rec) kidsList.push(armed(button('', 'secondary quiet'), r.t ? 'Clear details' : 'Remove', function () {
-        call('removeDrink', { id: r.id }).then(function (res) { note(dr.banner, res.ok ? (r.t ? r.name + ': details cleared, back to Toast’s own info.' : r.name + ' removed.') + (res.data.endedSpecials ? ' Its specials ended too.' : '') : res.error, res.ok ? 'ok' : 'error'); });
+      var onMenu = r.status === 'live' || r.status === '86';
+      var kidsList = [pick, thumb, name];
+      if (r.t) {
+        var tog = button(onMenu ? 'Take off menu' : 'Add to menu', onMenu ? 'secondary' : '', function () { setOnMenu([r.id], !onMenu); });
+        tog.setAttribute('aria-label', (onMenu ? 'Take off the bar menu: ' : 'Add to the bar menu: ') + r.name);
+        kidsList.push(tog);
+      }
+      kidsList.push(button('Edit', 'secondary', function () { openDrinkForm(r); }));
+      if (r.rec && !r.t) kidsList.push(armed(button('', 'secondary quiet'), 'Remove', function () {
+        call('removeDrink', { id: r.id }).then(function (res) { note(dr.banner, res.ok ? r.name + ' removed.' + (res.data.endedSpecials ? ' Its specials ended too.' : '') : res.error, res.ok ? 'ok' : 'error'); });
       }));
       kids(row, kidsList);
       dr.list.appendChild(row);
     });
   }
-  function quickSave(r, change) {
-    var save = r.rec ? call('saveDrink', { drink: Object.assign({}, r.rec, { id: r.id }, change) })
-      : call('saveDrink', { create: true, drink: Object.assign({ name: r.name }, change) });
-    save.then(function (res) { note(dr.banner, res.ok ? r.name + (change.available === false ? ' is hidden from the bar menu.' : ' is showing on the bar menu.') : res.error, res.ok ? 'ok' : 'error'); });
+  /** Add Toast drinks to the bar menu, or take them off (their details are kept). */
+  function setOnMenu(ids, on) {
+    call('setOnMenu', { ids: ids, on: on }).then(function (res) {
+      if (!res.ok) { note(dr.banner, res.error, 'error'); return; }
+      dr.sel = {};
+      note(dr.banner, res.data.changed ? res.data.changed + ' drink' + (res.data.changed === 1 ? '' : 's') + (on ? ' added to the bar menu.' : ' taken off the bar menu.') : 'Nothing to change: they were already ' + (on ? 'on' : 'off') + ' the menu.', 'ok');
+      drawDrinks();
+    });
   }
 
   function openDrinkForm(r) {
@@ -253,7 +281,7 @@ window.hsDrinksAdmin = (function () {
       field('ABV %', abv), field('Order in its section', sort, { hint: 'Lower shows first. Blank = Toast’s order' }),
       field('Description', desc, { long: true, hint: 'Ingredients or a line about the drink' }),
       group('Tags', tags.node), group('Contains (allergens)', allergens.node), photo.node,
-      group('', kids(make('label', { class: 'dx-check' }), [avail, document.createTextNode(' Show on the bar menu (untick to hide it without touching Toast)')]))]);
+      group('', kids(make('label', { class: 'dx-check' }), [avail, document.createTextNode(' On the bar menu (untick to take it off without touching Toast)')]))]);
     var save = make('button', { type: 'submit', class: 'save-btn' }, 'Save');
     kids(f, [grid, msg, kids(make('div', { class: 'cat-form-foot' }), [save, button('Cancel', 'secondary', function () { f.hidden = true; })])]);
     f.onsubmit = function (e) {
@@ -280,7 +308,7 @@ window.hsDrinksAdmin = (function () {
     b.appendChild(make('p', { class: 'cat-confirm' }, 'Use an Excel (.xlsx) or CSV file with a Name column that matches Toast’s drink names. Optional: Size, Description, ABV, Tags, Allergens, Available. Price and category come from Toast, so those columns are ignored. Photos are added on each drink afterward.'));
     var file = make('input', { type: 'file', accept: '.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'aria-label': 'Choose a spreadsheet' });
     var mode = 'merge', modeBox = make('div', { class: 'dx-checks', role: 'radiogroup', 'aria-label': 'Import mode' });
-    [['merge', 'Add new drinks and update matching ones (keeps everything else)'], ['replace', 'Reset every drink not in this file to plain Toast info (details and photos cleared)']].forEach(function (m) {
+    [['merge', 'Add the drinks in the file to the menu and update their details (keeps everything else)'], ['replace', 'Make the file the whole menu: every other drink comes off (details and photos cleared)']].forEach(function (m) {
       var r = make('input', { type: 'radio', name: 'dx-mode', value: m[0] }); r.checked = m[0] === 'merge';
       r.addEventListener('change', function () { mode = m[0]; draw(); });
       modeBox.appendChild(kids(make('label', { class: 'dx-check' }), [r, document.createTextNode(' ' + m[1])]));
@@ -313,9 +341,9 @@ window.hsDrinksAdmin = (function () {
         return;
       }
       if (mode === 'replace' && diff.removed.length) {
-        out.appendChild(make('div', { class: 'cat-note warn' }, 'Clearing details for: ' + diff.removed.slice(0, 15).map(function (id) { return drinks[id].name; }).join(', ') + (diff.removed.length > 15 ? '…' : '') + '. Their details and photos are cleared; the drinks still show from Toast.'));
+        out.appendChild(make('div', { class: 'cat-note warn' }, 'Clearing details for: ' + diff.removed.slice(0, 15).map(function (id) { return drinks[id].name; }).join(', ') + (diff.removed.length > 15 ? '…' : '') + '. They come off the bar menu and their details and photos are cleared.'));
       }
-      if (mode === 'merge') out.appendChild(make('div', { class: 'hint' }, 'Blank cells leave what is already there unchanged. Only columns in your file are touched.'));
+      if (mode === 'merge') out.appendChild(make('div', { class: 'hint' }, 'Every drink in the file is added to the menu unless its Available cell says no. Blank cells leave what is already there unchanged; only columns in your file are touched.'));
       var t = make('table', { class: 'dx-table' }), hr = make('tr');
       ['Name', 'In Toast?', 'Status'].forEach(function (h) { hr.appendChild(make('th', {}, h)); }); t.appendChild(hr);
       r.drinks.slice(0, 8).forEach(function (d) {
@@ -342,7 +370,7 @@ window.hsDrinksAdmin = (function () {
     });
     function onGo() {
       if (!parsed || !parsed.result) return;
-      if (mode === 'replace' && !confirmReplace) { confirmReplace = true; go.textContent = 'Tap again: clear the other drinks'; go.classList.add('danger'); return; }
+      if (mode === 'replace' && !confirmReplace) { confirmReplace = true; go.textContent = 'Tap again: take the other drinks off'; go.classList.add('danger'); return; }
       go.disabled = true; go.textContent = 'Importing…';
       call('importDrinks', { mode: mode, confirm: mode === 'replace', fields: parsed.result.fields, drinks: parsed.result.drinks,
         expectedRemoved: mode === 'replace' ? D.diffImport(drinks, parsed.result.drinks, 'replace', parsed.result.fields).removed : undefined }).then(function (r) {
@@ -448,6 +476,7 @@ window.hsDrinksAdmin = (function () {
         preview.className = 'cat-note ok';
         var fx = D.findToast(t.drinkId, drinks, toast), tn = fx ? D.cleanName(fx.t.name) : t.drinkId;
         preview.textContent = (t.kind === 'price' ? tn + ' ' + D.money(fx && fx.t.price) + ' → ' + D.money(t.price) : tn + ' shows only during this special') + '. ' + describeSpecial(t) + '.';
+        if (fx && t.kind === 'price' && !(fx.rec && fx.rec.available !== false)) preview.textContent += ' This drink is not on the bar menu yet, so the special will not show until you add it.';
       } else { preview.className = 'cat-note'; preview.textContent = v.errors[0]; }
     }
     f.oninput = f.onchange = sync;

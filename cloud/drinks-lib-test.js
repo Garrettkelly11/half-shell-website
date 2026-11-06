@@ -49,7 +49,7 @@ const audits = (db) => Object.values(db.data['audit-log'] || {}).map((a) => a.ac
     await rejects(dl.saveDrink({ uid: 'merroir:2', token: { staff_rank: 10 } }, { create: true, drink: { name: 'A' } }, dep(db)), 'permission-denied');
     await rejects(dl.saveDrink({ uid: 'merroir:2', token: { staff_rank: 20 } }, { create: true, drink: { name: 'A' } }, dep(db)), 'permission-denied'); // live rank 10 wins
     await rejects(dl.saveDrink({ uid: 'x', token: { staff_rank: 99 } }, {}, dep(db)), 'permission-denied'); // not in staff
-    for (const f of ['removeDrink', 'importDrinks', 'saveSpecial', 'removeSpecial', 'saveNightly']) {
+    for (const f of ['removeDrink', 'setOnMenu', 'importDrinks', 'saveSpecial', 'removeSpecial', 'saveNightly']) {
       await rejects(dl[f]({ uid: 'merroir:2', token: { staff_rank: 10 } }, {}, dep(db)), 'permission-denied');
     }
     assert.deepStrictEqual(db.data.menu, undefined);
@@ -90,6 +90,24 @@ const audits = (db) => Object.values(db.data['audit-log'] || {}).map((a) => a.ac
     const l = await dl.saveSpecial(mgr, { special: { kind: 'limited', drinkId: 'pumpkin-martini', startDate: '2026-11-06', endDate: '2026-11-30' } }, dep(db));
     const rm = await dl.removeDrink(mgr, { id: 'pumpkin-martini' }, dep(db));
     assert.strictEqual(rm.endedSpecials, 0); assert.ok(db.data.menu.drinkSpecials[l.id], 'Toast still has the drink: its special stays');
+  });
+
+  await check('setOnMenu: add Toast drinks (plain records), take off keeps details, bulk, bad input, permissions', async () => {
+    const db = staffDb({ menu: { drinks: { 'pumpkin-martini': { name: 'Pumpkin Martini', description: 'Keep', available: false } }, toastDrinks: TOAST } });
+    await rejects(dl.setOnMenu(null, { ids: ['a'], on: true }, dep(db)), 'unauthenticated');
+    await rejects(dl.setOnMenu({ uid: 'merroir:2', token: { staff_rank: 10 } }, { ids: ['a'], on: true }, dep(db)), 'permission-denied');
+    await rejects(dl.setOnMenu(mgr, { ids: [], on: true }, dep(db)), 'invalid-argument');
+    await rejects(dl.setOnMenu(mgr, { ids: ['a'], on: 'yes' }, dep(db)), 'invalid-argument');
+    await rejects(dl.setOnMenu(mgr, { ids: ['nope'], on: true }, dep(db)), 'not-found');
+    const r = await dl.setOnMenu(mgr, { ids: ['old-fashioned', 'a', 'pumpkin-martini', 'nope', 'old-fashioned'], on: true }, dep(db));
+    assert.strictEqual(r.changed, 3); assert.strictEqual(r.unknown, 1);
+    const dd = db.data.menu.drinks;
+    assert.strictEqual(dd['old-fashioned'].name, 'Old Fashioned'); assert.strictEqual(dd['old-fashioned'].available, true); assert.ok(!('price' in dd['old-fashioned']));
+    assert.strictEqual(dd['pumpkin-martini'].available, true); assert.strictEqual(dd['pumpkin-martini'].description, 'Keep', 'switching back on keeps details');
+    const again = await dl.setOnMenu(mgr, { ids: ['old-fashioned'], on: true }, dep(db)); assert.strictEqual(again.changed, 0);
+    const off = await dl.setOnMenu(mgr, { ids: ['old-fashioned', 'zin'], on: false }, dep(db));
+    assert.strictEqual(off.changed, 1); assert.strictEqual(dd['old-fashioned'].available, false); assert.ok(!dd.zin, 'taking an untouched drink off creates nothing');
+    assert.ok(audits(db).includes('menu_drinks_added') && audits(db).includes('menu_drinks_removed'));
   });
 
   await check('importDrinks: merge, replace guard, all-or-nothing, photo kept, specials ended, Toast columns ignored', async () => {

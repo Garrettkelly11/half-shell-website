@@ -13,7 +13,7 @@
  * Functions: startToastSync (S4), setMenuOverride (S6), setHappyHour (S5),
  * deletePassport (Oyster Passport, delete my account), awardStamps
  * (Oyster Passport stamps, 05/11/2026), and the drinks set: uploadDrinkPhoto, saveDrink,
- * removeDrink, importDrinks, saveSpecial, removeSpecial, saveNightly
+ * removeDrink, setOnMenu, importDrinks, saveSpecial, removeSpecial, saveNightly
  * (employee page Drinks and Specials tabs, managers and above; drinks-lib.js).
  * The logic lives in lib.js, menu-logic.js, price-logic.js and stamps.js
  * (tested by `node test.js`). Deploying runs vendor-site.js first
@@ -141,6 +141,7 @@ function drinksCallable(name, fallback) {
 exports.uploadDrinkPhoto = drinksCallable('uploadDrinkPhoto', 'Something went wrong uploading the photo.');
 exports.saveDrink = drinksCallable('saveDrink', 'Something went wrong saving the drink.');
 exports.removeDrink = drinksCallable('removeDrink', 'Something went wrong removing the drink.');
+exports.setOnMenu = drinksCallable('setOnMenu', 'Something went wrong changing the menu.');
 exports.importDrinks = drinksCallable('importDrinks', 'Something went wrong importing the drinks.');
 exports.saveSpecial = drinksCallable('saveSpecial', 'Something went wrong saving the special.');
 exports.removeSpecial = drinksCallable('removeSpecial', 'Something went wrong removing the special.');

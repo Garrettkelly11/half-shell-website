@@ -158,6 +158,43 @@ async function importDrinks(auth, data, deps) {
   return { ok: true, added: diff.added.length, changed: diff.changed.length, removed: diff.removed.length, same: diff.same.length };
 }
 
+/**
+ * data: { ids: [row ids], on: boolean }. Adds Toast drinks to the bar menu (creates a plain record for a drink nobody
+ * has touched, or switches an existing one back on), or takes them off (switches the record off; details are kept).
+ * One write, one audit entry. ids are the manager list's row ids (a record id, or the slug of the Toast name).
+ */
+async function setOnMenu(auth, data, deps) {
+  const { db } = deps; const now = (deps.now || Date.now)();
+  const actor = await manager(auth, db, 'choose what shows on the bar menu');
+  const ids = data && Array.isArray(data.ids) ? Array.from(new Set(data.ids.filter((x) => typeof x === 'string'))) : null;
+  if (!ids || !ids.length) throw new SyncError('invalid-argument', 'Pick at least one drink.');
+  if (ids.length > 300) throw new SyncError('invalid-argument', 'At most 300 drinks at a time.');
+  if (typeof (data && data.on) !== 'boolean') throw new SyncError('invalid-argument', 'Say whether to add or remove them.');
+  const on = data.on;
+  const drinks = (await val(db, 'menu/drinks')) || {};
+  const toast = (await val(db, 'menu/toastDrinks')) || {};
+  const updates = {}; let changed = 0, unknown = 0, created = 0;
+  for (const id of ids) {
+    const hit = D.findToast(id, drinks, toast);
+    if (!hit) { unknown++; continue; }
+    if (hit.rec) {
+      if ((hit.rec.available !== false) === on) continue;
+      updates[`${hit.id}/available`] = on; updates[`${hit.id}/by`] = actor; updates[`${hit.id}/at`] = now; changed++;
+    } else if (on) {
+      const v = D.validateDrink({ name: D.cleanName(hit.t.name) });
+      if (!v.ok) { unknown++; continue; }
+      updates[v.drink.id] = Object.assign({}, v.drink, { by: actor, at: now }); changed++; created++;
+    }
+  }
+  if (Object.keys(drinks).length + created > D.LIMITS.drinks) throw new SyncError('resource-exhausted', `The menu would pass ${D.LIMITS.drinks} drinks.`);
+  if (!changed && unknown === ids.length) throw new SyncError('not-found', 'Those drinks are not in Toast right now.');
+  if (changed) {
+    await db.ref('menu/drinks').update(updates);
+    await db.ref('audit-log').push(auditEntry(on ? 'menu_drinks_added' : 'menu_drinks_removed', `${changed} drink(s) ${on ? 'added to' : 'taken off'} the bar menu`, actor, now));
+  }
+  return { ok: true, changed, unknown };
+}
+
 /** data: { special, id? } id given = edit that special. */
 async function saveSpecial(auth, data, deps) {
   const { db } = deps; const now = (deps.now || Date.now)();
@@ -247,4 +284,4 @@ async function uploadDrinkPhoto(auth, data, deps) {
   return { ok: true, url: `${STORAGE_PREFIX(bucket)}${encodeURIComponent(name)}?alt=media&token=${token}` };
 }
 
-module.exports = { uploadDrinkPhoto, saveDrink, removeDrink, importDrinks, saveSpecial, removeSpecial, saveNightly };
+module.exports = { uploadDrinkPhoto, saveDrink, removeDrink, setOnMenu, importDrinks, saveSpecial, removeSpecial, saveNightly };
