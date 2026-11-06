@@ -94,7 +94,10 @@ async function removeDrink(auth, data, deps) {
   const existing = typeof id === 'string' && /^[a-z0-9-]{1,60}$/.test(id) ? await val(db, `menu/drinks/${id}`) : null;
   if (!existing) throw new SyncError('not-found', 'That drink is not on the menu.');
   await db.ref(`menu/drinks/${id}`).set(null);
-  const specials = await dropSpecialsFor(db, [id]);
+  // Removing the details only resets the drink to Toast's own; its specials go only if Toast no longer has the drink.
+  const toast = (await val(db, 'menu/toastDrinks')) || {};
+  const stillInToast = !!toast[D.toastKey(existing.name)] && D.usableToast(toast[D.toastKey(existing.name)]);
+  const specials = stillInToast ? 0 : await dropSpecialsFor(db, [id]);
   await db.ref('audit-log').push(auditEntry('drink_removed', `${existing.name}` + (specials ? `; ended ${specials} special(s) on it` : ''), actor, now));
   return { ok: true, endedSpecials: specials };
 }
@@ -143,10 +146,12 @@ async function importDrinks(auth, data, deps) {
     if (d.sort == null && old && old.sort != null) d.sort = old.sort;
     updates[id] = d;
   });
-  diff.removed.forEach((id) => { updates[id] = null; });
+  const removedNames = {}; diff.removed.forEach((id) => { removedNames[id] = current[id].name; updates[id] = null; });
   if (mode === 'merge' && Object.keys(current).length + diff.added.length > D.LIMITS.drinks) throw new SyncError('resource-exhausted', `The menu would pass ${D.LIMITS.drinks} drinks.`);
   await db.ref('menu/drinks').update(updates);
-  const ended = diff.removed.length ? await dropSpecialsFor(db, diff.removed) : 0;
+  const toast = diff.removed.length ? ((await val(db, 'menu/toastDrinks')) || {}) : {};
+  const gone = diff.removed.filter((id) => !toast[D.toastKey(removedNames[id])]); // specials end only for drinks Toast no longer has
+  const ended = gone.length ? await dropSpecialsFor(db, gone) : 0;
   await db.ref('audit-log').push(auditEntry('drinks_imported',
     `${mode}: ${diff.added.length} added, ${diff.changed.length} changed, ${diff.removed.length} removed, ${diff.same.length} unchanged` + (ended ? `; ended ${ended} special(s)` : ''), actor, now));
   return { ok: true, added: diff.added.length, changed: diff.changed.length, removed: diff.removed.length, same: diff.same.length };
@@ -157,15 +162,18 @@ async function saveSpecial(auth, data, deps) {
   const { db } = deps; const now = (deps.now || Date.now)();
   const actor = await manager(auth, db, 'edit specials');
   const drinks = (await val(db, 'menu/drinks')) || {};
-  const v = D.validateSpecial(data && data.special, Object.keys(drinks));
+  const toast = (await val(db, 'menu/toastDrinks')) || {};
+  // A special can name a drink with details, or a Toast drink nobody has added details to yet (its id is its name's slug).
+  const known = Object.keys(drinks).concat(Object.keys(toast).filter((k) => D.usableToast(toast[k])).map((k) => D.slug(D.cleanName(toast[k].name))));
+  const v = D.validateSpecial(data && data.special, known);
   if (!v.ok) throw new SyncError('invalid-argument', v.errors.join(' '));
   const s = v.special; delete s.id;
   const all = (await val(db, 'menu/drinkSpecials')) || {};
   let id = data.id;
   if (id && (typeof id !== 'string' || !/^[A-Za-z0-9]{1,40}$/.test(id) || !Object.prototype.hasOwnProperty.call(all, id))) throw new SyncError('not-found', 'That special no longer exists.');
-  const toast = (await val(db, 'menu/toastDrinks')) || {};
-  const t = toast[D.toastKey(drinks[s.drinkId].name)];
-  if (!t) throw new SyncError('failed-precondition', `"${drinks[s.drinkId].name}" is not in Toast right now, so it can't have a special.`);
+  const hit = D.findToast(s.drinkId, drinks, toast);
+  if (!hit) throw new SyncError('failed-precondition', 'That drink is not in Toast right now, so it can not have a special.');
+  const t = hit.t, shown = D.cleanName(t.name);
   if (s.kind === 'price') {
     if (!Number.isInteger(t.price)) throw new SyncError('invalid-argument', 'Price specials work on drinks with a single price. This one has sizes or no set price in Toast.');
     if (s.price >= t.price) throw new SyncError('invalid-argument', `A price special has to be under the Toast price (${D.money(t.price)}).`);
@@ -176,7 +184,7 @@ async function saveSpecial(auth, data, deps) {
   }
   s.by = actor; s.at = now;
   await db.ref(`menu/drinkSpecials/${id}`).set(s);
-  const label = s.kind === 'price' ? `${drinks[s.drinkId].name} at ${D.money(s.price)} (display only; Toast ${D.money(t.price)})` : `${drinks[s.drinkId].name} limited-time`;
+  const label = s.kind === 'price' ? `${shown} at ${D.money(s.price)} (display only; Toast ${D.money(t.price)})` : `${shown} limited-time`;
   await db.ref('audit-log').push(auditEntry(data.id ? 'drink_special_updated' : 'drink_special_created', `${label}, ${s.startDate} to ${s.endDate}`, actor, now));
   return { ok: true, id };
 }

@@ -19,86 +19,79 @@
   <meta name="robots" content="noindex, nofollow" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="image" href="assets/hero-slide-1.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"></noscript>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
-    body { font-family: 'Playfair Display', Georgia, serif; background: #f3f8f6; color: #0e2d3a; min-height: 100vh; display: flex; flex-direction: column; }
+    body { color-scheme: dark; font-family: 'Playfair Display', Georgia, serif; background: #14110e; color: #f1e6d2; min-height: 100vh; display: flex; flex-direction: column; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
     /* ── Header (same as the oyster menu) ── */
-    header { position: relative; background: url('assets/hero-slide-1.webp') center / cover no-repeat; color: #f5f0e8; padding: 2rem 2.5rem 1.75rem; border-bottom: 3px solid #e89438; text-align: center; }
-    header::before { content: ''; position: absolute; inset: 0; background: rgba(10, 28, 38, 0.68); }
-    header > * { position: relative; z-index: 1; }
-    .header-logo { height: 80px; width: auto; margin: 0 auto 1rem; display: block; filter: drop-shadow(0 2px 10px rgba(0,0,0,0.5)); }
-    header h1 { font-size: 2.2rem; font-weight: 400; letter-spacing: 0.03em; line-height: 1.2; }
-    header p { font-size: 0.9rem; color: #c8dfe5; margin-top: 0.4rem; font-style: italic; }
+    header { position: relative; background: radial-gradient(ellipse at 50% 0%, #2a2118 0%, #14110e 70%); color: #f1e6d2; padding: 2.25rem 2rem 1.75rem; border-bottom: 1px solid #5a4630; text-align: center; }
+    header::after { content: ''; display: block; width: 64px; height: 2px; background: #c79a55; margin: 1.1rem auto 0; }
+    .header-logo { height: 72px; width: auto; margin: 0 auto 0.9rem; display: block; }
+    header h1 { font-size: 2.1rem; font-weight: 400; letter-spacing: 0.06em; line-height: 1.2; text-transform: uppercase; }
+    header p { font-size: 0.9rem; color: #bfae92; margin-top: 0.4rem; font-style: italic; }
 
-    .page-nav { background: #112f3d; border-bottom: 1px solid #1a4a5a; padding: 0 2rem; display: flex; overflow-x: auto; }
-    .page-nav a { font-family: 'Lato', sans-serif; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #7fb3c0; text-decoration: none; padding: 0.95rem 1rem; min-height: 44px; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.15s; }
-    .page-nav a:hover { color: #f5f0e8; }
-    .page-nav a.active { color: #e89438; border-bottom-color: #e89438; }
 
     /* ── Preview banner (staff only, before the owners approve) ── */
-    .preview { background: #e89438; color: #0e2d3a; font-family: 'Lato', sans-serif; font-size: 0.8rem; font-weight: 700; text-align: center; padding: 0.55rem 1rem; letter-spacing: 0.03em; }
+    .preview { background: #c79a55; color: #14110e; font-family: 'Lato', sans-serif; font-size: 0.8rem; font-weight: 700; text-align: center; padding: 0.55rem 1rem; letter-spacing: 0.03em; }
 
     /* ── Tools: search, filters, category jump bar ── */
-    .tools { position: sticky; top: 0; z-index: 20; background: #f3f8f6; border-bottom: 1px solid #bcd4ce; }
+    .tools { position: sticky; top: 0; z-index: 20; background: #14110e; border-bottom: 1px solid #3a2f23; }
     .tools-inner { max-width: 900px; margin: 0 auto; padding: 0.6rem 1rem 0.5rem; }
-    .search { width: 100%; padding: 0.55rem 0.8rem; border: 1px solid #bcd4ce; border-radius: 4px; background: #fff; font-family: 'Lato', sans-serif; font-size: 1rem; color: #0e2d3a; }
-    .search:focus { outline: 2px solid #2a7f94; outline-offset: 1px; }
+    .search { width: 100%; padding: 0.55rem 0.8rem; border: 1px solid #3a2f23; border-radius: 4px; background: #1d1812; font-family: 'Lato', sans-serif; font-size: 1rem; color: #f1e6d2; }
+    .search:focus { outline: 2px solid #c79a55; outline-offset: 1px; }
     .chips { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.55rem 0 0.15rem; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
     .chips::-webkit-scrollbar { display: none; }
-    .chip { flex: none; font-family: 'Lato', sans-serif; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #0e2d3a; background: transparent; border: 1.5px solid #9ec4bc; border-radius: 20px; padding: 0.5rem 1rem; min-height: 44px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; transition: background 0.15s, color 0.15s, border-color 0.15s; }
-    .chip:hover { background: #e8f2ef; border-color: #2a7f94; }
-    .chip.on { background: #0e2d3a; border-color: #0e2d3a; color: #f5f0e8; }
-    .chip:focus-visible { outline: 3px solid #2a7f94; outline-offset: 2px; }
+    .chip { flex: none; font-family: 'Lato', sans-serif; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #f1e6d2; background: transparent; border: 1.5px solid #5a4630; border-radius: 20px; padding: 0.5rem 1rem; min-height: 44px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+    .chip:hover { background: #2a2218; border-color: #c79a55; }
+    .chip.on { background: #c79a55; border-color: #c79a55; color: #14110e; }
+    .chip:focus-visible { outline: 3px solid #c79a55; outline-offset: 2px; }
     .chips.filters .chip { border-style: dashed; }
-    .chips.filters .chip.on { border-style: solid; background: #2a7f94; border-color: #2a7f94; }
+    .chips.filters .chip.on { border-style: solid; background: #e0b36e; border-color: #e0b36e; color: #14110e; }
 
     /* ── Menu ── */
     main { flex: 1; padding: 1.5rem 1rem 2.5rem; max-width: 900px; margin: 0 auto; width: 100%; }
     .section { margin-bottom: 2rem; }
-    .section-header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.9rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e89438; }
+    .section-header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.9rem; padding-bottom: 0.5rem; border-bottom: 2px solid #c79a55; }
     .section-header h2 { font-size: 1.35rem; font-weight: 400; }
-    .section-count { font-family: 'Lato', sans-serif; font-size: 0.78rem; color: #46707c; letter-spacing: 0.06em; }
+    .section-count { font-family: 'Lato', sans-serif; font-size: 0.78rem; color: #a8977c; letter-spacing: 0.06em; }
     .items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
-    .item { min-width: 0; display: flex; gap: 0.85rem; background: #fff; border: 1px solid #d3e3df; border-radius: 4px; padding: 0.9rem 1rem; box-shadow: 0 1px 3px rgba(14,45,58,0.05); }
-    .item.limited { border-left: 4px solid #e89438; }
-    .item-photo { flex: none; width: 84px; height: 84px; border-radius: 3px; object-fit: cover; background: #e8f2ef; }
+    .item { min-width: 0; display: flex; gap: 0.85rem; background: #1d1812; border: 1px solid #33291d; border-radius: 4px; padding: 0.9rem 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .item.limited { border-left: 4px solid #c79a55; }
+    .item-photo { flex: none; width: 84px; height: 84px; border-radius: 3px; object-fit: cover; background: #2a2218; }
     .item-main { flex: 1; min-width: 0; }
     .item-top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
     .item-name { font-size: 1.08rem; line-height: 1.3; font-weight: 400; overflow-wrap: anywhere; }
     .price { flex: none; font-family: 'Lato', sans-serif; font-weight: 700; font-size: 1rem; white-space: nowrap; text-align: right; }
-    .price .was { display: block; font-size: 0.78rem; font-weight: 400; color: #46707c; text-decoration: line-through; }
-    .price.sale { color: #9a4f10; }
+    .price .was { display: block; font-size: 0.78rem; font-weight: 400; color: #a8977c; text-decoration: line-through; }
+    .price.sale { color: #e0b36e; }
     .price.sizes { font-weight: 400; font-size: 0.85rem; line-height: 1.5; }
     .price .size-line { display: block; }
-    .meta { font-family: 'Lato', sans-serif; font-size: 0.8rem; color: #46707c; margin-top: 0.15rem; letter-spacing: 0.02em; }
-    .desc { overflow-wrap: anywhere; font-family: 'Montserrat', sans-serif; font-size: 0.82rem; line-height: 1.5; color: #3d5560; margin-top: 0.4rem; }
+    .meta { font-family: 'Lato', sans-serif; font-size: 0.8rem; color: #a8977c; margin-top: 0.15rem; letter-spacing: 0.02em; }
+    .desc { overflow-wrap: anywhere; font-family: 'Montserrat', sans-serif; font-size: 0.82rem; line-height: 1.5; color: #cdbfa6; margin-top: 0.4rem; }
     .badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.5rem; }
-    .badge { font-family: 'Lato', sans-serif; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; border-radius: 3px; padding: 0.18rem 0.45rem; background: #e8f2ef; color: #2a7f94; border: 1px solid #bcd4ce; }
-    .badge.hot { background: #fdf0e0; color: #9a4f10; border-color: #f0c795; }
-    .contains { font-family: 'Lato', sans-serif; font-size: 0.8rem; color: #0e2d3a; margin-top: 0.45rem; }
-    .contains b { color: #9a4f10; }
+    .badge { font-family: 'Lato', sans-serif; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; border-radius: 3px; padding: 0.18rem 0.45rem; background: #2a2218; color: #c79a55; border: 1px solid #3a2f23; }
+    .badge.hot { background: #2e2417; color: #e0b36e; border-color: #6b5230; }
+    .contains { font-family: 'Lato', sans-serif; font-size: 0.8rem; color: #f1e6d2; margin-top: 0.45rem; }
+    .contains b { color: #e0b36e; }
 
-    .state { text-align: center; padding: 3rem 1rem; font-style: italic; color: #6a8f9a; }
-    .state h2 { font-size: 1.3rem; font-weight: 400; color: #0e2d3a; font-style: normal; margin-bottom: 0.4rem; }
+    .state { text-align: center; padding: 3rem 1rem; font-style: italic; color: #a8977c; }
+    .state h2 { font-size: 1.3rem; font-weight: 400; color: #f1e6d2; font-style: normal; margin-bottom: 0.4rem; }
     .state[hidden] { display: none; }
-    .fine { max-width: 900px; margin: 0 auto; padding: 0 1rem 2rem; font-family: 'Lato', sans-serif; font-size: 0.8rem; color: #46707c; line-height: 1.55; text-align: center; }
-    .fine a { color: #3d7080; }
+    .fine { max-width: 900px; margin: 0 auto; padding: 0 1rem 2rem; font-family: 'Lato', sans-serif; font-size: 0.8rem; color: #a8977c; line-height: 1.55; text-align: center; }
+    .fine a { color: #c79a55; }
 
     @media (max-width: 700px) {
       header { padding: 1.5rem 1.25rem 1.25rem; }
       header h1 { font-size: 1.7rem; }
       .header-logo { height: 60px; }
-      .page-nav { padding: 0 0.5rem; }
-      .items { grid-template-columns: minmax(0, 1fr); }
+        .items { grid-template-columns: minmax(0, 1fr); }
       .item-photo { width: 72px; height: 72px; }
     }
-    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .chip, .page-nav a { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .chip { transition: none; } }
   </style>
 </head>
 <body>
@@ -108,12 +101,6 @@
   <h1>The Bar at Half Shell</h1>
   <p>Cocktails, beer, wine and more</p>
 </header>
-
-<nav class="page-nav" aria-label="Menus">
-  <a href="index.html">Oyster Menu</a>
-  <a href="bar.html" class="active" aria-current="page">Bar Menu</a>
-  <a href="curated-flights.html">Curated Flights</a>
-</nav>
 
 <div class="preview" id="preview" role="note" hidden>Staff preview. Guests can not see the bar menu yet.</div>
 
@@ -128,7 +115,7 @@
 
 <main>
   <div class="state" id="loading" role="status">Loading the bar menu&hellip;</div>
-  <div class="state" id="soon" hidden><h2>The bar menu is coming soon</h2><p>Ask your server what we are pouring tonight.</p></div>
+  <div class="state" id="soon" hidden><h2 id="soon-h">The bar menu is coming soon</h2><p id="soon-p">Ask your server what we are pouring tonight.</p></div>
   <div class="state" id="offline" hidden><h2>We could not load the menu</h2><p>Check your connection and try again, or ask your server.</p></div>
   <div class="state" id="empty" hidden><h2>Nothing matches</h2><p>Try a different search or clear a filter.</p></div>
   <div id="menu"></div>
@@ -137,7 +124,7 @@
 <p class="fine" id="fine" hidden>
   Please drink responsibly. Allergen and ingredient notes are a guide: tell your server about any allergy before you order.
   Prices and availability can change.
-  <br /><a href="privacy.html">Privacy notice</a>
+  <br />This page counts visits with Google Analytics (off if your browser sends Global Privacy Control) and collects no personal information.
 </p>
 
 <script src="src/firebase-config.js"></script>
@@ -146,7 +133,7 @@
 (function () {
   var D = window.HS_DRINKS;
   var $ = function (id) { return document.getElementById(id); };
-  var drinks = null, toast = null, specials = {}, filterTags = {}, query = '';
+  var isPublicNow = false, drinks = null, toast = null, specials = {}, filterTags = {}, query = '';
 
   function h(tag, cls, text) {
     var e = document.createElement(tag);
@@ -250,7 +237,7 @@
     jump.hidden = !jump.childNodes.length;
     $('empty').hidden = !(total > 0 && shown === 0);
     $('soon').hidden = total > 0 ? true : $('soon').hidden;
-    if (total === 0) { $('soon').hidden = false; $('tools').hidden = true; $('fine').hidden = true; }
+    if (total === 0) { if (!isPublicNow) { $('soon-h').textContent = 'No drinks to show yet'; $('soon-p').textContent = 'Toast\u2019s drink list has not been copied here yet. Run Sync Toast (or wait up to 15 minutes), then reload.'; } $('soon').hidden = false; $('tools').hidden = true; $('fine').hidden = true; }
     else { $('tools').hidden = false; $('fine').hidden = false; }
   }
 
@@ -277,7 +264,7 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     var db = firebase.database(), auth = firebase.auth();
     var isPublic = false, wired = false;
-    db.ref('config/drinksPublic').on('value', function (s) { isPublic = s.val() === true; gate(); }, function () {});
+    db.ref('config/drinksPublic').on('value', function (s) { isPublic = s.val() === true; isPublicNow = isPublic; gate(); }, function () {});
     var user = undefined;
     auth.onAuthStateChanged(function (u) { user = u && u.uid.indexOf('merroir:') === 0 ? u : null; gate(); });
     function gate() {

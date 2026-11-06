@@ -5,10 +5,11 @@
  * No DOM, no Firebase. Tested by tools/drinks-test.js.
  *
  * Toast is the single source of truth for what a drink is called, what it
- * costs, which section it sits in and whether it is 86'd. A drink record
- * here is only the extras a manager adds (description, photo, tags,
- * allergens, size note, ABV). It shows on the bar menu only while a Toast
- * drink with the same name exists (toastKey below).
+ * costs, which section it sits in and whether it is 86'd. Every Toast drink
+ * appears on the bar menu on its own. A drink record here is only the extras
+ * a manager adds later (description, photo, tags, allergens, size note,
+ * ABV) or a switch to hide it; it belongs to the Toast drink with the same
+ * name (toastKey below).
  *
  * Money is whole cents everywhere. Times are America/New_York; a "business
  * day" runs 4 AM to 4 AM, like happy hour and the nightly menu.
@@ -359,10 +360,61 @@
     return t.inStock === false ? '86' : 'live';
   }
 
+  /** Toast items worth showing: a name that starts with a letter or number (Toast also holds helper items such as "# of Glasses"). */
+  function usableToast(t) { return !!(t && /^[A-Za-z0-9]/.test(cleanName(t.name))); }
+  function recordsByKey(drinks) {
+    var m = Object.create(null);
+    Object.keys(drinks || {}).forEach(function (id) {
+      var d = drinks[id], k = d && toastKey(d.name);
+      if (k && !m[k]) m[k] = { id: id, rec: d };
+    });
+    return m;
+  }
   /**
-   * The bar menu as a guest sees it now. Toast supplies name, price(s),
-   * section, order and 86 status; a drink record supplies the extras and
-   * is what makes a Toast drink appear at all.
+   * The Toast drink a special's drinkId points at: a drink record's id, or,
+   * for a Toast drink nobody has added details to yet, the id its name makes.
+   * Returns { id, rec, t, key } or null.
+   */
+  function findToast(id, drinks, toast) {
+    if (typeof id !== 'string' || !id || !toast) return null;
+    var rec = Object.prototype.hasOwnProperty.call(drinks || {}, id) ? drinks[id] : null;
+    if (rec) { var k = toastKey(rec.name); return toast[k] ? { id: id, rec: rec, t: toast[k], key: k } : null; }
+    var keys = Object.keys(toast);
+    for (var i = 0; i < keys.length; i++) {
+      var t = toast[keys[i]];
+      if (usableToast(t) && slug(cleanName(t.name)) === id) return { id: id, rec: null, t: t, key: keys[i] };
+    }
+    return null;
+  }
+  /**
+   * Everything the manager list shows: every Toast drink (with its details
+   * record if it has one), then records Toast has no drink for.
+   * status: 'live' | 'hidden' (hidden by a manager) | '86' | 'missing'.
+   * Returns [{ id, key, name, rec, t, status }].
+   */
+  function listRows(drinks, toast) {
+    var byKey = recordsByKey(drinks), out = [], seen = Object.create(null);
+    Object.keys(toast || {}).map(function (k) { return [k, toast[k]]; }).filter(function (e) { return usableToast(e[1]); })
+      .sort(function (a, b) { return (isInt(a[1].order) ? a[1].order : 1e9) - (isInt(b[1].order) ? b[1].order : 1e9); })
+      .forEach(function (e) {
+        var k = e[0], t = e[1], hit = byKey[k], rec = hit ? hit.rec : null;
+        seen[k] = true;
+        out.push({ id: hit ? hit.id : slug(cleanName(t.name)), key: k, name: cleanName(t.name), rec: rec, t: t,
+          status: rec && rec.available === false ? 'hidden' : t.inStock === false ? '86' : 'live' });
+      });
+    Object.keys(drinks || {}).forEach(function (id) {
+      var d = drinks[id], k = d && toastKey(d.name);
+      if (!d || (k && seen[k])) return;
+      out.push({ id: id, key: k, name: str(d.name), rec: d, t: null, status: 'missing' });
+    });
+    return out;
+  }
+
+  /**
+   * The bar menu as a guest sees it now. Every Toast drink shows on its own
+   * (name, price(s), section and order come from Toast); a details record
+   * with the same name adds the description, photo, tags, allergens and
+   * so on. A drink is left off when Toast has it 86'd or a manager hid it.
    *   drinks:  {id: record}      (menu/drinks)
    *   specials:{id: special}     (menu/drinkSpecials)
    *   toast:   {key: item}       (menu/toastDrinks: name, group, order, price in cents or null, sizes [{name, price}] or null, inStock)
@@ -382,13 +434,16 @@
       if (!(isInt(s.price) && s.price >= 0)) return;
       if (priceOverride[s.drinkId] == null || s.price < priceOverride[s.drinkId]) priceOverride[s.drinkId] = s.price;
     });
-    var items = [];
-    Object.keys(drinks || {}).forEach(function (id) {
-      var d = drinks[id], t = d && toast && toast[toastKey(d.name)];
-      if (!d || !t || d.available === false || t.inStock === false || !str(t.name)) return;
-      if (limitedIds[id] && !live[id]) return;
+    var byKey = recordsByKey(drinks), items = [];
+    Object.keys(toast || {}).forEach(function (key) {
+      var t = toast[key];
+      if (!usableToast(t) || t.inStock === false) return;
+      var hit = byKey[key], rec = hit ? hit.rec : null;
+      if (rec && rec.available === false) return;
+      var id = hit ? hit.id : slug(cleanName(t.name));
+      if (!id || (limitedIds[id] && !live[id])) return;
       var sizes = Array.isArray(t.sizes) ? t.sizes.filter(function (z) { return z && str(z.name) && isInt(z.price); }) : [];
-      var it = Object.assign({}, d, { id: id, name: cleanName(t.name), category: str(t.group) || 'Drinks', order: isInt(t.order) ? t.order : 1e9 });
+      var it = Object.assign({ tags: [], allergens: [] }, rec || {}, { id: id, name: cleanName(t.name), category: str(t.group) || 'Drinks', order: isInt(t.order) ? t.order : 1e9 });
       if (sizes.length) it.sizes = sizes; else if (isInt(t.price)) it.price = t.price;
       if (it.price != null && priceOverride[id] != null && priceOverride[id] < it.price) { it.was = it.price; it.price = priceOverride[id]; it.special = true; }
       if (live[id]) { it.limited = true; it.note = live[id].note; it.endDate = live[id].endDate; }
@@ -437,7 +492,7 @@
   return {
     ZONE: ZONE, DAYS: DAYS, ALLERGENS: ALLERGENS, TAGS: TAGS, LIMITS: LIMITS,
     CSV_COLUMNS: CSV_COLUMNS, FIELDS: FIELDS, STORAGE_HOST: STORAGE_HOST,
-    money: money, parsePrice: parsePrice, clock: clock, slug: slug, toastKey: toastKey, cleanName: cleanName, matchStatus: matchStatus, isDate: isDate,
+    money: money, parsePrice: parsePrice, clock: clock, slug: slug, toastKey: toastKey, cleanName: cleanName, matchStatus: matchStatus, usableToast: usableToast, findToast: findToast, listRows: listRows, isDate: isDate,
     businessDay: businessDay, addDays: addDays, validPhotoUrl: validPhotoUrl,
     validateDrink: validateDrink, parseCSV: parseCSV, drinksFromRows: drinksFromRows,
     diffImport: diffImport, mergeFields: mergeFields, toCSV: toCSV,

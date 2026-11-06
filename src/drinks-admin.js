@@ -79,16 +79,12 @@ window.hsDrinksAdmin = (function () {
   }
   function button(label, cls, fn) { var b = make('button', { type: 'button', class: 'save-btn' + (cls ? ' ' + cls : '') }, label); if (fn) b.addEventListener('click', fn); return b; }
   function priceText(cents) { return cents == null ? '' : (cents / 100).toFixed(2); }
-  /** Toast's side of a drink record, or undefined when no Toast drink has its name. */
-  function tof(d) { return d && toast[D.toastKey(d.name)]; }
   /** "$7", "6 oz $8 · Bottle $30", or "no set price". */
   function toastPrice(t) {
     if (!t) return '';
     if (t.sizes && t.sizes.length) return t.sizes.map(function (z) { return z.name + ' ' + D.money(z.price); }).join(' · ');
     return Number.isInteger(t.price) ? D.money(t.price) : 'no set price';
   }
-  function shownName(d) { var t = tof(d); return t ? D.cleanName(t.name) : d.name; }
-  function sectionOf(d) { var t = tof(d); return t ? t.group : 'Not in Toast'; }
   function today() { return D.businessDay(Date.now()).date; }
   function niceDate(iso) {
     var p = iso.split('-');
@@ -149,90 +145,94 @@ window.hsDrinksAdmin = (function () {
     dr.status = make('div', { class: 'cat-note' });
     dr.banner = make('div', { class: 'cat-note', hidden: true, role: 'status' });
     dr.search = make('input', { type: 'text', placeholder: 'Search drinks…', 'aria-label': 'Search drinks' });
+    dr.filter = make('select', { 'aria-label': 'Show which drinks' });
+    FILTERS.forEach(function (o) { dr.filter.appendChild(make('option', { value: o[0] }, o[1])); });
     dr.form = make('form', { class: 'cat-form', hidden: true, novalidate: true });
     dr.importBox = make('div', { class: 'cat-form', hidden: true });
     dr.list = make('div', { class: 'cat-list' });
     kids(root, [
       make('div', { class: 'section-title' }, 'Drinks'), dr.status, dr.banner,
       kids(make('div', { class: 'cat-toolbar' }), [dr.search, make('span', { class: 'spacer' }),
-        button('Download as CSV', 'secondary', function () { download('half-shell-drinks.csv', D.toCSV(sortedDrinks())); }),
-        button('Import from file', 'secondary', openImport), button('Add drink details', '', function () { openDrinkForm(null); })]),
+        dr.filter, button('Download as CSV', 'secondary', function () { download('half-shell-drinks.csv', D.toCSV(csvRecords())); }),
+        button('Import from file', 'secondary', openImport)]),
       dr.form, dr.importBox, dr.list,
     ]);
-    dr.search.addEventListener('input', drawDrinks);
+    dr.search.addEventListener('input', drawDrinks); dr.filter.addEventListener('change', drawDrinks);
   }
-  function sortedDrinks() {
-    return Object.keys(drinks).map(function (id) { return Object.assign({ id: id }, drinks[id]); }).sort(function (a, b) {
-      var ta = tof(a), tb = tof(b);
-      return (ta ? 0 : 1) - (tb ? 0 : 1) || (ta ? ta.order : 0) - (tb ? tb.order : 0) || shownName(a).localeCompare(shownName(b));
-    });
-  }
+  function rows() { return D.listRows(drinks, toast); }
   function download(name, text) {
     var a = make('a', { href: URL.createObjectURL(new Blob(['﻿' + text], { type: 'text/csv;charset=utf-8' })), download: name });
     document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
+  /** Every Toast drink as a spreadsheet row (details filled in where they exist), ready to fill in and import. */
+  function csvRecords() {
+    return rows().filter(function (r) { return r.t; }).map(function (r) { return Object.assign({}, r.rec || {}, { id: r.id, name: r.name }); });
+  }
   function drawStatus() {
-    var all = Object.keys(drinks).map(function (k) { return drinks[k]; }), showing = all.filter(function (d) { return D.matchStatus(d, toast) === 'live'; }).length;
-    var synced = Object.keys(toast).length > 0;
+    var rs = rows(), toastRows = rs.filter(function (r) { return r.t; }), synced = toastRows.length > 0;
+    var n = function (st) { return rs.filter(function (r) { return r.status === st; }).length; };
     dr.status.className = 'cat-note ' + (!synced ? 'warn' : isPublic ? 'ok' : 'warn');
     dr.status.textContent = (isPublic
       ? 'The bar menu is live: guests can see it at bar.html. '
       : 'The bar menu is hidden from guests until the owners approve it. You can preview it at bar.html while signed in. ') +
-      'Names, prices, sections and 86s come from Toast; you add the descriptions, photos and tags. ' +
-      (synced ? showing + ' of ' + all.length + (all.length === 1 ? ' drink is' : ' drinks are') + ' showing.'
-        : 'Toast’s drink list has not been copied over yet (it happens with the Toast sync), so nothing can show yet.');
+      (synced
+        ? 'Every drink in Toast shows here and on the menu on its own; names, prices, sections and 86s come from Toast. Add descriptions, photos and tags with Edit, or Hide what should not show. ' +
+          n('live') + ' showing, ' + n('hidden') + ' hidden by you, ' + n('86') + ' 86’d in Toast' + (n('missing') ? ', ' + n('missing') + ' with a name Toast does not have.' : '.')
+        : 'Toast’s drink list has not been copied over yet (it happens with the Toast sync: use Sync Toast on the Menu tab), so nothing can show yet.');
   }
+  var FILTERS = [['all', 'All drinks'], ['plain', 'No details added yet'], ['hidden', 'Hidden by you'], ['86', '86’d in Toast'], ['missing', 'Not in Toast']];
   function drawDrinks() {
     drawStatus();
-    var q = dr.search.value.trim().toLowerCase();
-    var list = sortedDrinks().filter(function (d) { return !q || (shownName(d) + ' ' + sectionOf(d) + ' ' + (d.description || '')).toLowerCase().indexOf(q) >= 0; });
+    var q = dr.search.value.trim().toLowerCase(), f = dr.filter.value;
+    var list = rows().filter(function (r) {
+      if (f === 'plain' && !(r.t && !r.rec)) return false;
+      if (f === 'hidden' && r.status !== 'hidden') return false;
+      if (f === '86' && r.status !== '86') return false;
+      if (f === 'missing' && r.status !== 'missing') return false;
+      return !q || (r.name + ' ' + (r.t ? r.t.group : '') + ' ' + ((r.rec && r.rec.description) || '')).toLowerCase().indexOf(q) >= 0;
+    });
     clear(dr.list);
     if (!list.length) {
-      dr.list.appendChild(make('div', { class: 'cat-empty' }, Object.keys(drinks).length ? 'No drinks match.' : 'No drink details yet. Add the drinks you want guests to see (pick each one from Toast’s list), or import a spreadsheet.'));
+      dr.list.appendChild(make('div', { class: 'cat-empty' }, rows().length ? 'No drinks match.' : 'No drinks yet. They appear here after the Toast sync has run.'));
       return;
     }
     var last = null;
-    list.forEach(function (d) {
-      var st = D.matchStatus(d, toast), t = tof(d);
-      if (sectionOf(d) !== last) { last = sectionOf(d); dr.list.appendChild(make('div', { class: 'dx-cat' }, last)); }
-      var row = make('div', { class: 'cat-row dx-row' + (st === 'live' ? '' : ' off') });
-      var thumb = d.photo && D.validPhotoUrl(d.photo) ? make('img', { class: 'dx-mini', src: d.photo, alt: '', width: '40', height: '40', loading: 'lazy' }) : make('span', { class: 'dx-mini blank', 'aria-hidden': 'true' });
-      var name = make('div', { class: 'dx-name' }); name.appendChild(make('strong', {}, shownName(d)));
-      name.appendChild(make('span', { class: 'cat-row-meta' }, ' ' + [t ? toastPrice(t) : '', d.size].filter(Boolean).join(' · ')));
-      var why = { live: '', hidden: 'hidden by you', '86': '86’d in Toast', missing: 'not in Toast: won’t show' }[st];
-      if (why) name.appendChild(make('span', { class: 'dx-pill ' + (st === 'missing' ? 'ended' : 'idle') }, why));
-      var live = Object.keys(specials).some(function (k) { var s = specials[k]; return s.kind === 'price' && s.drinkId === d.id && D.specialStatus(s, Date.now()) === 'live'; });
+    list.forEach(function (r) {
+      var sec = r.t ? r.t.group : 'Not in Toast';
+      if (sec !== last) { last = sec; dr.list.appendChild(make('div', { class: 'dx-cat' }, sec)); }
+      var rec = r.rec || {};
+      var row = make('div', { class: 'cat-row dx-row' + (r.status === 'live' ? '' : ' off') });
+      var thumb = rec.photo && D.validPhotoUrl(rec.photo) ? make('img', { class: 'dx-mini', src: rec.photo, alt: '', width: '40', height: '40', loading: 'lazy' }) : make('span', { class: 'dx-mini blank', 'aria-hidden': 'true' });
+      var name = make('div', { class: 'dx-name' }); name.appendChild(make('strong', {}, r.name));
+      name.appendChild(make('span', { class: 'cat-row-meta' }, ' ' + [r.t ? toastPrice(r.t) : '', rec.size].filter(Boolean).join(' · ')));
+      var why = { live: '', hidden: 'hidden by you', '86': '86’d in Toast', missing: 'not in Toast: won’t show' }[r.status];
+      if (why) name.appendChild(make('span', { class: 'dx-pill ' + (r.status === 'missing' ? 'ended' : 'idle') }, why));
+      if (r.t && !r.rec) name.appendChild(make('span', { class: 'dx-pill' }, 'Toast info only'));
+      var live = Object.keys(specials).some(function (k) { var s = specials[k]; return s.drinkId === r.id && D.specialStatus(s, Date.now()) === 'live'; });
       if (live) name.appendChild(make('span', { class: 'dx-pill live' }, 'special now'));
-      kids(row, [thumb, name,
-        (function () { var b = button(d.available === false ? 'Show' : 'Hide', 'secondary', function () { quickSave(d, { available: d.available === false }); }); b.setAttribute('aria-label', (d.available === false ? 'Show on the bar menu: ' : 'Hide from the bar menu: ') + shownName(d)); return b; })(),
-        button('Edit', 'secondary', function () { openDrinkForm(d); }),
-        armed(button('', 'secondary quiet'), 'Remove', function () {
-          call('removeDrink', { id: d.id }).then(function (r) { note(dr.banner, r.ok ? shownName(d) + ' removed.' + (r.data.endedSpecials ? ' Its specials ended too.' : '') : r.error, r.ok ? 'ok' : 'error'); });
-        })]);
+      var hidden = rec.available === false;
+      var hide = button(hidden ? 'Show' : 'Hide', 'secondary', function () { quickSave(r, { available: hidden }); });
+      hide.setAttribute('aria-label', (hidden ? 'Show on the bar menu: ' : 'Hide from the bar menu: ') + r.name);
+      var kidsList = [thumb, name, hide, button('Edit', 'secondary', function () { openDrinkForm(r); })];
+      if (r.rec) kidsList.push(armed(button('', 'secondary quiet'), r.t ? 'Clear details' : 'Remove', function () {
+        call('removeDrink', { id: r.id }).then(function (res) { note(dr.banner, res.ok ? (r.t ? r.name + ': details cleared, back to Toast’s own info.' : r.name + ' removed.') + (res.data.endedSpecials ? ' Its specials ended too.' : '') : res.error, res.ok ? 'ok' : 'error'); });
+      }));
+      kids(row, kidsList);
       dr.list.appendChild(row);
     });
   }
-  function quickSave(d, change) {
-    var next = Object.assign({}, d, change);
-    call('saveDrink', { drink: next }).then(function (r) { note(dr.banner, r.ok ? shownName(d) + (next.available === false ? ' is hidden from the bar menu.' : ' is showing on the bar menu again.') : r.error, r.ok ? 'ok' : 'error'); });
+  function quickSave(r, change) {
+    var save = r.rec ? call('saveDrink', { drink: Object.assign({}, r.rec, { id: r.id }, change) })
+      : call('saveDrink', { create: true, drink: Object.assign({ name: r.name }, change) });
+    save.then(function (res) { note(dr.banner, res.ok ? r.name + (change.available === false ? ' is hidden from the bar menu.' : ' is showing on the bar menu.') : res.error, res.ok ? 'ok' : 'error'); });
   }
 
-  /** Toast's drinks as options, so a manager picks the exact name. Skips ones that already have a record unless keep says otherwise. */
-  function toastNames(keep) {
-    var have = Object.create(null);
-    Object.keys(drinks).forEach(function (k) { have[D.toastKey(drinks[k].name)] = true; });
-    var dl = make('datalist', { id: 'dx-toast' });
-    Object.keys(toast).map(function (k) { return toast[k]; }).sort(function (a, b) { return a.order - b.order; }).forEach(function (t) {
-      if (!have[D.toastKey(t.name)] || (keep && D.toastKey(keep) === D.toastKey(t.name))) dl.appendChild(make('option', { value: D.cleanName(t.name), label: t.group }));
-    });
-    return dl;
-  }
-  function openDrinkForm(d) {
+  function openDrinkForm(r) {
     var f = dr.form; clear(f); f.hidden = false; dr.importBox.hidden = true;
-    var isNew = !d; d = d || { available: true, tags: [], allergens: [] };
-    f.appendChild(make('h3', {}, isNew ? 'Add drink details' : 'Edit ' + shownName(d)));
-    var name = make('input', { type: 'text', maxlength: String(D.LIMITS.name), value: d.name || '', autocomplete: 'off' });
-    name.setAttribute('list', 'dx-toast');
+    var d = r.rec || { available: true, tags: [], allergens: [] }, linked = !!r.t;
+    f.appendChild(make('h3', {}, 'Edit ' + r.name));
+    var name = make('input', { type: 'text', maxlength: String(D.LIMITS.name), value: r.name, autocomplete: 'off' });
+    if (linked) name.readOnly = true;
     var match = make('div', { class: 'hint', role: 'status' });
     var size = make('input', { type: 'text', maxlength: String(D.LIMITS.size), value: d.size || '', placeholder: '16oz, 5oz pour, glass…' });
     var abv = make('input', { type: 'text', inputmode: 'decimal', value: d.abv == null ? '' : String(d.abv), placeholder: 'optional' });
@@ -243,36 +243,34 @@ window.hsDrinksAdmin = (function () {
     var photo = photoField(d.photo);
     var msg = make('div', { class: 'cat-note error', hidden: true, role: 'alert' });
     function showMatch() {
-      var st = D.matchStatus({ name: name.value, available: true }, toast), t = toast[D.toastKey(name.value)];
-      match.className = 'hint' + (st === 'live' ? '' : ' err');
-      match.textContent = !name.value.trim() ? 'Pick a drink from Toast’s list (start typing).' :
-        !Object.keys(toast).length ? 'Toast’s drink list has not been copied over yet.' :
-        st === 'live' ? 'Matches Toast: ' + t.group + ', ' + toastPrice(t) + '. Name and price come from Toast.' :
-        st === '86' ? 'Matches Toast, but it is 86’d there right now, so it is hidden until Toast has it back.' :
-        'No drink in Toast has this name. It shows once Toast has one with exactly this name.';
+      var t = toast[D.toastKey(name.value)];
+      match.className = 'hint' + (t ? '' : ' err');
+      match.textContent = t ? 'From Toast: ' + t.group + ', ' + toastPrice(t) + (t.inStock === false ? ' (86’d there right now, so it is off the menu)' : '') + '. Name and price are Toast’s: change them in Toast.'
+        : 'No drink in Toast has this name, so it will not show. Change the name to match Toast’s, or remove this entry.';
     }
     name.addEventListener('input', showMatch); showMatch();
-    var grid = kids(make('div', { class: 'cat-form-grid' }), [kids(field('Drink name (as in Toast)', name), [match]), toastNames(d.name), field('Size note', size, { hint: 'Optional, e.g. 16oz can. Toast’s sizes show on their own.' }), field('ABV %', abv), field('Order in its section', sort, { hint: 'Lower shows first. Blank = A to Z' }),
+    var grid = kids(make('div', { class: 'cat-form-grid' }), [kids(field(linked ? 'Drink (from Toast)' : 'Drink name', name), [match]), field('Size note', size, { hint: 'Optional, e.g. 16oz can. Toast’s sizes show on their own.' }),
+      field('ABV %', abv), field('Order in its section', sort, { hint: 'Lower shows first. Blank = Toast’s order' }),
       field('Description', desc, { long: true, hint: 'Ingredients or a line about the drink' }),
       group('Tags', tags.node), group('Contains (allergens)', allergens.node), photo.node,
       group('', kids(make('label', { class: 'dx-check' }), [avail, document.createTextNode(' Show on the bar menu (untick to hide it without touching Toast)')]))]);
-    var save = make('button', { type: 'submit', class: 'save-btn' }, 'Save drink');
+    var save = make('button', { type: 'submit', class: 'save-btn' }, 'Save');
     kids(f, [grid, msg, kids(make('div', { class: 'cat-form-foot' }), [save, button('Cancel', 'secondary', function () { f.hidden = true; })])]);
     f.onsubmit = function (e) {
       e.preventDefault();
       if (photo.busy()) { note(msg, 'Wait for the photo to finish uploading.', 'error'); return; }
-      var v = D.validateDrink({ id: d.id, name: name.value, size: size.value, abv: abv.value, sort: sort.value,
+      var v = D.validateDrink({ id: r.rec ? r.id : undefined, name: name.value, size: size.value, abv: abv.value, sort: sort.value,
         description: desc.value, tags: tags.values(), allergens: allergens.values(), available: avail.checked, photo: photo.url() || undefined });
       if (!v.ok) { note(msg, v.errors.join(' '), 'error'); return; }
       save.disabled = true; note(msg, 'Saving…', '');
-      call('saveDrink', { drink: v.drink, create: isNew }).then(function (r) {
+      call('saveDrink', { drink: v.drink, create: !r.rec }).then(function (res) {
         save.disabled = false;
-        if (!r.ok) { note(msg, r.error, 'error'); return; }
-        f.hidden = true; note(dr.banner, v.drink.name + ' saved.' + (D.matchStatus(v.drink, toast) === 'missing' ? ' Toast has no drink with that name yet, so it will not show.' : ''), 'ok');
+        if (!res.ok) { note(msg, res.error, 'error'); return; }
+        f.hidden = true; note(dr.banner, r.name + ' saved.', 'ok');
         dr.banner.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       });
     };
-    name.focus(); f.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    desc.focus(); f.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
   // ── import from csv / xlsx ──
@@ -282,7 +280,7 @@ window.hsDrinksAdmin = (function () {
     b.appendChild(make('p', { class: 'cat-confirm' }, 'Use an Excel (.xlsx) or CSV file with a Name column that matches Toast’s drink names. Optional: Size, Description, ABV, Tags, Allergens, Available. Price and category come from Toast, so those columns are ignored. Photos are added on each drink afterward.'));
     var file = make('input', { type: 'file', accept: '.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'aria-label': 'Choose a spreadsheet' });
     var mode = 'merge', modeBox = make('div', { class: 'dx-checks', role: 'radiogroup', 'aria-label': 'Import mode' });
-    [['merge', 'Add new drinks and update matching ones (keeps everything else)'], ['replace', 'Replace the whole menu with this file']].forEach(function (m) {
+    [['merge', 'Add new drinks and update matching ones (keeps everything else)'], ['replace', 'Reset every drink not in this file to plain Toast info (details and photos cleared)']].forEach(function (m) {
       var r = make('input', { type: 'radio', name: 'dx-mode', value: m[0] }); r.checked = m[0] === 'merge';
       r.addEventListener('change', function () { mode = m[0]; draw(); });
       modeBox.appendChild(kids(make('label', { class: 'dx-check' }), [r, document.createTextNode(' ' + m[1])]));
@@ -314,7 +312,7 @@ window.hsDrinksAdmin = (function () {
         return;
       }
       if (mode === 'replace' && diff.removed.length) {
-        out.appendChild(make('div', { class: 'cat-note warn' }, 'Removing: ' + diff.removed.slice(0, 15).map(function (id) { return drinks[id].name; }).join(', ') + (diff.removed.length > 15 ? '…' : '') + '. Photos and specials on removed drinks are lost.'));
+        out.appendChild(make('div', { class: 'cat-note warn' }, 'Clearing details for: ' + diff.removed.slice(0, 15).map(function (id) { return drinks[id].name; }).join(', ') + (diff.removed.length > 15 ? '…' : '') + '. Their details and photos are cleared; the drinks still show from Toast.'));
       }
       var t = make('table', { class: 'dx-table' }), hr = make('tr');
       ['Name', 'In Toast?', 'Status'].forEach(function (h) { hr.appendChild(make('th', {}, h)); }); t.appendChild(hr);
@@ -338,7 +336,7 @@ window.hsDrinksAdmin = (function () {
     });
     function onGo() {
       if (!parsed || !parsed.result) return;
-      if (mode === 'replace' && !confirmReplace) { confirmReplace = true; go.textContent = 'Tap again: replace the whole menu'; go.classList.add('danger'); return; }
+      if (mode === 'replace' && !confirmReplace) { confirmReplace = true; go.textContent = 'Tap again: clear the other drinks'; go.classList.add('danger'); return; }
       go.disabled = true; go.textContent = 'Importing…';
       call('importDrinks', { mode: mode, confirm: mode === 'replace', fields: parsed.result.fields, drinks: parsed.result.drinks,
         expectedRemoved: mode === 'replace' ? D.diffImport(drinks, parsed.result.drinks, 'replace', parsed.result.fields).removed : undefined }).then(function (r) {
@@ -386,7 +384,7 @@ window.hsDrinksAdmin = (function () {
     if (!items.length) { sp.list.appendChild(make('div', { class: 'cat-empty' }, 'No drink specials yet.')); return; }
     items.forEach(function (s) {
       var row = make('div', { class: 'cat-row dx-row' + (s._st === 'ended' ? ' off' : '') });
-      var d = drinks[s.drinkId], t = tof(d), nm = d ? shownName(d) : s.drinkId;
+      var fx = D.findToast(s.drinkId, drinks, toast), t = fx && fx.t, nm = fx ? D.cleanName(fx.t.name) : (drinks[s.drinkId] ? drinks[s.drinkId].name : s.drinkId);
       var title = s.kind === 'price' ? nm + ' at ' + D.money(s.price) + (t && Number.isInteger(t.price) ? ' (Toast ' + D.money(t.price) + ')' : '') : nm + ' · limited-time';
       var label = { live: 'live now', idle: 'between times', scheduled: 'scheduled', ended: 'ended' }[s._st];
       var name = kids(make('div', { class: 'dx-name' }), [make('strong', {}, title), make('span', { class: 'dx-pill ' + s._st }, label),
@@ -409,9 +407,9 @@ window.hsDrinksAdmin = (function () {
     });
     if (!isNew) kind.disabled = true;
     var drinkSel = make('select', {}); drinkSel.appendChild(make('option', { value: '' }, 'Choose a drink…'));
-    sortedDrinks().forEach(function (d) {
-      var t = tof(d); if (!t) return; // only drinks Toast has
-      var op = make('option', { value: d.id }, shownName(d) + ' (' + toastPrice(t) + ')'); if (d.id === s.drinkId) op.selected = true; drinkSel.appendChild(op);
+    D.listRows(drinks, toast).forEach(function (r) {
+      if (!r.t) return; // only drinks Toast has
+      var op = make('option', { value: r.id }, r.name + ' (' + toastPrice(r.t) + ')'); if (r.id === s.drinkId) op.selected = true; drinkSel.appendChild(op);
     });
     var price = make('input', { type: 'text', inputmode: 'decimal', value: priceText(s.kind === 'price' ? s.price : null), placeholder: '8.00' });
     var start = make('input', { type: 'date', value: s.startDate }), end = make('input', { type: 'date', value: s.endDate });
@@ -421,15 +419,16 @@ window.hsDrinksAdmin = (function () {
     var snote = make('input', { type: 'text', maxlength: String(D.LIMITS.note), value: s.note || '', placeholder: 'e.g. Through Thanksgiving' });
     var preview = make('div', { class: 'cat-note', role: 'status' }), msg = make('div', { class: 'cat-note error', hidden: true, role: 'alert' });
     var priceField = field('Special price ($)', price, { hint: 'Must be under the Toast price. Display only: ring it in Toast too.' });
-    var grid = kids(make('div', { class: 'cat-form-grid' }), [field('Type', kind, { long: true }), field('Drink', drinkSel, { hint: 'Only drinks that have details here and are in Toast. Add details on the Drinks tab first.' }), priceField,
+    var grid = kids(make('div', { class: 'cat-form-grid' }), [field('Type', kind, { long: true }), field('Drink', drinkSel, { hint: 'Every drink that is in Toast.' }), priceField,
       field('Starts', start), field('Ends (last day)', end), group('Days (none ticked = every day)', days.node),
       field('From time (optional)', tStart, { hint: 'Leave both times blank for all day' }), field('Until time', tEnd, { hint: 'After midnight is fine: 10pm to 2am' }),
       field('Note for guests (optional)', snote, { long: true })]);
     function build() {
       var raw = { kind: kind.value, drinkId: drinkSel.value, startDate: start.value, endDate: end.value, days: days.values().map(function (x) { return x.toUpperCase(); }), start: tStart.value, end: tEnd.value, note: snote.value };
       if (kind.value === 'price') raw.priceText = price.value;
-      var v = D.validateSpecial(raw, Object.keys(drinks));
-      var t = v.ok && tof(drinks[v.special.drinkId]);
+      var known = D.listRows(drinks, toast).filter(function (r) { return r.t; }).map(function (r) { return r.id; });
+      var v = D.validateSpecial(raw, known);
+      var fx = v.ok && D.findToast(v.special.drinkId, drinks, toast), t = fx && fx.t;
       if (v.ok && !t) { v.ok = false; v.errors = ['That drink is not in Toast right now.']; }
       else if (v.ok && v.special.kind === 'price' && !Number.isInteger(t.price)) { v.ok = false; v.errors = ['Price specials need a drink with a single Toast price (this one has sizes).']; }
       else if (v.ok && v.special.kind === 'price' && v.special.price >= t.price) { v.ok = false; v.errors = ['A price special has to be under the Toast price (' + D.money(t.price) + ').']; }
@@ -441,8 +440,8 @@ window.hsDrinksAdmin = (function () {
       if (v.ok) {
         var t = v.special;
         preview.className = 'cat-note ok';
-        var dd = drinks[t.drinkId];
-        preview.textContent = (t.kind === 'price' ? shownName(dd) + ' ' + D.money(tof(dd).price) + ' → ' + D.money(t.price) : shownName(dd) + ' shows only during this special') + '. ' + describeSpecial(t) + '.';
+        var fx = D.findToast(t.drinkId, drinks, toast), tn = fx ? D.cleanName(fx.t.name) : t.drinkId;
+        preview.textContent = (t.kind === 'price' ? tn + ' ' + D.money(fx && fx.t.price) + ' → ' + D.money(t.price) : tn + ' shows only during this special') + '. ' + describeSpecial(t) + '.';
       } else { preview.className = 'cat-note'; preview.textContent = v.errors[0]; }
     }
     f.oninput = f.onchange = sync;

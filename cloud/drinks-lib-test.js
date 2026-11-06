@@ -82,6 +82,16 @@ const audits = (db) => Object.values(db.data['audit-log'] || {}).map((a) => a.ac
     await rejects(dl.removeDrink(mgr, { id: '../x' }, dep(db)), 'not-found');
   });
 
+  await check('Toast-only drinks: specials work with no record; clearing details keeps specials while Toast has the drink', async () => {
+    const db = staffDb({ menu: { drinks: { 'pumpkin-martini': { name: 'Pumpkin Martini' } }, toastDrinks: TOAST } });
+    const r = await dl.saveSpecial(mgr, { special: { kind: 'price', drinkId: 'old-fashioned', priceText: '10', startDate: '2026-11-06', endDate: '2026-11-08' } }, dep(db));
+    assert.strictEqual(db.data.menu.drinkSpecials[r.id].price, 1000, 'a drink nobody added details for can have a special');
+    await rejects(dl.saveSpecial(mgr, { special: { kind: 'price', drinkId: 'old-fashioned', priceText: '15', startDate: '2026-11-06', endDate: '2026-11-08' } }, dep(db)), 'invalid-argument');
+    const l = await dl.saveSpecial(mgr, { special: { kind: 'limited', drinkId: 'pumpkin-martini', startDate: '2026-11-06', endDate: '2026-11-30' } }, dep(db));
+    const rm = await dl.removeDrink(mgr, { id: 'pumpkin-martini' }, dep(db));
+    assert.strictEqual(rm.endedSpecials, 0); assert.ok(db.data.menu.drinkSpecials[l.id], 'Toast still has the drink: its special stays');
+  });
+
   await check('importDrinks: merge, replace guard, all-or-nothing, photo kept, specials ended, Toast columns ignored', async () => {
     const db = staffDb({ menu: { drinks: {
       a: { name: 'A', description: 'old', tags: [], allergens: [], available: true, photo, sort: 3 },
