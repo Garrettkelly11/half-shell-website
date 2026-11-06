@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3SQ3075FQ1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    // Opt-out: the button on privacy.html, or the browser's Global Privacy Control signal.
+    try { if (navigator.globalPrivacyControl === true || localStorage.getItem('hs_ga_optout') === '1') window['ga-disable-G-3SQ3075FQ1'] = true; } catch (e) {}
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-3SQ3075FQ1', { allow_ad_personalization_signals: false });
+  </script>
+  <meta name="description" content="The Half Shell bar menu: cocktails, beer, wine and more." />
+  <title>Half Shell — Bar Menu</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="image" href="assets/hero-slide-1.webp" type="image/webp" fetchpriority="high" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"></noscript>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
+    body { font-family: 'Playfair Display', Georgia, serif; background: #f3f8f6; color: #0e2d3a; min-height: 100vh; display: flex; flex-direction: column; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    /* ── Header (same as the oyster menu) ── */
+    header { position: relative; background: url('assets/hero-slide-1.webp') center / cover no-repeat; color: #f5f0e8; padding: 2rem 2.5rem 1.75rem; border-bottom: 3px solid #e89438; text-align: center; }
+    header::before { content: ''; position: absolute; inset: 0; background: rgba(10, 28, 38, 0.68); }
+    header > * { position: relative; z-index: 1; }
+    .header-logo { height: 80px; width: auto; margin: 0 auto 1rem; display: block; filter: drop-shadow(0 2px 10px rgba(0,0,0,0.5)); }
+    header h1 { font-size: 2.2rem; font-weight: 400; letter-spacing: 0.03em; line-height: 1.2; }
+    header p { font-size: 0.9rem; color: #c8dfe5; margin-top: 0.4rem; font-style: italic; }
+
+    .page-nav { background: #112f3d; border-bottom: 1px solid #1a4a5a; padding: 0 2rem; display: flex; overflow-x: auto; }
+    .page-nav a { font-family: 'Lato', sans-serif; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #7fb3c0; text-decoration: none; padding: 0.95rem 1rem; min-height: 44px; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.15s; }
+    .page-nav a:hover { color: #f5f0e8; }
+    .page-nav a.active { color: #e89438; border-bottom-color: #e89438; }
+
+    /* ── Preview banner (staff only, before the owners approve) ── */
+    .preview { background: #e89438; color: #0e2d3a; font-family: 'Lato', sans-serif; font-size: 0.8rem; font-weight: 700; text-align: center; padding: 0.55rem 1rem; letter-spacing: 0.03em; }
+
+    /* ── Tools: search, filters, category jump bar ── */
+    .tools { position: sticky; top: 0; z-index: 20; background: #f3f8f6; border-bottom: 1px solid #bcd4ce; }
+    .tools-inner { max-width: 900px; margin: 0 auto; padding: 0.6rem 1rem 0.5rem; }
+    .search { width: 100%; padding: 0.55rem 0.8rem; border: 1px solid #bcd4ce; border-radius: 4px; background: #fff; font-family: 'Lato', sans-serif; font-size: 1rem; color: #0e2d3a; }
+    .search:focus { outline: 2px solid #2a7f94; outline-offset: 1px; }
+    .chips { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.55rem 0 0.15rem; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip { flex: none; font-family: 'Lato', sans-serif; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #0e2d3a; background: transparent; border: 1.5px solid #9ec4bc; border-radius: 20px; padding: 0.5rem 1rem; min-height: 44px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+    .chip:hover { background: #e8f2ef; border-color: #2a7f94; }
+    .chip.on { background: #0e2d3a; border-color: #0e2d3a; color: #f5f0e8; }
+    .chip:focus-visible { outline: 3px solid #2a7f94; outline-offset: 2px; }
+    .chips.filters .chip { border-style: dashed; }
+    .chips.filters .chip.on { border-style: solid; background: #2a7f94; border-color: #2a7f94; }
+
+    /* ── Menu ── */
+    main { flex: 1; padding: 1.5rem 1rem 2.5rem; max-width: 900px; margin: 0 auto; width: 100%; }
+    .section { margin-bottom: 2rem; }
+    .section-header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.9rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e89438; }
+    .section-header h2 { font-size: 1.35rem; font-weight: 400; }
+    .section-count { font-family: 'Lato', sans-serif; font-size: 0.78rem; color: #46707c; letter-spacing: 0.06em; }
+    .items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+    .item { min-width: 0; display: flex; gap: 0.85rem; background: #fff; border: 1px solid #d3e3df; border-radius: 4px; padding: 0.9rem 1rem; box-shadow: 0 1px 3px rgba(14,45,58,0.05); }
+    .item.limited { border-left: 4px solid #e89438; }
+    .item-photo { flex: none; width: 84px; height: 84px; border-radius: 3px; object-fit: cover; background: #e8f2ef; }
+    .item-main { flex: 1; min-width: 0; }
+    .item-top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+    .item-name { font-size: 1.08rem; line-height: 1.3; font-weight: 400; overflow-wrap: anywhere; }
+    .price { flex: none; font-family: 'Lato', sans-serif; font-weight: 700; font-size: 1rem; white-space: nowrap; text-align: right; }
+    .price .was { display: block; font-size: 0.78rem; font-weight: 400; color: #46707c; text-decoration: line-through; }
+    .price.sale { color: #9a4f10; }
+    .price.sizes { font-weight: 400; font-size: 0.85rem; line-height: 1.5; }
+    .price .size-line { display: block; }
+    .meta { font-family: 'Lato', sans-serif; font-size: 0.8rem; color: #46707c; margin-top: 0.15rem; letter-spacing: 0.02em; }
+    .desc { overflow-wrap: anywhere; font-family: 'Montserrat', sans-serif; font-size: 0.82rem; line-height: 1.5; color: #3d5560; margin-top: 0.4rem; }
+    .badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.5rem; }
+    .badge { font-family: 'Lato', sans-serif; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; border-radius: 3px; padding: 0.18rem 0.45rem; background: #e8f2ef; color: #2a7f94; border: 1px solid #bcd4ce; }
+    .badge.hot { background: #fdf0e0; color: #9a4f10; border-color: #f0c795; }
+    .contains { font-family: 'Lato', sans-serif; font-size: 0.8rem; color: #0e2d3a; margin-top: 0.45rem; }
+    .contains b { color: #9a4f10; }
+
+    .state { text-align: center; padding: 3rem 1rem; font-style: italic; color: #6a8f9a; }
+    .state h2 { font-size: 1.3rem; font-weight: 400; color: #0e2d3a; font-style: normal; margin-bottom: 0.4rem; }
+    .state[hidden] { display: none; }
+    .fine { max-width: 900px; margin: 0 auto; padding: 0 1rem 2rem; font-family: 'Lato', sans-serif; font-size: 0.8rem; color: #46707c; line-height: 1.55; text-align: center; }
+    .fine a { color: #3d7080; }
+
+    @media (max-width: 700px) {
+      header { padding: 1.5rem 1.25rem 1.25rem; }
+      header h1 { font-size: 1.7rem; }
+      .header-logo { height: 60px; }
+      .page-nav { padding: 0 0.5rem; }
+      .items { grid-template-columns: minmax(0, 1fr); }
+      .item-photo { width: 72px; height: 72px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .chip, .page-nav a { transition: none; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="assets/logo.png" alt="Half Shell Raw Bar" class="header-logo" width="80" height="80" />
+  <h1>The Bar at Half Shell</h1>
+  <p>Cocktails, beer, wine and more</p>
+</header>
+
+<nav class="page-nav" aria-label="Menus">
+  <a href="index.html">Oyster Menu</a>
+  <a href="bar.html" class="active" aria-current="page">Bar Menu</a>
+  <a href="curated-flights.html">Curated Flights</a>
+</nav>
+
+<div class="preview" id="preview" role="note" hidden>Staff preview. Guests can not see the bar menu yet.</div>
+
+<div class="tools" id="tools" hidden>
+  <div class="tools-inner">
+    <label class="sr-only" for="search">Search drinks</label>
+    <input class="search" id="search" type="search" placeholder="Search drinks" autocomplete="off" />
+    <div class="chips filters" id="filters" role="group" aria-label="Show only"></div>
+    <nav class="chips" id="jump" aria-label="Jump to a section"></nav>
+  </div>
+</div>
+
+<main>
+  <div class="state" id="loading" role="status">Loading the bar menu&hellip;</div>
+  <div class="state" id="soon" hidden><h2>The bar menu is coming soon</h2><p>Ask your server what we are pouring tonight.</p></div>
+  <div class="state" id="offline" hidden><h2>We could not load the menu</h2><p>Check your connection and try again, or ask your server.</p></div>
+  <div class="state" id="empty" hidden><h2>Nothing matches</h2><p>Try a different search or clear a filter.</p></div>
+  <div id="menu"></div>
+</main>
+
+<p class="fine" id="fine" hidden>
+  Please drink responsibly. Allergen and ingredient notes are a guide: tell your server about any allergy before you order.
+  Prices and availability can change.
+  <br /><a href="privacy.html">Privacy notice</a>
+</p>
+
+<script src="src/firebase-config.js"></script>
+<script src="src/drinks-core.js"></script>
+<script>
+(function () {
+  var D = window.HS_DRINKS;
+  var $ = function (id) { return document.getElementById(id); };
+  var drinks = null, toast = null, specials = {}, filterTags = {}, query = '';
+
+  function h(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function priceEl(it) {
+    var p = h('div', 'price' + (it.special ? ' sale' : ''));
+    if (it.sizes) { // wine by the glass and bottle: one line per size
+      p.classList.add('sizes');
+      it.sizes.forEach(function (z) { p.appendChild(h('span', 'size-line', z.name + ' ' + D.money(z.price))); });
+      return p;
+    }
+    if (it.price == null) { p.appendChild(document.createTextNode('Ask us')); return p; }
+    if (it.special) { p.setAttribute('aria-label', 'Now ' + D.money(it.price) + ', was ' + D.money(it.was)); p.appendChild(h('span', 'was', D.money(it.was))); }
+    p.appendChild(document.createTextNode(D.money(it.price)));
+    return p;
+  }
+
+  function itemEl(it) {
+    var a = h('article', 'item' + (it.limited ? ' limited' : ''));
+    if (it.photo && D.validPhotoUrl(it.photo)) {
+      var img = h('img', 'item-photo');
+      img.src = it.photo; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async'; img.width = 84; img.height = 84;
+      img.onerror = function () { img.remove(); };
+      a.appendChild(img);
+    }
+    var main = h('div', 'item-main');
+    var top = h('div', 'item-top');
+    top.appendChild(h('h3', 'item-name', it.name));
+    top.appendChild(priceEl(it));
+    main.appendChild(top);
+    var meta = [it.size, it.abv != null ? it.abv + '% ABV' : ''].filter(Boolean).join(' · ');
+    if (meta) main.appendChild(h('div', 'meta', meta));
+    if (it.description) main.appendChild(h('p', 'desc', it.description));
+    var badges = h('div', 'badges');
+    if (it.limited) badges.appendChild(h('span', 'badge hot', 'Limited time' + (it.endDate ? ' · through ' + shortDate(it.endDate) : '')));
+    if (it.special) badges.appendChild(h('span', 'badge hot', 'Special'));
+    (it.tags || []).forEach(function (t) { badges.appendChild(h('span', 'badge', t)); });
+    if (badges.childNodes.length) main.appendChild(badges);
+    if (it.limited && it.note) main.appendChild(h('div', 'meta', it.note));
+    if (it.allergens && it.allergens.length) {
+      var c = h('div', 'contains'); c.appendChild(h('b', null, 'Contains: ')); c.appendChild(document.createTextNode(it.allergens.join(', ')));
+      main.appendChild(c);
+    }
+    a.appendChild(main);
+    return a;
+  }
+
+  function shortDate(iso) {
+    var m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(iso || ''); if (!m) return '';
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+  function slugId(s) { return 'sec-' + s.toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
+
+  function matches(it) {
+    if (query) {
+      var hay = (it.name + ' ' + (it.description || '') + ' ' + it.category + ' ' + (it.tags || []).join(' ')).toLowerCase();
+      if (hay.indexOf(query) < 0) return false;
+    }
+    return Object.keys(filterTags).every(function (t) { return (it.tags || []).indexOf(t) >= 0; });
+  }
+
+  function render() {
+    var menuEl = $('menu'), jump = $('jump'), filters = $('filters');
+    if (!drinks || !toast) return;
+    $('loading').hidden = true;
+    var all = D.buildMenu(drinks, specials, toast, Date.now());
+    var total = all.reduce(function (n, g) { return n + g.items.length; }, 0);
+    // Filter chips: only tags that exist on the menu right now.
+    var present = {};
+    all.forEach(function (g) { g.items.forEach(function (it) { (it.tags || []).forEach(function (t) { present[t] = true; }); }); });
+    filters.textContent = '';
+    D.TAGS.filter(function (t) { return present[t]; }).forEach(function (t) {
+      var b = h('button', 'chip' + (filterTags[t] ? ' on' : ''), t);
+      b.type = 'button'; b.setAttribute('aria-pressed', filterTags[t] ? 'true' : 'false');
+      b.onclick = function () { if (filterTags[t]) delete filterTags[t]; else filterTags[t] = true; render(); };
+      filters.appendChild(b);
+    });
+    filters.hidden = !filters.childNodes.length;
+
+    menuEl.textContent = ''; jump.textContent = '';
+    var shown = 0;
+    all.forEach(function (g) {
+      var items = g.items.filter(matches);
+      if (!items.length) return;
+      shown += items.length;
+      var sec = h('section', 'section'); sec.id = slugId(g.category);
+      var hd = h('div', 'section-header');
+      hd.appendChild(h('h2', null, g.category));
+      hd.appendChild(h('span', 'section-count', items.length + (items.length === 1 ? ' drink' : ' drinks')));
+      sec.appendChild(hd);
+      var grid = h('div', 'items');
+      items.forEach(function (it) { grid.appendChild(itemEl(it)); });
+      sec.appendChild(grid);
+      menuEl.appendChild(sec);
+      var a = h('a', 'chip', g.category); a.href = '#' + sec.id; jump.appendChild(a);
+    });
+    jump.hidden = !jump.childNodes.length;
+    $('empty').hidden = !(total > 0 && shown === 0);
+    $('soon').hidden = total > 0 ? true : $('soon').hidden;
+    if (total === 0) { $('soon').hidden = false; $('tools').hidden = true; $('fine').hidden = true; }
+    else { $('tools').hidden = false; $('fine').hidden = false; }
+  }
+
+  function fail(which) { $('loading').hidden = true; $(which).hidden = false; }
+
+  $('search').addEventListener('input', function (e) { query = e.target.value.trim().toLowerCase(); render(); });
+  setInterval(render, 60000); // specials start and stop on their own
+
+  function loadScript(src, cb, integrity) {
+    var s = firebaseScript(src);
+    if (integrity) { s.integrity = integrity; s.crossOrigin = 'anonymous'; }
+    s.onload = cb; s.onerror = function () { fail('offline'); };
+    document.head.appendChild(s);
+  }
+  var BASE = 'https://www.gstatic.com/firebasejs/9.23.0/';
+  loadScript(BASE + 'firebase-app-compat.js', function () {
+    loadScript(BASE + 'firebase-database-compat.js', function () {
+      // Auth is only here so a signed-in staff member can preview before launch.
+      loadScript(BASE + 'firebase-auth-compat.js', start, 'sha384-xD1t9dGSVKobUztxDkv6xUI0H4AnFz0NxwlgDJJ7FDlblG9xxr1Z9iauCZuJYj6p');
+    });
+  });
+
+  function start() {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    var db = firebase.database(), auth = firebase.auth();
+    var isPublic = false, wired = false;
+    db.ref('config/drinksPublic').on('value', function (s) { isPublic = s.val() === true; gate(); }, function () {});
+    var user = undefined;
+    auth.onAuthStateChanged(function (u) { user = u && u.uid.indexOf('merroir:') === 0 ? u : null; gate(); });
+    function gate() {
+      if (user === undefined) return;
+      if (isPublic || user) {
+        $('preview').hidden = isPublic;
+        if (!wired) wire();
+      } else if (!wired) { location.replace('landing.html'); } // not approved yet: guests are sent to the front page, nothing is shown
+    }
+    function wire() {
+      wired = true;
+      var broke = function () { wired = false; drinks = null; toast = null; $('menu').textContent = ''; $('jump').textContent = ''; $('tools').hidden = true; $('fine').hidden = true; if (!isPublic && !user) location.replace('landing.html'); else fail(isPublic ? 'offline' : 'soon'); };
+      db.ref('menu/drinks').on('value', function (s) { drinks = s.val() || {}; render(); }, broke);
+      db.ref('menu/toastDrinks').on('value', function (s) { toast = s.val() || {}; render(); }, broke);
+      db.ref('menu/drinkSpecials').on('value', function (s) { specials = s.val() || {}; render(); }, function () {});
+    }
+  }
+})();
+</script>
+
+</body>
+</html>

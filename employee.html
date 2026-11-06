@@ -596,6 +596,7 @@
       .serving-checklist { grid-template-columns: 1fr; }
     }
   </style>
+  <link rel="stylesheet" href="src/drinks-admin.css">
 </head>
 <body>
 
@@ -650,6 +651,8 @@
     <div class="page-tabs" id="page-tabs" role="tablist" hidden>
       <button class="page-tab active" type="button" role="tab" data-tab="menu" aria-selected="true">Tonight's Menu</button>
       <button class="page-tab" type="button" role="tab" data-tab="oysters" aria-selected="false">Oysters</button>
+      <button class="page-tab" type="button" role="tab" data-tab="drinks" aria-selected="false">Drinks</button>
+      <button class="page-tab" type="button" role="tab" data-tab="specials" aria-selected="false">Specials</button>
     </div>
 
     <div class="tab-panel" id="tab-menu">
@@ -785,6 +788,10 @@
       <div class="cat-list" id="region-list"></div>
     </div>
 
+    <!-- Drinks and Specials tabs (managers and up): built by src/drinks-admin.js -->
+    <div class="tab-panel" id="tab-drinks" hidden></div>
+    <div class="tab-panel" id="tab-specials" hidden></div>
+
   </main>
 
   <footer>
@@ -873,11 +880,13 @@ auth.onAuthStateChanged(async user => {
     unlock();
     if (window.hsOystersTab) window.hsOystersTab.signedIn(staffClaims);
     if (window.hsHappyHour) window.hsHappyHour.signedIn(staffClaims);
+    if (window.hsDrinksAdmin) window.hsDrinksAdmin.signedIn(staffClaims);
   } else {
     staffName = null;
     staffClaims = null;
     if (window.hsOystersTab) window.hsOystersTab.signedOut();
     if (window.hsHappyHour) window.hsHappyHour.signedIn(null);
+    if (window.hsDrinksAdmin) window.hsDrinksAdmin.signedOut();
     signOutBtn.hidden = true;
     if (overridesRef) { overridesRef.off(); overridesRef = null; overrides = {}; }
     lock();
@@ -1331,7 +1340,8 @@ document.addEventListener('DOMContentLoaded', () => {
 window.hsOystersTab = (function () {
   const C = HS_CATALOG;
   const tabs = document.getElementById('page-tabs');
-  const panels = { menu: document.getElementById('tab-menu'), oysters: document.getElementById('tab-oysters') };
+  const panels = { menu: document.getElementById('tab-menu'), oysters: document.getElementById('tab-oysters'),
+    drinks: document.getElementById('tab-drinks'), specials: document.getElementById('tab-specials') };
   const el = id => document.getElementById(id);
   const banner = el('cat-banner'), result = el('cat-result'), list = el('cat-list');
   const form = el('cat-form'), regionForm = el('region-form'), regionList = el('region-list');
@@ -1884,6 +1894,12 @@ window.hsHappyHour = (function () {
   return { signedIn };
 })();
 if (typeof staffClaims !== 'undefined' && staffClaims) window.hsHappyHour.signedIn(staffClaims);
+</script>
+<script src="src/drinks-core.js"></script>
+<script src="src/drinks-xlsx.js"></script>
+<script src="src/drinks-admin.js"></script>
+<script>
+if (typeof staffClaims !== 'undefined' && staffClaims) window.hsDrinksAdmin.signedIn(staffClaims);
 </script>
 </body>
 </html>

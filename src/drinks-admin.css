@@ -1,0 +1,56 @@
+/* Drinks and Specials tabs on the employee page. Builds on the page's own
+   .cat-* form and list styles; everything new is prefixed dx-. */
+.dx-cat { font-family: 'Lato', sans-serif; font-size: 0.75rem; color: #46707c; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #6a8f9a; background: #f3f8f6; padding: 0.4rem 0.9rem; border-bottom: 1px solid #e1ece9; }
+.dx-row .dx-name { flex: 1; min-width: 12rem; font-family: 'Lato', sans-serif; font-size: 0.9rem; line-height: 1.4; }
+.dx-row.off .dx-name strong { text-decoration: line-through; color: #8aa9b1; }
+.dx-row .cat-row-meta { margin-left: 0.2rem; }
+.dx-row > .save-btn { min-height: 44px; min-width: 64px; }
+.dx-row > .save-btn.quiet { background: none; border-color: transparent; color: #8a3b2e; margin-left: 0.5rem; }
+.dx-row > .save-btn.quiet.danger { background: #b3402e; color: #fff; }
+.dx-set { border: 0; padding: 0; min-width: 0; }
+.dx-set legend { padding: 0; font-family: 'Lato', sans-serif; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #46707c; margin-bottom: 0.25rem; }
+.cat-field label { font-size: 0.75rem; color: #46707c; }
+.dx-mini { flex: none; width: 40px; height: 40px; border-radius: 3px; object-fit: cover; background: #e8f2ef; border: 1px solid #d3e3df; }
+.dx-mini.blank { display: inline-block; }
+.dx-pill { display: inline-block; margin-left: 0.5rem; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 0.12rem 0.45rem; border-radius: 10px; background: #e8f2ef; color: #3d7080; vertical-align: middle; }
+.dx-pill.live { background: #e3f3ec; color: #1d6b4f; }
+.dx-pill.scheduled, .dx-pill.idle { background: #fbf0e1; color: #7a4a12; }
+.dx-pill.ended { background: #eceeee; color: #6b7a7e; }
+.dx-checks { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; }
+.dx-check { display: inline-flex; align-items: center; gap: 0.3rem; font-family: 'Lato', sans-serif; font-size: 0.85rem; color: #0e2d3a; text-transform: none; letter-spacing: 0; font-weight: 400; cursor: pointer; min-height: 44px; }
+.dx-check input { width: 1.3rem; height: 1.3rem; accent-color: #2a7f94; }
+.dx-photo-row { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; }
+.dx-photo-row .dx-thumb { width: 88px; height: 88px; object-fit: cover; border-radius: 4px; border: 1px solid #bcd4ce; background: #e8f2ef; }
+.dx-photo-row .dx-thumb[hidden], .dx-photo-ctl [hidden] { display: none; }
+.dx-photo-ctl { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; font-family: 'Lato', sans-serif; font-size: 0.8rem; }
+.save-btn.danger { background: #b3402e; border-color: #b3402e; color: #fff; }
+.dx-import-out { margin: 0.6rem 0; }
+.dx-problems { font-family: 'Lato', sans-serif; font-size: 0.8rem; margin: 0 0 0.7rem 1.2rem; color: #8a3b2e; }
+.dx-table { border-collapse: collapse; width: 100%; font-family: 'Lato', sans-serif; font-size: 0.8rem; margin: 0.4rem 0; }
+.dx-table th, .dx-table td { text-align: left; padding: 0.3rem 0.6rem; border-bottom: 1px solid #e1ece9; }
+.dx-table th { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.08em; color: #6a8f9a; }
+.dx-item { border: 1px solid #d3e3df; border-radius: 6px; padding: 0.8rem 0.9rem 0.6rem; margin-bottom: 0.8rem; background: #fbfdfc; }
+.cat-field[hidden], .cat-form-grid[hidden] { display: none; }
+.cat-form .cat-toolbar .cat-field { margin-bottom: 0; }
+.cat-form-foot .spacer { flex: 1; }
+@media (max-width: 600px) { .dx-row { flex-wrap: wrap; } .dx-row .dx-name { min-width: calc(100% - 56px); flex-basis: calc(100% - 56px); } .dx-row > .save-btn { flex: 1; } }
+
+/* The paper specials sheet: only this prints. */
+#dx-print { display: none; }
+@media print {
+  @page { margin: 0.6in; }
+  body.dx-printing { background: #fff; }
+  body.dx-printing > *:not(#dx-print) { display: none !important; }
+  body.dx-printing #dx-print { display: block; font-family: 'Playfair Display', Georgia, serif; color: #000; }
+  #dx-print { text-align: center; }
+  #dx-print .dx-print-logo { height: 70px; width: auto; }
+  #dx-print h1 { font-size: 34pt; font-weight: 400; letter-spacing: 0.04em; margin: 0.1in 0 0; }
+  #dx-print .dx-print-date { font-size: 13pt; font-style: italic; margin-bottom: 0.3in; padding-bottom: 0.15in; border-bottom: 2px solid #000; }
+  #dx-print .dx-print-item { text-align: left; margin-bottom: 0.22in; break-inside: avoid; }
+  #dx-print .dx-print-top { display: flex; justify-content: space-between; gap: 1rem; font-size: 16pt; }
+  #dx-print .dx-print-price { font-weight: 700; }
+  #dx-print .dx-print-ing { font-size: 11.5pt; margin-top: 0.03in; }
+  #dx-print .dx-print-desc { font-size: 11pt; font-style: italic; margin-top: 0.03in; }
+  #dx-print .dx-print-all { font-size: 10pt; font-weight: 700; margin-top: 0.04in; }
+  #dx-print .dx-print-fine { font-size: 8.5pt; margin-top: 0.35in; padding-top: 0.12in; border-top: 1px solid #000; text-align: left; }
+}

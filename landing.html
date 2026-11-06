@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3SQ3075FQ1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    // Opt-out: the button on privacy.html, or the browser's Global Privacy Control signal.
+    try { if (navigator.globalPrivacyControl === true || localStorage.getItem('hs_ga_optout') === '1') window['ga-disable-G-3SQ3075FQ1'] = true; } catch (e) {}
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-3SQ3075FQ1', { allow_ad_personalization_signals: false });
+  </script>
+  <meta name="description" content="Welcome to Half Shell Raw Bar. Choose the oyster menu or the bar menu." />
+  <title>Half Shell — Menus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"></noscript>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Playfair Display', Georgia, serif;
+      background: #0e2d3a radial-gradient(circle at 50% 0, #14485a 0, #0e2d3a 60%) no-repeat;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .portal-card {
+      background: #f3f8f6;
+      border-radius: 6px;
+      width: 420px;
+      max-width: 100%;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+
+    /* ── Hero ── */
+    .card-hero {
+      position: relative;
+      background: url('assets/hero-slide-1.webp') center / cover no-repeat;
+      padding: 2rem 1.5rem 1.75rem;
+      text-align: center;
+      border-bottom: 3px solid #e89438;
+    }
+    .card-hero::before { content: ''; position: absolute; inset: 0; background: rgba(10, 28, 38, 0.68); }
+    .card-hero > * { position: relative; z-index: 1; }
+    .portal-logo { height: 72px; width: auto; margin: 0 auto 0.75rem; display: block; filter: drop-shadow(0 2px 10px rgba(0,0,0,0.5)); }
+    .card-hero h1 { font-size: 1.5rem; font-weight: 400; color: #f5f0e8; letter-spacing: 0.03em; }
+    .card-hero p { font-size: 0.82rem; color: #c8dfe5; margin-top: 0.35rem; font-style: italic; }
+
+    /* ── Body ── */
+    .card-body { padding: 1.5rem 1.5rem 1.75rem; }
+    .card-body h2 { font-size: 1.25rem; font-weight: 400; color: #0e2d3a; text-align: center; margin-bottom: 1.1rem; }
+
+    /* ── Choice tiles ── */
+    .choices { display: flex; flex-direction: column; gap: 0.75rem; }
+    .choice {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.1rem;
+      min-height: 72px;
+      background: #fff;
+      border: 1.5px solid #bcd4ce;
+      border-left: 4px solid #e89438;
+      border-radius: 4px;
+      color: #0e2d3a;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    }
+    .choice:hover, .choice:focus-visible, .choice:active { background: #fdf3e4; border-color: #2a7f94; border-left-color: #e89438; }
+    .choice:active { transform: scale(0.99); }
+    .choice:focus-visible { outline: 3px solid #2a7f94; outline-offset: 2px; }
+    .choice[hidden] { display: none; }
+    .choice-icon { flex: none; width: 40px; height: 40px; color: #2a7f94; }
+    .choice-text { flex: 1; min-width: 0; }
+    .choice-title { display: block; font-size: 1.15rem; line-height: 1.25; }
+    .choice-sub { display: block; font-family: 'Montserrat', sans-serif; font-style: italic; font-size: 0.82rem; color: #46707c; margin-top: 0.15rem; line-height: 1.4; }
+    .choice-arrow { flex: none; width: 20px; height: 20px; color: #e89438; }
+
+    /* ── Footer links ── */
+    .foot { margin-top: 1.25rem; text-align: center; font-family: 'Lato', sans-serif; font-size: 0.75rem; display: flex; justify-content: center; gap: 1.25rem; flex-wrap: wrap; }
+    .foot a { color: #3d7080; padding: 0.8rem 0.5rem; display: inline-block; }
+
+    @media (max-width: 400px) {
+      .card-body { padding: 1.25rem 1rem 1.5rem; }
+      .card-hero { padding: 1.5rem 1rem 1.25rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { .choice { transition: none; } }
+  </style>
+</head>
+<body>
+
+<div class="portal-card">
+
+  <div class="card-hero">
+    <img src="assets/logo.png" alt="Half Shell Raw Bar" class="portal-logo" width="72" height="72" />
+    <h1>Half Shell Raw Bar</h1>
+    <p>Fresh selections, sourced from both coasts</p>
+  </div>
+
+  <div class="card-body">
+    <h2>What can we get you?</h2>
+
+    <nav class="choices" aria-label="Menus">
+      <a class="choice" id="choice-oysters" href="index.html">
+        <svg class="choice-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 30c0-10 8-19 17-19s17 9 17 19c0 4-3 7-7 7H14c-4 0-7-3-7-7z"/>
+          <path d="M14 36c-2 3 2 5 10 5s12-2 10-5"/>
+          <path d="M24 12v22M16 16l4 18M32 16l-4 18"/>
+        </svg>
+        <span class="choice-text">
+          <span class="choice-title">Oyster Menu</span>
+          <span class="choice-sub">Tonight's oysters, flights and the library</span>
+        </span>
+        <svg class="choice-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </a>
+
+      <!-- The bar menu stays hidden until config/drinksPublic is true (set by hand
+           in the Firebase console once the owners approve). See the script below. -->
+      <a class="choice" id="choice-bar" href="bar.html" target="_blank" rel="noopener" aria-label="Bar Menu, cocktails, beer, wine and more (opens in a new tab)" hidden>
+        <svg class="choice-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8 9h32L24 27z"/>
+          <path d="M24 27v13M16 40h16"/>
+          <path d="M14 15h20"/>
+          <circle cx="36" cy="8" r="3.5"/>
+        </svg>
+        <span class="choice-text">
+          <span class="choice-title">Bar Menu</span>
+          <span class="choice-sub">Cocktails, beer, wine and more</span>
+        </span>
+        <svg class="choice-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </a>
+    </nav>
+
+    <p class="foot">
+      <a href="user.html">Oyster Passport</a>
+      <a href="privacy.html">Privacy notice</a>
+    </p>
+  </div>
+</div>
+
+<script src="src/firebase-config.js"></script>
+<script>
+  // Show the Bar Menu choice only when the owners have approved it.
+  // Any failure (offline, blocked, rules) leaves it hidden: the safe default.
+  (function () {
+    function load(src, cb) {
+      var s = firebaseScript(src);
+      s.onload = cb;
+      s.onerror = function () {};
+      document.head.appendChild(s);
+    }
+    load('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js', function () {
+      load('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js', function () {
+        try {
+          firebase.initializeApp(firebaseConfig);
+          firebase.database().ref('config/drinksPublic').once('value').then(function (snap) {
+            if (snap.val() === true) document.getElementById('choice-bar').hidden = false;
+          }, function () {});
+        } catch (e) {}
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>
