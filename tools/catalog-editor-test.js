@@ -92,9 +92,14 @@ check('publish results read plainly, with the commit link', () => {
   assert.ok(/not yet on the site/.test(C.describePublish({ status: 'FAILED', error: 'x' }).text));
   assert.strictEqual(C.describePublish(null).text, 'Nothing changed.');
 });
+check('a commit link that is not https is left off the page', () => {
+  assert.strictEqual(C.describePublish({ status: 'PUBLISHED', commit_url: 'javascript:alert(1)' }).link, undefined);
+  assert.strictEqual(C.describePublishes([{ status: 'PUBLISHED', commit_url: 'JavaScript:alert(1)' }]).link, undefined);
+  assert.strictEqual(C.describePublish({ status: 'PUBLISHED', commit_url: 'http://github.com/x' }).link, undefined);
+});
 check('Publish now: any failure wins; else the last commit; else up to date', () => {
   assert.ok(C.describePublishes([{ status: 'NO_CHANGE' }, { status: 'FAILED', error: 'down' }]).publishNow);
-  assert.strictEqual(C.describePublishes([{ status: 'PUBLISHED', commit_url: 'a' }, { status: 'PUBLISHED', commit_url: 'b' }]).link, 'b');
+  assert.strictEqual(C.describePublishes([{ status: 'PUBLISHED', commit_url: 'https://github.com/x/commit/a' }, { status: 'PUBLISHED', commit_url: 'https://github.com/x/commit/b' }]).link, 'https://github.com/x/commit/b');
   assert.strictEqual(C.describePublishes([{ status: 'NO_CHANGE' }, { status: 'NO_CHANGE' }]).text, 'The site is up to date.');
 });
 check('search matches name, other names, origin and id, ignoring case and punctuation', () => {

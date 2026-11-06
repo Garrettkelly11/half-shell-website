@@ -118,11 +118,16 @@
     return { error: 'Merroir answered ' + status + '. Nothing may have been saved; reload and check.' };
   }
 
+  /** Only an https link goes on the page: a javascript: URL would run on click. */
+  function safeLink(url) {
+    return typeof url === 'string' && /^https:\/\//i.test(url) ? url : undefined;
+  }
+
   /** One publish result → a line for the page, with a link when there is one. */
   function describePublish(p) {
     if (!p) return { text: 'Nothing changed.', kind: 'info' };
     if (p.status === 'PUBLISHED') {
-      return { text: 'Saved. Live on the site in about 2 minutes.', link: p.commit_url, kind: 'ok' };
+      return { text: 'Saved. Live on the site in about 2 minutes.', link: safeLink(p.commit_url), kind: 'ok' };
     }
     if (p.status === 'NO_CHANGE') return { text: 'Saved. The site already has it.', kind: 'ok' };
     return { text: 'Saved, not yet on the site. ' + (p.error || ''), kind: 'warn', publishNow: true };
@@ -134,7 +139,7 @@
     var bad = list.filter(function (p) { return p.status === 'REFUSED' || p.status === 'FAILED'; });
     if (bad.length) return describePublish(bad[0]);
     var done = list.filter(function (p) { return p.status === 'PUBLISHED'; });
-    if (done.length) return { text: 'Published. Live on the site in about 2 minutes.', link: done[done.length - 1].commit_url, kind: 'ok' };
+    if (done.length) return { text: 'Published. Live on the site in about 2 minutes.', link: safeLink(done[done.length - 1].commit_url), kind: 'ok' };
     return { text: 'The site is up to date.', kind: 'ok' };
   }
 

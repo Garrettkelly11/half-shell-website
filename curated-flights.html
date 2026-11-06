@@ -438,8 +438,7 @@ setInterval(() => {
 // ── Firebase real-time menu sync (same as index.html) ───────────────────────
 (function () {
   function loadScript(src, cb) {
-    const s = document.createElement('script');
-    s.src = src;
+    const s = firebaseScript(src);              // from src/firebase-config.js (adds the integrity hash)
     s.onload = cb;
     s.onerror = function () {}; // Firebase CDN unreachable — the timeout above shows the empty state
     document.head.appendChild(s);

@@ -144,8 +144,12 @@ async function liveCatalogIds(fetchFn, now) {
   return catalogCache.ids;
 }
 
-/** Who is asking, and are they staff? Returns their name for the change log. */
-async function staffName(auth, db, what) {
+/**
+ * Who is asking, and are they staff? Returns { name, rank }: the name for
+ * the change log and the rank on their live staff/{uid} entry (null when
+ * the entry has none).
+ */
+async function staffEntry(auth, db, what) {
   if (!auth || !auth.uid) {
     throw new SyncError('unauthenticated', 'Sign in on the employee page first.');
   }
@@ -154,8 +158,15 @@ async function staffName(auth, db, what) {
     throw new SyncError('permission-denied', `Only staff accounts can ${what}.`);
   }
   const entry = staff.val();
-  return (entry && typeof entry === 'object' && entry.name)
-    || (auth.token && auth.token.email) || auth.uid;
+  const isObj = entry && typeof entry === 'object';
+  const name = (isObj && entry.name) || (auth.token && auth.token.email) || auth.uid;
+  const rank = isObj && typeof entry.rank === 'number' ? entry.rank : null;
+  return { name, rank };
+}
+
+/** Who is asking, and are they staff? Returns their name for the change log. */
+async function staffName(auth, db, what) {
+  return (await staffEntry(auth, db, what)).name;
 }
 
 /**
@@ -260,7 +271,8 @@ const MANAGER_RANK = 20;
 /**
  * setHappyHour — the employee page's Happy hour section (S5; "Price and
  * Happy Hour Plan", 06/10/2026). MANAGER and above: the rank Merroir puts in
- * the sign-in (claim staff_rank), and a staff/{uid} entry.
+ * the sign-in (claim staff_rank), and a staff/{uid} entry (whose own rank,
+ * when it has one, must also be manager or above).
  * data: { schedule: {days, start, end, percentOff} }   the standing rule
  *    or { today: 'on' | 'off' | null }                  today's switch, until
  *                                                        4 AM; null = back to
@@ -274,9 +286,11 @@ const MANAGER_RANK = 20;
 async function setHappyHour(auth, data, deps) {
   const { db } = deps;
   const now = (deps.now || Date.now)();
-  const actor = await staffName(auth, db, 'change happy hour');
+  const { name: actor, rank: liveRank } = await staffEntry(auth, db, 'change happy hour');
+  // The token's claim can be up to an hour old, so a rank on the live
+  // staff/{uid} entry also has to pass: a demotion takes effect at once.
   const rank = Number(auth.token && auth.token.staff_rank);
-  if (!(rank >= MANAGER_RANK)) {
+  if (!(rank >= MANAGER_RANK) || (liveRank !== null && !(liveRank >= MANAGER_RANK))) {
     throw new SyncError('permission-denied', 'Only managers can change happy hour. Sign out and in again if you were just promoted.');
   }
   const log = (action, details) => db.ref('audit-log').push(auditEntry(action, details, actor, now));

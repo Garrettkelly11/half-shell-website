@@ -17,6 +17,28 @@ const firebaseConfig = {
 };
 
 /**
+ * Subresource integrity for the Firebase SDK files the pages load from
+ * gstatic: the browser refuses a file whose contents don't match. Change
+ * these together with the SDK version. To get a hash:
+ *   curl -s <url> | openssl dgst -sha384 -binary | openssl base64 -A
+ */
+const FIREBASE_SRI = {
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js': 'sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js': 'sha384-f6/UpzjTjIXASlp20cArQsaRh1EvHVJd5kegy/gYR9W2D0a32TnEqUEiW4Zm/5O0'
+};
+
+/** A <script> for a Firebase SDK file, with its integrity hash when known. */
+function firebaseScript(src) {
+  const script = document.createElement('script');
+  script.src = src;
+  if (FIREBASE_SRI[src]) {
+    script.integrity = FIREBASE_SRI[src];
+    script.crossOrigin = 'anonymous';
+  }
+  return script;
+}
+
+/**
  * Initialize Firebase and return database reference
  * Call this function to set up Firebase in any page
  */
@@ -30,8 +52,7 @@ async function initializeFirebase() {
 
     let loaded = 0;
     scripts.forEach((src) => {
-      const script = document.createElement('script');
-      script.src = src;
+      const script = firebaseScript(src);
       script.onload = () => {
         loaded++;
         if (loaded === scripts.length) {

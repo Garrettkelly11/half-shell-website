@@ -469,6 +469,11 @@ async function rejects(promise, code) {
     const db = hhDb();
     await rejects(lib.setHappyHour({ uid: 'nobody', token: { staff_rank: 40 } }, { schedule: HH }, { db, now: () => T0 }), 'permission-denied');
   });
+  await check('S5 setHappyHour: a stale manager claim is refused once the live staff entry is demoted', async () => {
+    const db = hhDb();
+    await rejects(lib.setHappyHour({ uid: STF, token: { staff_rank: 20 } }, { schedule: HH }, { db, now: () => T0 }), 'permission-denied');
+    assert.ok(!db.data.menu);
+  });
   await check('S5 setHappyHour: a manager saves the rule; it is logged with their name', async () => {
     const db = hhDb();
     const r = await lib.setHappyHour(mgrAuth, { schedule: HH }, { db, now: () => T0 });

@@ -41,6 +41,14 @@
     appId:             '1:784452175310:web:2d56ed01d06bb39886179f'
   };
   var SDK = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-';
+  // Subresource integrity for each SDK file: the browser refuses a file whose
+  // contents don't match. Change these together with the version above.
+  var SDK_SRI = {
+    'app-compat.js': 'sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh',
+    'database-compat.js': 'sha384-f6/UpzjTjIXASlp20cArQsaRh1EvHVJd5kegy/gYR9W2D0a32TnEqUEiW4Zm/5O0',
+    'auth-compat.js': 'sha384-xD1t9dGSVKobUztxDkv6xUI0H4AnFz0NxwlgDJJ7FDlblG9xxr1Z9iauCZuJYj6p',
+    'functions-compat.js': 'sha384-Cn425IPPqYFT0+lUg71+39dOh8zj/Ebpl97FkjUqrd+P37HLlysOYDvdw+N7tPuj'
+  };
   var APP_NAME = 'passport';
 
   // Keys on this phone (localStorage). None holds a birthday or card digits.
@@ -77,6 +85,8 @@
       loads[src] = new Promise(function (resolve, reject) {
         var s = root.document.createElement('script');
         s.src = src;
+        var sri = src.indexOf(SDK) === 0 && SDK_SRI[src.slice(SDK.length)];
+        if (sri) { s.integrity = sri; s.crossOrigin = 'anonymous'; }
         s.onload = function () { resolve(); };
         s.onerror = function () { delete loads[src]; reject(new Error('Could not load ' + src)); };
         root.document.head.appendChild(s);

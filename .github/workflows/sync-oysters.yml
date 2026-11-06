@@ -28,13 +28,18 @@ on:
         type: boolean
         default: false
 
+# Read-only token: the sync writes to Firebase with its own secret and never
+# pushes to the repo, so nothing here needs write access to main.
+permissions:
+  contents: read
+
 jobs:
   sync:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Check business hours (11 AM-11:59 PM America/New_York, DST-safe)
         id: hours
@@ -49,7 +54,7 @@ jobs:
 
       - name: Set up Node.js
         if: github.event_name == 'workflow_dispatch' || steps.hours.outputs.in_window == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
 
