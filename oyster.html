@@ -106,6 +106,19 @@
       padding: 2.5rem 2rem 3rem;
     }
 
+    /* ── Consumer advisory (same as index.html) ── */
+    .advisory-banner {
+      background: #fff;
+      border: 1px solid #bcd4ce;
+      border-left: 4px solid #e89438;
+      border-radius: 6px;
+      padding: 0.9rem 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.75rem;
+      line-height: 1.55;
+      color: #29525f;
+    }
+
     /* ── Back link ── */
     .back-link {
       display: inline-flex;
@@ -398,6 +411,18 @@
 <script src="./data/oysters.js?v=3"></script>
 <script src="src/price-display.js"></script>
 <script>
+// Catalog text goes into innerHTML: escape it. Links must be http(s).
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function safeUrl(u) {
+  u = String(u || '');
+  return /^https?:\/\//i.test(u) || /^\w[\w.\/-]*$/.test(u) ? esc(u) : '';   // http(s) or a plain relative path
+}
+const ADVISORY = `<div class="advisory-banner" role="note">
+    CONSUMER ADVISORY — Eating raw, or undercooked oysters, clams or mussels may cause severe illness. People with the following conditions are at especially high risk: liver disease, alcoholism, diabetes, cancer, stomach or blood disorder, or weakened immune system. Ask your doctor if you are unsure of your risk. If you eat raw, or undercooked shellfish and become sick, see a doctor immediately.
+  </div>`;
+
 // ── Salinity dots ──────────────────────────────────────────────────────────
 const DOTS_MAP = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
 function buildDots(level) {
@@ -457,15 +482,15 @@ function render() {
   document.getElementById('page-subtitle').textContent = oyster.origin.split(',').slice(-1)[0].trim();
 
   // Photo or placeholder
-  const photoAlt = oyster.photoAlt || `${oyster.name} oysters on the half shell`;
-  const photoEl = oyster.photoUrl
-    ? `<img class="oyster-photo" src="${oyster.photoUrl}" alt="${photoAlt}" loading="lazy" width="800" height="400" onerror="this.parentElement.innerHTML='<div class=\\'oyster-photo-placeholder\\'>🦪</div>'">`
+  const photoAlt = esc(oyster.photoAlt || `${oyster.name} oysters on the half shell`);
+  const photoEl = safeUrl(oyster.photoUrl)
+    ? `<img class="oyster-photo" src="${safeUrl(oyster.photoUrl)}" alt="${photoAlt}" loading="lazy" width="800" height="400" onerror="this.outerHTML='<div class=\\'oyster-photo-placeholder\\'>🦪</div>'">`
     : `<div class="oyster-photo-placeholder">🦪</div>`;
 
   // Farmer link
-  const farmerName = oyster.farmer || 'TBD';
-  const farmerLinkEl = oyster.farmerUrl
-    ? `<a class="farmer-link" href="${oyster.farmerUrl}" target="_blank" rel="noopener">
+  const farmerName = esc(oyster.farmer || 'TBD');
+  const farmerLinkEl = /^https?:\/\//i.test(oyster.farmerUrl || '')
+    ? `<a class="farmer-link" href="${esc(oyster.farmerUrl)}" target="_blank" rel="noopener">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M5 2H2a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/>
           <polyline points="8,1 13,1 13,6"/>
@@ -483,39 +508,41 @@ function render() {
       Back
     </a>
 
+    ${ADVISORY}
+
     <div class="oyster-hero">
       ${photoEl}
       <div class="oyster-hero-body">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;">
-          <div class="oyster-hero-name" style="flex:1">${oyster.name}</div>
+          <div class="oyster-hero-name" style="flex:1">${esc(oyster.name)}</div>
           <div id="oyster-price">${HS_PRICE.priceHtml(HS_PRICE.priceFor(priceEntry, happyHour, Date.now()), 'detail-price')}</div>
         </div>
-        <div class="oyster-hero-origin">${oyster.origin}</div>
+        <div class="oyster-hero-origin">${esc(oyster.origin)}</div>
         <div class="salinity-row">
           <span class="salinity-label-tag">Salinity</span>
           <div class="salinity-dots">${buildDots(oyster.salinity)}</div>
-          <span class="salinity-value-text">${oyster.salinityText}</span>
+          <span class="salinity-value-text">${esc(oyster.salinityText)}</span>
         </div>
-        <blockquote class="tasting-quote">${oyster.tastingNotes}</blockquote>
+        <blockquote class="tasting-quote">${esc(oyster.tastingNotes)}</blockquote>
       </div>
     </div>
 
     <div class="details-section">
       <div class="section-label">Details</div>
       <div class="details-grid">
-        <div class="detail-item"><div class="detail-key">Species</div><div class="detail-val"><em>${oyster.species || 'TBD'}</em></div></div>
-        <div class="detail-item"><div class="detail-key">Size</div><div class="detail-val">${oyster.size || 'TBD'}</div></div>
-        <div class="detail-item"><div class="detail-key">Farming Method</div><div class="detail-val">${oyster.farmingMethod || 'TBD'}</div></div>
-        <div class="detail-item"><div class="detail-key">Grow-Out</div><div class="detail-val">${oyster.growOut || 'TBD'}</div></div>
-        <div class="detail-item"><div class="detail-key">Availability</div><div class="detail-val">${oyster.seasonalAvailability || 'TBD'}</div></div>
-        <div class="detail-item"><div class="detail-key">Shell</div><div class="detail-val">${oyster.shell || 'TBD'}</div></div>
+        <div class="detail-item"><div class="detail-key">Species</div><div class="detail-val"><em>${esc(oyster.species || 'TBD')}</em></div></div>
+        <div class="detail-item"><div class="detail-key">Size</div><div class="detail-val">${esc(oyster.size || 'TBD')}</div></div>
+        <div class="detail-item"><div class="detail-key">Farming Method</div><div class="detail-val">${esc(oyster.farmingMethod || 'TBD')}</div></div>
+        <div class="detail-item"><div class="detail-key">Grow-Out</div><div class="detail-val">${esc(oyster.growOut || 'TBD')}</div></div>
+        <div class="detail-item"><div class="detail-key">Availability</div><div class="detail-val">${esc(oyster.seasonalAvailability || 'TBD')}</div></div>
+        <div class="detail-item"><div class="detail-key">Shell</div><div class="detail-val">${esc(oyster.shell || 'TBD')}</div></div>
       </div>
     </div>
 
     ${oyster.notable ? `
     <div class="notable-box">
       <div class="section-label">Notable</div>
-      <p>${oyster.notable}</p>
+      <p>${esc(oyster.notable)}</p>
     </div>` : ''}
 
     <div class="details-section">

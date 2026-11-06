@@ -130,8 +130,7 @@
       border-radius: 6px;
       padding: 0.9rem 1.25rem;
       margin-bottom: 1.5rem;
-      font-style: italic;
-      font-size: 0.6rem;
+      font-size: 0.75rem;
       line-height: 1.55;
       color: #29525f;
     }
@@ -520,6 +519,7 @@
 </footer>
 
 <script src="data/oysters.js?v=3"></script>
+<script src="src/firebase-config.js"></script>
 <script src="src/price-display.js"></script>
 <script>
 // OYSTERS catalog is loaded from data/oysters.js as a global `var`.
@@ -529,7 +529,7 @@ const DOTS_MAP  = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':
 
 // ── Sort state ────────────────────────────────────────────────────────────────
 let currentSort   = 'az';
-let lastServingIds = new Set();
+let lastServingIds = null;   // null until Firebase answers (or the 8 s timeout)
 
 // Prices (S5): Toast's regular price per oyster, and the happy hour rule
 // (and game day, S7) managers set on the employee page. Both come from Firebase; the price
@@ -537,6 +537,15 @@ let lastServingIds = new Set();
 let prices = {};
 let happyHour = null;
 let hhKey = '';
+
+// Catalog text goes into innerHTML: escape it. Links must be http(s).
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function safeUrl(u) {
+  u = String(u || '');
+  return /^https?:\/\//i.test(u) || /^\w[\w.\/-]*$/.test(u) ? esc(u) : '';   // http(s) or a plain relative path
+}
 // Banner lines (S7): game day, when on, rotates with the regular happy hour
 // line every 6 seconds. Screen readers get all lines once, not each rotation.
 let bannerList = [], bannerIdx = 0;
@@ -574,7 +583,7 @@ setInterval(() => {
 
 // Happy hour and game day start and end on time without a reload.
 setInterval(() => {
-  if (bannerKey(HS_PRICE.banners(happyHour, Date.now())) !== hhKey) { drawBanner(); render(lastServingIds); }
+  if (bannerKey(HS_PRICE.banners(happyHour, Date.now())) !== hhKey) { drawBanner(); if (lastServingIds) render(lastServingIds); }
 }, 30000);
 
 const SAL_ORDER  = { 'low':1, 'medium':2, 'medium-high':3, 'high':4, 'very-high':5 };
@@ -637,14 +646,14 @@ function render(servingIds) {
   countLabel.textContent = `${serving.length} variet${serving.length === 1 ? 'y' : 'ies'}`;
 
   grid.innerHTML = serving.map(o => `
-    <div class="oyster-card" data-id="${o.id}">
-      ${o.photoUrl
-        ? `<img class="card-photo" src="${o.photoUrl}" alt="${o.name} oysters on the half shell" loading="lazy" width="300" height="180" onerror="this.outerHTML='<div class=\\'card-photo-placeholder\\'>🦪</div>'">`
+    <div class="oyster-card" data-id="${esc(o.id)}">
+      ${safeUrl(o.photoUrl)
+        ? `<img class="card-photo" src="${safeUrl(o.photoUrl)}" alt="${esc(o.name)} oysters on the half shell" loading="lazy" width="300" height="180" onerror="this.outerHTML='<div class=\\'card-photo-placeholder\\'>🦪</div>'">`
         : `<div class="card-photo-placeholder">🦪</div>`}
       <div class="card-head">
         <div class="card-head-text">
-          <div class="card-name">${o.name}</div>
-          <div class="card-origin">${o.origin}</div>
+          <div class="card-name">${esc(o.name)}</div>
+          <div class="card-origin">${esc(o.origin)}</div>
         </div>
         ${HS_PRICE.priceHtml(HS_PRICE.priceFor(prices[o.id], happyHour, Date.now()))}
       </div>
@@ -656,17 +665,20 @@ function render(servingIds) {
           t=t.replace(/^(very high|high|moderate to high|medium[- ]to[- ]high|low to moderate|moderate|medium|low)\s*[—–\-]\s*/i,'').replace(/\s*ppt/gi,'').trim();
           if(/^~?[\d.,]+\s*[–\-]?\s*~?[\d.,]*$/.test(t))return'';
           if(/rated\s*[\d.]+\s*\/\s*\d+|[\d.]+\s*[–\/]\s*[\d.]+\s*(\/\s*\d+)?\s*intensity/i.test(t))return'';
-          return t;
+          return esc(t);
         })(o.salinityText)}</span>
       </div>
       <div class="card-body">
-        <p class="card-tasting">${o.tastingNotes}</p>
-        <a class="card-link" href="oyster.html?id=${o.id}">Full profile &rarr;</a>
+        <p class="card-tasting">${esc(o.tastingNotes)}</p>
+        <a class="card-link" href="oyster.html?id=${encodeURIComponent(o.id)}">Full profile &rarr;</a>
       </div>
     </div>
   `).join('');
   if (window.HS_PASSPORT_MENU) HS_PASSPORT_MENU.cards(grid, serving.map(o => o.id));   // Passport, signed in only
 }
+
+// If Firebase never answers (offline, blocked), show the empty state instead of nothing.
+setTimeout(() => { if (lastServingIds === null) render(new Set()); }, 8000);
 
 // ── Firebase real-time menu sync ────────────────────────────────────────────
 // Scripts are loaded dynamically so they never block window.load or page render.
@@ -675,27 +687,18 @@ function render(servingIds) {
     const s = document.createElement('script');
     s.src = src;
     s.onload = cb;
-    s.onerror = function () {}; // Firebase CDN unreachable — page loads fine without it
+    s.onerror = function () {}; // Firebase CDN unreachable — the timeout above shows the empty state
     document.head.appendChild(s);
   }
 
   loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js', function () {
     loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js', function () {
-      const firebaseConfig = {
-        apiKey:            "AIzaSyDNuyGuzAmow0YehKlztihYn3l57--82L8",
-        authDomain:        "half-shell-oyster-menu.firebaseapp.com",
-        databaseURL:       "https://half-shell-oyster-menu-default-rtdb.firebaseio.com",
-        projectId:         "half-shell-oyster-menu",
-        storageBucket:     "half-shell-oyster-menu.firebasestorage.app",
-        messagingSenderId: "784452175310",
-        appId:             "1:784452175310:web:2d56ed01d06bb39886179f"
-      };
-
-      firebase.initializeApp(firebaseConfig);
+      firebase.initializeApp(firebaseConfig);   // from src/firebase-config.js
       const db  = firebase.database();
       const ref = db.ref('menu/serving');
       const pricesRef = db.ref('menu/prices');
       const hhRef = db.ref('menu/happyHour');
+      const again = () => { if (lastServingIds) render(lastServingIds); };
 
       function startListener() {
         ref.on('value', snapshot => {
@@ -704,9 +707,9 @@ function render(servingIds) {
           const ids = Object.keys(servingObj);
           render(new Set(ids));
         });
-        pricesRef.on('value', snap => { prices = snap.val() || {}; render(lastServingIds); },
+        pricesRef.on('value', snap => { prices = snap.val() || {}; again(); },
           () => {});
-        hhRef.on('value', snap => { happyHour = snap.val(); drawBanner(); render(lastServingIds); },
+        hhRef.on('value', snap => { happyHour = snap.val(); drawBanner(); again(); },
           () => {});
       }
 
@@ -792,7 +795,7 @@ function render(servingIds) {
     sortDrop.querySelectorAll('.sort-option').forEach(o => o.classList.toggle('active', o === opt));
     sortDrop.classList.remove('open');
     sortBtn.classList.remove('active');
-    render(lastServingIds);
+    if (lastServingIds) render(lastServingIds);
   });
 })();
 </script>

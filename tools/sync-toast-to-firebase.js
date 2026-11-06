@@ -158,8 +158,9 @@ async function fetchOutOfStockGuids(token) {
   await sleep(TOAST_RATE_LIMIT_MS);
   const res = await fetch(`${HOSTNAME}/stock/v1/inventory`, { headers: authHeaders(token) });
   if (!res.ok) {
-    console.warn(`Stock API ${res.status} — treating all items as in stock.`);
-    return new Set();
+    // Without stock data every 86'd oyster would look in stock and go on the
+    // menu. Stop instead: the menu stays as it was, and the next run retries.
+    throw new Error(`Stock API ${res.status}: can't tell which oysters are 86'd. Menu left unchanged.`);
   }
   const records = await res.json();
   const outOfStock = new Set(

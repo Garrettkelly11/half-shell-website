@@ -1,9 +1,9 @@
 /**
  * Cloud Functions, codebase "cloud" (Data Ownership Build Guide, S4).
  *
- * Deploy ONLY with:  firebase deploy --only functions:cloud
- * (A bare `firebase deploy` would also publish the legacy hosting and
- * functions configs in firebase.json.)
+ * Deploy with:  firebase deploy --only functions:cloud
+ * (firebase.json lists only this codebase and the database rules; the
+ * legacy functions/ codebase and hosting config were removed 05/11/2026.)
  *
  * Runtime Node 22 (firebase.json), region us-east1.
  * Secret: GH_DISPATCH_TOKEN — fine-grained GitHub token for
@@ -11,9 +11,11 @@
  * Set with:  firebase functions:secrets:set GH_DISPATCH_TOKEN
  *
  * Functions: startToastSync (S4), setMenuOverride (S6), setHappyHour (S5),
- * deletePassport (Oyster Passport, delete my account).
- * The logic lives in lib.js, menu-logic.js and price-logic.js (tested by
- * `node test.js`).
+ * deletePassport (Oyster Passport, delete my account), awardStamps
+ * (Oyster Passport stamps, 05/11/2026).
+ * The logic lives in lib.js, menu-logic.js, price-logic.js and stamps.js
+ * (tested by `node test.js`). Deploying runs vendor-site.js first
+ * (firebase.json predeploy), which copies the stamp code into cloud/site/.
  */
 
 'use strict';
@@ -24,6 +26,7 @@ const { initializeApp } = require('firebase-admin/app');
 const { getDatabase } = require('firebase-admin/database');
 const { getAuth } = require('firebase-admin/auth');
 const lib = require('./lib');
+const stamps = require('./stamps');
 
 initializeApp();
 const GH_DISPATCH_TOKEN = defineSecret('GH_DISPATCH_TOKEN');
@@ -90,6 +93,26 @@ exports.deletePassport = onCall(
       if (e instanceof lib.SyncError) throw new HttpsError(e.code, e.message, e.details);
       console.error('deletePassport failed', e);
       throw new HttpsError('internal', 'Something went wrong deleting your passport.');
+    }
+  },
+);
+
+// Oyster Passport stamps (audit L-passport-F02, 05/11/2026): the page asks
+// after a save; this works the stamps out from the saved visits and writes
+// any new tier. Guests can no longer write tiers themselves.
+exports.awardStamps = onCall(
+  { region: 'us-east1', maxInstances: 4 },
+  async (request) => {
+    try {
+      return await stamps.awardStamps(request.auth, {
+        db: getDatabase(),
+        fetch: globalThis.fetch,
+        SyncError: lib.SyncError,
+      });
+    } catch (e) {
+      if (e instanceof lib.SyncError) throw new HttpsError(e.code, e.message, e.details);
+      console.error('awardStamps failed', e);
+      throw new HttpsError('internal', 'Something went wrong checking your stamps.');
     }
   },
 );

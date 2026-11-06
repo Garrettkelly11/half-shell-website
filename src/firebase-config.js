@@ -1,6 +1,9 @@
 /**
  * Firebase Configuration & Initialization
- * Shared across index.html and employee.html
+ * The one copy of the web config, loaded by index.html, curated-flights.html
+ * and employee.html. src/passport-store.js keeps its own copy on purpose: it
+ * starts a separately named app ("passport") so a guest's sign-in never
+ * touches the menu's connection.
  */
 
 const firebaseConfig = {

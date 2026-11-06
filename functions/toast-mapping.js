@@ -1,9 +1,12 @@
 /**
  * Toast item GUID → Half Shell oyster slug — emergency override table.
  *
- * NOT the primary mapping path. The default behavior in
- * `sync-toast-endpoint.js` is to match Toast item names against the catalog
- * (`oyster-catalog.json`, generated at deploy time from `data/oysters.js`).
+ * Read by tools/sync-toast-to-firebase.js (the live sync) and
+ * tools/toast-price-printout.js. It is the only live file left in functions/;
+ * the old Cloud Functions sync was deleted on 05/11/2026.
+ *
+ * NOT the primary mapping path. The sync matches Toast item names against
+ * the catalog (`data/oysters.js`).
  * The catalog supports `aliases: [...]` on each entry, which handles almost
  * every name discrepancy without code changes.
  *

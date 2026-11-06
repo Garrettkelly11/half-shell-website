@@ -15,14 +15,13 @@ Files included in the repo:
 | `index.html` | Main nightly oyster menu (customer-facing) |
 | `oyster.html` | Oyster explorer / detail page |
 | `employee.html` | Staff-facing admin view |
-| `User.html` | User profile page |
+| `user.html` | Oyster Passport sign-up and sign-in |
 | `Oyster Overview.html` | Full oyster encyclopedia |
 | `assets/` | Background images, logo, 48 oyster photos |
 | `data/oysters.js` | Master oyster database (static, manually curated) |
-| `public/oysters.json` | Old sync artifact — no longer used |
 | `tools/sync-toast-to-firebase.js` | Live Toast → Firebase sync script |
 | `.github/workflows/sync-oysters.yml` | GitHub Actions workflow (15-min sync) |
-| `tools/` | Dev utilities (generate_photo_map.js) |
+| `tools/` | Dev utilities and tests (see README.md) |
 | `.gitignore` | Excludes backups, Python scripts, node_modules |
 | `README.md` | Project overview |
 
@@ -121,8 +120,6 @@ Domain is registered and pointing at GitHub Pages. `CNAME` file in repo contains
 **GitHub Actions rate limits:** GitHub Actions is free for public repos. The 15-minute sync runs ~96 times/day — well within free tier limits.
 
 **Toast API timing:** After purchasing Standard API access, Toast says 1–3 business days for credentials. Budget time for this.
-
-**The `[skip ci]` tag:** The sync workflow commit message includes `[skip ci]` — this tells GitHub not to re-trigger the workflow when the bot commits `oysters.json`, preventing an infinite loop.
 
 **Zero-oyster safety guard:** `tools/sync-toast-to-firebase.js` skips the Firebase write if Toast returns 0 oysters, so the last good list stays live if Toast has an error.
 

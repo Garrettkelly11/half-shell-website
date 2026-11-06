@@ -226,10 +226,23 @@ function visit(extra) {
   });
 
   // ── stamps ──
-  await check('stamps: tier from the list, seen flag', async () => {
-    await assertSucceeds(custA.ref('users/' + A + '/stamps/volume').set({ tier: 'bronze', seen: false, tierEarnedAt: { bronze: 1 } }));
-    await assertFails(custA.ref('users/' + A + '/stamps/volume').set({ tier: 'platinum', seen: false }));
-    await assertFails(custA.ref('users/' + A + '/stamps/volume/tierEarnedAt/platinum').set(1));
+  // Tiers are written by the awardStamps Cloud Function (Admin SDK, no rules)
+  // since 05/11/2026 (audit L-passport-F02). A guest may only mark one seen.
+  await check('stamps: a guest cannot give themselves a stamp or a higher tier', async () => {
+    await assertFails(custA.ref('users/' + A + '/stamps/volume').set({ tier: 'bronze', seen: false, tierEarnedAt: { bronze: 1 } }));
+    await assertFails(custA.ref('users/' + A + '/stamps/volume').set({ tier: 'pearl', seen: true }));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.database().ref('users/' + A + '/stamps/volume').set({ tier: 'bronze', seen: false, tierEarnedAt: { bronze: 1 } });
+    });
+    await assertFails(custA.ref('users/' + A + '/stamps/volume/tier').set('pearl'));
+    await assertFails(custA.ref('users/' + A + '/stamps/volume/tierEarnedAt/pearl').set(2));
+    await assertFails(custA.ref('users/' + A + '/stamps/volume/tierEarnedAt/bronze').set(2));
+    await assertFails(custA.ref('users/' + A + '/stamps/volume').update({ tier: 'gold', seen: true }));
+  });
+  await check('stamps: a guest can mark a server-awarded stamp seen', async () => {
+    await assertSucceeds(custA.ref('users/' + A + '/stamps/volume/seen').set(true));
+    await assertSucceeds(custA.ref('users/' + A).update({ 'stamps/volume/seen': true, 'hereOn/2026-10-18': 1760800000000 }));
+    await assertFails(custA.ref('users/' + A + '/stamps/volume/seen').set('yes'));
   });
 
   // ── cards (optional, for P2) ──
@@ -248,8 +261,10 @@ function visit(extra) {
   });
 
   // ── hereOn (P2) ──
-  await check('hereOn/{date} = ms', async () => {
+  await check('hereOn/{date} = ms, not in the future', async () => {
     await assertSucceeds(custA.ref('users/' + A + '/hereOn/2026-10-19').set(1760900000000));
+    await assertSucceeds(custA.ref('users/' + A + '/hereOn/2026-10-20').set(Date.now()));
+    await assertFails(custA.ref('users/' + A + '/hereOn/2026-10-21').set(Date.now() + 24 * 3600e3));
     await assertFails(custA.ref('users/' + A + '/hereOn/today').set(1));
     await assertFails(custA.ref('users/' + A + '/hereOn/2026-10-19').set(true));
   });

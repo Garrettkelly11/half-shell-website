@@ -17,7 +17,13 @@
  * user.html uses the Firebase, storage and analytics parts. Passport pages
  * (passport.html; the menu and Curated Flights from step 5) open a session
  * with HS_STORE.session(), which holds the guest's passport in memory,
- * saves changes (6.2) and earns stamps (6.5).
+ * saves changes (6.2) and asks for stamps (6.5).
+ *
+ * Stamps (05/11/2026, audit L-passport-F02): the page works stamps out
+ * locally, to draw progress and to know when something new is due, but the
+ * tier is written by the awardStamps Cloud Function from the saved visits.
+ * The database rules refuse a tier written from here; the page only marks
+ * a stamp seen after its celebration.
  *
  * Needs src/passport-core.js; a session also needs data/oysters.js,
  * data/regions.js, data/flights.js and data/stamps.js.
@@ -160,6 +166,18 @@
    * Adds `updates` to a pending multi-path update without overlapping paths
    * (Realtime Database refuses an update with a path inside another).
    */
+  /** A pending-changes object without stamp tier writes (only seen may be sent). */
+  function withoutTierWrites(pending) {
+    if (!pending || typeof pending !== 'object') return pending;
+    var out = {};
+    Object.keys(pending).forEach(function (k) {
+      if (/^stamps\/[^/]+\/(tier|tierEarnedAt)(\/|$)/.test(k)) return;
+      if (/^stamps(\/[^/]+)?$/.test(k)) return;      // a whole stamp or all stamps: can't be written from here
+      out[k] = pending[k];
+    });
+    return out;
+  }
+
   function mergePending(pending, updates) {
     Object.keys(updates).forEach(function (path) {
       var v = updates[path];
@@ -231,7 +249,9 @@
     this.birthdayReward = null;
 
     // Changes saved on this phone but not yet sent (a reload, a lost signal).
-    var saved = lsJson(this.pendingKey);
+    // Stamp tiers saved by an older version of this page are dropped: the
+    // rules refuse them, and one refused path would block the whole save.
+    var saved = withoutTierWrites(lsJson(this.pendingKey));
     if (saved && typeof saved === 'object' && Object.keys(saved).length) {
       applyPaths(this.state, saved);
       mergePending(this.pending, saved);
@@ -314,6 +334,7 @@
       self.inflight = null;
       if (self.closed) return true;
       self.saveError = null;
+      self.savedSinceAsk = true;
       self.savePendingLocally();
       self.emit('status');
       if (Object.keys(self.pending).length) return self.flush();
@@ -344,19 +365,44 @@
       return f.oysters.map(function (o) { return o.id; });
     });
   };
-  /** Evaluates stamps and records new tiers (seen: false). */
+  /**
+   * Evaluates stamps locally (progress bars use this.evaluated). If a new
+   * tier looks due, asks the server to award it once the visit is saved.
+   */
   Session.prototype.refreshStamps = function (initial) {
     var P = this.P, now = this.now();
     var ev = P.evaluateStamps({ visits: this.state.visits || {}, oysters: this.oysters, regions: this.regions,
       dob: this.state.profile && this.state.profile.dob, today: this.today(), todayFlights: this.todayFlights() });
     this.evaluated = ev;
-    var u = P.stampUpdates(this.state.stamps, ev, now);
-    if (!Object.keys(u).length) return;
-    Object.keys(u).forEach(function (k) {
-      var m = /^stamps\/([^/]+)\/tier$/.exec(k);
-      if (m) track('stamp_earned', { stamp: m[1], tier: u[k] });
-    });
-    this.apply(u, { noStamps: true });
+    if (Object.keys(P.stampUpdates(this.state.stamps, ev, now)).length) this.askForStamps();
+  };
+  /**
+   * Saves, then calls awardStamps. The server's answer (the tiers it wrote)
+   * goes into memory only: it is already in the database. At most one call
+   * in flight, and none within 20 s of the last unless a save happened since.
+   */
+  Session.prototype.askForStamps = function () {
+    var self = this, now = this.now();
+    if (this.closed || this.stampCall || (this.lastStampAsk && now - this.lastStampAsk < 20000 && !this.savedSinceAsk)) return;
+    this.lastStampAsk = now;
+    this.savedSinceAsk = false;
+    this.stampCall = this.flush().then(function (ok) {
+      if (!ok || self.closed) return null;
+      return sdk(['functions']).then(function () {
+        return app().functions('us-east1').httpsCallable('awardStamps')({});
+      });
+    }).then(function (res) {
+      var u = (res && res.data && res.data.updates) || {};
+      if (self.closed || !Object.keys(u).length) return;
+      applyPaths(self.state, u);
+      Object.keys(u).forEach(function (k) {
+        var m = /^stamps\/([^/]+)\/tier$/.exec(k);
+        if (m) track('stamp_earned', { stamp: m[1], tier: u[k] });
+      });
+      self.emit('change');
+    }).catch(function (e) {
+      if (root.console) root.console.warn('Stamps not checked:', e && e.message);   // asked again after the next change
+    }).then(function () { self.stampCall = null; });
   };
   /** Stamps waiting for their celebration, oldest first. */
   Session.prototype.unseen = function () { return this.P.unseenStamps(this.state.stamps); };
@@ -384,6 +430,6 @@
     lsGet: lsGet, lsSet: lsSet, lsRemove: lsRemove, lsJson: lsJson,
     isPreview: isPreview, markSignedIn: markSignedIn, hereRemembered: hereRemembered,
     sdk: sdk, app: app, track: track, setMember: setMember, visitBand: visitBand,
-    applyPaths: applyPaths, mergePending: mergePending, session: session
+    applyPaths: applyPaths, mergePending: mergePending, withoutTierWrites: withoutTierWrites, session: session
   };
 })(window);

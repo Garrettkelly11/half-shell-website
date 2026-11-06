@@ -50,9 +50,9 @@ function normalize(s) {
 }
 
 // Build catalog lookup indexes: normalized id → entry, normalized name → entry,
-// normalized alias → entry. Mirrors the production matcher in
-// functions/sync-toast-endpoint.js, which treats name/id/aliases as equally
-// valid match keys for an entry.
+// normalized alias → entry. Mirrors the matcher in the old
+// functions/sync-toast-endpoint.js (deleted 05/11/2026), which treated
+// name/id/aliases as equally valid match keys for an entry.
 const byNormId = new Map();
 const byNormName = new Map();
 const byNormAlias = new Map();

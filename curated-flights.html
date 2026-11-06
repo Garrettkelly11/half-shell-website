@@ -130,8 +130,7 @@
       border-radius: 6px;
       padding: 0.9rem 1.25rem;
       margin-bottom: 1.5rem;
-      font-style: italic;
-      font-size: 0.6rem;
+      font-size: 0.75rem;
       line-height: 1.55;
       color: #29525f;
     }
@@ -364,6 +363,7 @@
 <script src="data/oysters.js"></script>
 <script src="data/regions.js"></script>
 <script src="data/flights.js"></script>
+<script src="src/firebase-config.js"></script>
 <script src="src/price-display.js"></script>
 <script>
 // OYSTERS (data/oysters.js) is the catalog; HS_FLIGHTS (data/flights.js) holds the flight
@@ -447,17 +447,7 @@ setInterval(() => {
 
   loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js', function () {
     loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js', function () {
-      const firebaseConfig = {
-        apiKey:            "AIzaSyDNuyGuzAmow0YehKlztihYn3l57--82L8",
-        authDomain:        "half-shell-oyster-menu.firebaseapp.com",
-        databaseURL:       "https://half-shell-oyster-menu-default-rtdb.firebaseio.com",
-        projectId:         "half-shell-oyster-menu",
-        storageBucket:     "half-shell-oyster-menu.firebasestorage.app",
-        messagingSenderId: "784452175310",
-        appId:             "1:784452175310:web:2d56ed01d06bb39886179f"
-      };
-
-      firebase.initializeApp(firebaseConfig);
+      firebase.initializeApp(firebaseConfig);   // from src/firebase-config.js
       const db  = firebase.database();
       const ref = db.ref('menu/serving');
       const pricesRef = db.ref('menu/prices');

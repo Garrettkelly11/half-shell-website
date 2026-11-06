@@ -50,6 +50,22 @@ const withSalAttr = [...html.matchAll(/<article class="oyster" id="([^"]+)"\n\s+
 check('oysters with unknown salinity get no salinity dots', unknownSal.every(id => !withSalAttr.includes(id)),
   unknownSal.join(', '));
 
+// Catalog text is escaped. The catalog is written by Merroir from what managers
+// type, so a stray "<" must never become markup on the public page.
+const evil = {
+  id: 'escape-test', name: 'Bad "Name" <b>& Co</b>', region: null, aliases: ['<i>alias</i>'],
+  origin: '<script>alert(1)</script>', farmer: '<a href="javascript:alert(1)">farm</a>',
+  species: 'Crassostrea virginica <img src=x onerror=alert(2)>', farmingMethod: '<u>x</u>',
+  growOut: '<u>x</u>', seasonalAvailability: '<u>x</u>', size: 'Medium <svg onload=alert(3)>',
+  shell: '<u>x</u>', tastingNotes: '<img src=x onerror=alert(4)>', notable: '</div><script>alert(5)</script>',
+  salinity: 'high"><script>alert(6)</script>', salinityText: '<u>x</u>'
+};
+const evilHtml = build([evil]).html;
+const payloads = ['<script>alert(', '<img src=x', '<svg onload', '<b>& Co', '<a href="javascript', '<u>x</u>', '<i>alias', 'high"><'];
+const leaked = payloads.filter(p => evilHtml.includes(p));
+check('catalog text is HTML-escaped everywhere it appears', !leaked.length, 'unescaped: ' + leaked.join(', '));
+check('escaped name appears as text', evilHtml.includes('Bad &quot;Name&quot; &lt;b&gt;&amp; Co&lt;/b&gt;'));
+
 // Size buckets
 const cases = [
   ['Medium — 2.5–3"', 'medium'], ['Small — 2.5–3" (cocktail)', 'small'],

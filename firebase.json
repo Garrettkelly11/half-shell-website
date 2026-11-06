@@ -2,57 +2,14 @@
   "database": {
     "rules": "database.rules.json"
   },
-  "hosting": {
-    "public": ".",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**",
-      "functions/**",
-      "tools/**",
-      "src/**/*.bak*",
-      "**/*.bak.*",
-      "*.md",
-      "migration-checklist.md"
-    ],
-    "rewrites": [
-      {
-        "source": "/api/sync-toast-menu",
-        "function": {
-          "functionId": "syncToastMenu",
-          "region": "us-east1"
-        }
-      },
-      {
-        "source": "/api/sync-toast-automatic",
-        "function": {
-          "functionId": "syncToastMenuAutomatic",
-          "region": "us-east1"
-        }
-      }
-    ]
-  },
   "functions": [
-    {
-      "source": "functions",
-      "codebase": "default",
-      "runtime": "nodejs20",
-      "predeploy": [
-        "npm --prefix \"$RESOURCE_DIR\" run build:catalog"
-      ],
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        ".env",
-        ".env.*"
-      ]
-    },
     {
       "source": "cloud",
       "codebase": "cloud",
       "runtime": "nodejs22",
+      "predeploy": [
+        "node \"$RESOURCE_DIR/vendor-site.js\""
+      ],
       "ignore": [
         "node_modules",
         ".git",

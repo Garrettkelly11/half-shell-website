@@ -596,6 +596,73 @@ async function rejects(promise, code) {
     assert.ok(ep.callableTrigger && ep.region[0] === 'us-east1' && !(ep.secretEnvironmentVariables || []).length);
   });
 
+  // ── Oyster Passport: awardStamps (audit L-passport-F01/F02, 05/11/2026) ──
+  const stamps = require('./stamps');
+  const fs = require('fs'), path = require('path'), vm = require('vm');
+  const catalogText = fs.readFileSync(path.join(__dirname, '..', 'data', 'oysters.js'), 'utf8');
+  const okFetch = async () => ({ status: 200, text: async () => catalogText });
+  const deadFetch = async () => ({ status: 503, text: async () => '' });
+  // 2026-11-05 15:00 New York = 20:00 UTC; business day 2026-11-05.
+  const NOW = Date.UTC(2026, 10, 5, 20, 0, 0);
+  const visit = (date, items) => ({ date, startedAt: 1, lastChangedAt: 1, source: 'manual',
+    items: Object.fromEntries(Object.entries(items).map(([id, qty]) => [id, { qty, addedAt: 1 }])) });
+  const stampDb = (user) => fakeDb({ users: { g1: user }, menu: { serving: {} } });
+  const award = (db, fetchFn, auth) => stamps.awardStamps(auth === undefined ? phoneAuth('g1') : auth,
+    { db, fetch: fetchFn || okFetch, now: () => NOW, SyncError: lib.SyncError });
+
+  await check('parseCatalog reads data/oysters.js exactly as the page does, without running it', async () => {
+    const c = {}; vm.createContext(c); vm.runInContext(catalogText, c);
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(stamps.parseCatalog(catalogText))), JSON.parse(JSON.stringify(c.OYSTERS)));
+    assert.throws(() => stamps.parseCatalog('var OYSTERS = [ (function () { return {}; })() ];'));
+    assert.throws(() => stamps.parseCatalog('var OYSTERS = [\n  {\n    id: "a",\n  },\n];'), /fewer than 10/);
+    assert.throws(() => stamps.parseCatalog('nothing here'));
+  });
+  await check('awardStamps: signed out, staff and non-phone sign-ins refused', async () => {
+    stamps._resetCache();
+    const db = stampDb({ profile: { name: 'Jane Doe', dob: '1990-01-01' }, visits: { v1: visit('2026-11-01', { 'carolina-envy': 2 }) } });
+    await rejects(award(db, null, null), 'unauthenticated');
+    await rejects(award(db, null, { uid: 'merroir:1', token: { firebase: { sign_in_provider: 'custom' } } }), 'permission-denied');
+    assert.strictEqual(db.data.users.g1.stamps, undefined);
+  });
+  await check('awardStamps: no passport is refused', async () => {
+    await rejects(award(stampDb({}), null), 'failed-precondition');
+  });
+  await check('awardStamps: writes new tiers with seen: false; a second call writes nothing', async () => {
+    stamps._resetCache();
+    const db = stampDb({ profile: { name: 'Jane Doe', dob: '1990-01-01' }, visits: { v1: visit('2026-11-01', { 'carolina-envy': 2 }) } });
+    const r = await award(db);
+    assert.strictEqual(r.updates['stamps/first-slurp/tier'], 'single');
+    assert.strictEqual(r.updates['stamps/home-waters/tier'], 'single');
+    assert.strictEqual(db.data.users.g1.stamps['first-slurp'].seen, false);
+    assert.strictEqual(db.data.users.g1.stamps['first-slurp'].tierEarnedAt.single, NOW);
+    assert.strictEqual(db.data.users.g1.stamps.volume, undefined, '2 oysters is not bronze');
+    assert.deepStrictEqual((await award(db)).updates, {});
+  });
+  await check('awardStamps: visits dated after today are ignored (L-passport-F01)', async () => {
+    stamps._resetCache();
+    const db = stampDb({ profile: { name: 'Jane Doe', dob: '1990-11-07' }, visits: { v1: visit('2026-11-07', { 'carolina-envy': 50 }) } });
+    assert.deepStrictEqual((await award(db)).updates, {});
+    assert.strictEqual(db.data.users.g1.stamps, undefined);
+  });
+  await check('awardStamps: a stored tier is never lowered', async () => {
+    stamps._resetCache();
+    const db = stampDb({ profile: { name: 'Jane Doe', dob: '1990-01-01' }, visits: { v1: visit('2026-11-01', { 'carolina-envy': 40 }) },
+      stamps: { volume: { tier: 'gold', seen: true, tierEarnedAt: { gold: 5 } } } });
+    const r = await award(db);
+    assert.ok(!Object.keys(r.updates).some((k) => k.startsWith('stamps/volume/')));
+    assert.strictEqual(db.data.users.g1.stamps.volume.tier, 'gold');
+  });
+  await check('awardStamps: live catalog down -> uses the deploy-time copy', async () => {
+    stamps._resetCache();
+    const db = stampDb({ profile: { name: 'Jane Doe', dob: '1990-01-01' }, visits: { v1: visit('2026-11-01', { 'carolina-envy': 1 }) } });
+    const r = await award(db, deadFetch);
+    assert.strictEqual(r.updates['stamps/first-slurp/tier'], 'single');
+  });
+  await check('index.js exports awardStamps as a callable in us-east1 (no secrets)', async () => {
+    const ep = require('./index.js').awardStamps.__endpoint;
+    assert.ok(ep.callableTrigger && ep.region[0] === 'us-east1' && !(ep.secretEnvironmentVariables || []).length);
+  });
+
   console.log('\n' + (failed ? `${failed} of ${passed + failed} checks failed.` : `All ${passed} checks passed.`));
   process.exit(failed ? 1 : 0);
 })();

@@ -1010,6 +1010,11 @@ function activeOverride(id) {
   return o && o.until > Date.now() ? o : null;
 }
 
+// Catalog text goes into innerHTML: escape it.
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function renderOverrideTags() {
   document.querySelectorAll('.serving-item').forEach(el => {
     const id = el.dataset.id;
@@ -1095,10 +1100,10 @@ function renderChecklist(filter = '') {
   );
 
   checklist.innerHTML = filtered.map(o => `
-    <div class="serving-item${pendingServing.has(o.id) ? ' checked' : ''}" data-id="${o.id}">
+    <div class="serving-item${pendingServing.has(o.id) ? ' checked' : ''}" data-id="${esc(o.id)}">
       <input type="checkbox" ${pendingServing.has(o.id) ? 'checked' : ''} />
-      <span class="serving-item-name">${o.name}</span>
-      <span class="serving-item-region">${regionShort(o.region)}</span>
+      <span class="serving-item-name">${esc(o.name)}</span>
+      <span class="serving-item-region">${esc(regionShort(o.region))}</span>
     </div>
   `).join('');
 
@@ -1133,15 +1138,15 @@ function initPage() {
   // Build table
   const tbody = document.getElementById('table-body');
   tbody.innerHTML = OYSTERS.map(o => `
-    <tr data-id="${o.id}" class="${pendingServing.has(o.id) ? 'on-menu' : ''}">
-      <td class="td-name">${o.name}</td>
+    <tr data-id="${esc(o.id)}" class="${pendingServing.has(o.id) ? 'on-menu' : ''}">
+      <td class="td-name">${esc(o.name)}</td>
       <td class="td-serving">${pendingServing.has(o.id) ? '● On Menu' : ''}</td>
-      <td class="td-price" data-id="${o.id}" style="font-family:'Lato',sans-serif;font-size:0.85rem;font-weight:700;color:#e89438;white-space:nowrap">${tablePrice(o.id)}</td>
-      <td>${o.origin}</td>
-      <td>${buildDotsSm(o.salinity)}<span style="font-family:'Lato',sans-serif;font-size:0.72rem;color:#3a6070">${o.salinityText}</span></td>
-      <td style="font-family:'Lato',sans-serif;font-size:0.8rem">${o.size}</td>
-      <td style="font-style:italic">${o.tastingNotes}</td>
-      <td style="font-family:'Lato',sans-serif;font-size:0.78rem">${o.farmingMethod}</td>
+      <td class="td-price" data-id="${esc(o.id)}" style="font-family:'Lato',sans-serif;font-size:0.85rem;font-weight:700;color:#e89438;white-space:nowrap">${tablePrice(o.id)}</td>
+      <td>${esc(o.origin)}</td>
+      <td>${buildDotsSm(o.salinity)}<span style="font-family:'Lato',sans-serif;font-size:0.72rem;color:#3a6070">${esc(o.salinityText)}</span></td>
+      <td style="font-family:'Lato',sans-serif;font-size:0.8rem">${esc(o.size)}</td>
+      <td style="font-style:italic">${esc(o.tastingNotes)}</td>
+      <td style="font-family:'Lato',sans-serif;font-size:0.78rem">${esc(o.farmingMethod)}</td>
     </tr>
   `).join('');
 

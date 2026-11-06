@@ -10,11 +10,15 @@ Digital menu website for **Half Shell**, Charlotte's raw bar. Displays nightly o
 
 | File | Purpose |
 |---|---|
-| `index.html` | Main nightly oyster menu (customer-facing) |
-| `oyster.html` | Oyster detail / explorer page |
-| `employee.html` | Staff-facing admin / reference view |
-| `User.html` | User profile / preferences |
-| `Oyster Overview.html` | Full oyster encyclopedia |
+| `index.html` | Tonight's oyster menu (customer-facing) |
+| `curated-flights.html` | Curated Flights, built from tonight's menu |
+| `oyster.html` | One oyster's full profile (`oyster.html?id=<id>`) |
+| `Oyster Overview.html` | Oyster Library, every catalog oyster (generated) |
+| `passport.html` | Oyster Passport for signed-in guests |
+| `user.html` | Oyster Passport sign-up and sign-in |
+| `privacy.html` | Privacy notice |
+| `employee.html` | Staff page: menu overrides, happy hour, catalog editing |
+| `wifi.html` | Guest Wi-Fi welcome page (captive portal) |
 
 ## Data
 
@@ -28,16 +32,37 @@ Digital menu website for **Half Shell**, Charlotte's raw bar. Displays nightly o
 ### Setup (one-time)
 
 1. Purchase Toast Standard API Access from the Toast Shop
-2. Add three secrets to your GitHub repo (Settings → Secrets and variables → Actions):
+2. Add four secrets to your GitHub repo (Settings → Secrets and variables → Actions):
    - `TOAST_CLIENT_ID`
    - `TOAST_CLIENT_SECRET`
    - `TOAST_RESTAURANT_GUID`
+   - `FIREBASE_ADMIN_CREDENTIALS` — the full JSON of a Firebase service account key
+     (paste the file's contents, not its path)
 3. The workflow in `.github/workflows/sync-oysters.yml` handles the rest automatically.
 
 ## Hosting
 
 Hosted on **GitHub Pages** — deploys automatically on every push to `main`.
 
+## Tests
+
+Terminal, from this folder. None of them touch Toast or the live database.
+
+| Command | Checks |
+|---|---|
+| `node cloud/test.js` | Cloud Functions logic (run `npm install` in `cloud/` first) |
+| `node tools/passport-test.js` | Oyster Passport logic |
+| `node tools/price-display-test.js` | Prices and happy hour |
+| `node tools/catalog-editor-test.js` | Employee page catalog editor |
+| `node tools/signin-test.js` | Merroir sign-in |
+| `node tools/library-test.js` | Oyster Library page is up to date and escapes catalog text |
+| `node tools/regions-test.js` | Regions data |
+| `node tools/flights-test.js` | Curated Flights (reads the live public menu) |
+| `cd tools/rules-test && npm install && npm test` | Database rules, against a local emulator (needs Java 21+) |
+
 ## Dev Utilities
 
-- `tools/generate_photo_map.js` — helper to generate the oyster photo filename mapping
+- `tools/photo-check.js` — reports oysters without photos and photos no oyster uses
+- `tools/build-library.js` — rebuilds `Oyster Overview.html` (the workflow runs it on `main`)
+- `tools/build-map-na.js` — rebuilds `data/map-na.js`, the Passport map
+- `tools/toast-*.js` — read-only Toast probes; they need `.env` credentials

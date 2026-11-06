@@ -107,8 +107,9 @@ function article(o) {
   ].join('\n');
 }
 
-function build() {
-  const oysters = loadCatalog().slice().sort(byName);
+// catalog: optional list of oysters, for tests; defaults to data/oysters.js.
+function build(catalog) {
+  const oysters = (catalog || loadCatalog()).slice().sort(byName);
   const ids = new Set();
   oysters.forEach(o => {
     if (!o.id || ids.has(o.id)) throw new Error('missing or duplicate id: ' + o.id);
