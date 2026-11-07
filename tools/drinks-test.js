@@ -247,6 +247,17 @@ t('matchStatus', () => {
   assert.strictEqual(C.matchStatus({ name: 'Lager' }, null), 'missing');
 });
 
+t('food specials: saved list, libId, menuPrice', () => {
+  const ok = C.validateLibrarySpecial({ name: ' Crab Dip ', ingredients: 'sherry', allergens: 'shellfish', price: '14.50' });
+  assert.ok(ok.ok); assert.strictEqual(ok.special.name, 'Crab Dip'); assert.strictEqual(ok.special.price, 1450);
+  assert.ok(!C.validateLibrarySpecial({ name: '' }).ok); assert.ok(!C.validateLibrarySpecial({ name: 'A', price: 'abc' }).ok);
+  const n = C.validateNightly({ date: '2026-11-06', items: [{ name: 'A', libId: 'f123' }, { name: 'B' }] });
+  assert.ok(n.ok); assert.strictEqual(n.nightly.items[0].libId, 'f123'); assert.ok(!('libId' in n.nightly.items[1]));
+  assert.ok(!C.validateNightly({ date: '2026-11-06', items: [{ name: 'A', libId: 'a/b' }] }).ok);
+  assert.strictEqual(C.menuPrice(1400), '14'); assert.strictEqual(C.menuPrice(1450), '14.5'); assert.strictEqual(C.menuPrice(1425), '14.25');
+  assert.strictEqual(C.menuPrice(1405), '14.05'); assert.strictEqual(C.menuPrice(undefined), '');
+});
+
 t('validateNightly', () => {
   const ok = C.validateNightly({ date: '2026-11-06', items: [{ name: 'Crab Bisque', ingredients: 'crab, cream', description: 'Rich', allergens: 'shellfish; milk', price: '9' }, { name: 'Oyster Po Boy' }] });
   assert.ok(ok.ok, ok.errors.join()); assert.deepStrictEqual(ok.nightly.items[0].allergens, ['Shellfish', 'Milk']); assert.strictEqual(ok.nightly.items[0].price, 900);

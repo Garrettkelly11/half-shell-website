@@ -24,7 +24,7 @@
   var DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   var ALLERGENS = ['Milk', 'Eggs', 'Fish', 'Shellfish', 'Tree nuts', 'Peanuts', 'Wheat', 'Soy', 'Sesame', 'Sulfites'];
   var TAGS = ['House', 'Local', 'Seasonal', 'Non-alcoholic', 'Gluten-free', 'Vegan', 'Spicy', 'Low ABV'];
-  var LIMITS = { drinks: 500, specials: 100, nightlyItems: 25, name: 80, description: 400, size: 40, category: 30, note: 200, ingredients: 300 };
+  var LIMITS = { drinks: 500, specials: 100, nightlyItems: 25, library: 300, name: 80, description: 400, size: 40, category: 30, note: 200, ingredients: 300 };
   var STORAGE_HOST = 'https://firebasestorage.googleapis.com/';
 
   /** Text from any source, cleaned: invisible characters dropped, no-break spaces and stray control characters become plain spaces, trimmed. */
@@ -490,29 +490,52 @@
     });
   }
 
-  // ── Nightly (food) specials: staff only, for the paper sheet ──
+  // ── Food specials: staff only, for the paper sheet ──
+  // The saved list (menu/specialsLibrary) holds every special a manager has
+  // made; a night (menu/nightlySpecials/{date}) holds its own ordered copies,
+  // each with libId pointing back to the saved one when it came from there.
+  var LIB_ID = /^[A-Za-z0-9]{1,40}$/;
+  function foodItem(it, label, errors) {
+    var name = str(it && it.name);
+    if (!name) { errors.push(label + ' needs a name.'); return null; }
+    if (name.length > LIMITS.name) errors.push(label + ' name is too long.');
+    var ing = str(it.ingredients), desc = str(it.description);
+    if (ing.length > LIMITS.ingredients) errors.push(label + ' ingredients are too long.');
+    if (desc.length > LIMITS.description) errors.push(label + ' description is too long.');
+    var al = matchList(splitList(it.allergens), ALLERGENS);
+    if (al.bad.length) errors.push(label + ': unknown allergen ' + al.bad.join(', ') + '.');
+    var row = { name: name, ingredients: ing, description: desc, allergens: al.ok };
+    if (it.price != null && str(it.price) !== '') {
+      var p = isInt(it.price) ? it.price : parsePrice(it.price);
+      if (p == null) errors.push(label + ' price must be a number.'); else row.price = p;
+    }
+    return row;
+  }
   function validateNightly(input) {
     var errors = [], src = input || {}, out = { date: str(src.date), items: [] };
     if (!isDate(out.date)) errors.push('Date is needed.');
     var items = Array.isArray(src.items) ? src.items : [];
     if (items.length > LIMITS.nightlyItems) errors.push('At most ' + LIMITS.nightlyItems + ' items a night.');
     items.forEach(function (it, i) {
-      var n = i + 1, name = str(it && it.name);
-      if (!name) { errors.push('Item ' + n + ' needs a name.'); return; }
-      if (name.length > LIMITS.name) errors.push('Item ' + n + ' name is too long.');
-      var ing = str(it.ingredients), desc = str(it.description);
-      if (ing.length > LIMITS.ingredients) errors.push('Item ' + n + ' ingredients are too long.');
-      if (desc.length > LIMITS.description) errors.push('Item ' + n + ' description is too long.');
-      var al = matchList(splitList(it.allergens), ALLERGENS);
-      if (al.bad.length) errors.push('Item ' + n + ': unknown allergen ' + al.bad.join(', ') + '.');
-      var row = { name: name, ingredients: ing, description: desc, allergens: al.ok };
-      if (str(it.price) !== '') {
-        var p = isInt(it.price) ? it.price : parsePrice(it.price);
-        if (p == null) errors.push('Item ' + n + ' price must be a number.'); else row.price = p;
-      }
+      var row = foodItem(it, 'Item ' + (i + 1), errors);
+      if (!row) return;
+      var lid = str(it.libId);
+      if (lid) { if (LIB_ID.test(lid)) row.libId = lid; else errors.push('Item ' + (i + 1) + ' has a bad saved-list link.'); }
       out.items.push(row);
     });
     return { ok: errors.length === 0, nightly: out, errors: errors };
+  }
+  /** One special for the saved list. */
+  function validateLibrarySpecial(input) {
+    var errors = [], row = foodItem(input || {}, 'The special', errors);
+    return { ok: errors.length === 0 && !!row, special: row, errors: errors };
+  }
+  /** Olivero-style menu price: bare number, cents only when not .00 (1400 -> "14", 1450 -> "14.5", 1425 -> "14.25"). */
+  function menuPrice(cents) {
+    if (!isInt(cents)) return '';
+    var d = Math.floor(cents / 100), c = cents % 100;
+    if (!c) return String(d);
+    return d + '.' + (c % 10 ? String(c).padStart(2, '0') : String(c / 10));
   }
 
   return {
@@ -523,6 +546,6 @@
     validateDrink: validateDrink, parseCSV: parseCSV, drinksFromRows: drinksFromRows,
     diffImport: diffImport, mergeFields: mergeFields, toCSV: toCSV,
     validateSpecial: validateSpecial, specialActive: specialActive, specialStatus: specialStatus,
-    buildMenu: buildMenu, validateNightly: validateNightly,
+    buildMenu: buildMenu, validateNightly: validateNightly, validateLibrarySpecial: validateLibrarySpecial, menuPrice: menuPrice, LIB_ID: LIB_ID,
   };
 });

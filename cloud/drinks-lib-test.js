@@ -49,7 +49,7 @@ const audits = (db) => Object.values(db.data['audit-log'] || {}).map((a) => a.ac
     await rejects(dl.saveDrink({ uid: 'merroir:2', token: { staff_rank: 10 } }, { create: true, drink: { name: 'A' } }, dep(db)), 'permission-denied');
     await rejects(dl.saveDrink({ uid: 'merroir:2', token: { staff_rank: 20 } }, { create: true, drink: { name: 'A' } }, dep(db)), 'permission-denied'); // live rank 10 wins
     await rejects(dl.saveDrink({ uid: 'x', token: { staff_rank: 99 } }, {}, dep(db)), 'permission-denied'); // not in staff
-    for (const f of ['removeDrink', 'setOnMenu', 'importDrinks', 'saveSpecial', 'removeSpecial', 'saveNightly']) {
+    for (const f of ['removeDrink', 'setOnMenu', 'importDrinks', 'saveSpecial', 'removeSpecial', 'saveNightly', 'saveLibrarySpecial', 'removeLibrarySpecial']) {
       await rejects(dl[f]({ uid: 'merroir:2', token: { staff_rank: 10 } }, {}, dep(db)), 'permission-denied');
     }
     assert.deepStrictEqual(db.data.menu, undefined);
@@ -171,6 +171,30 @@ const audits = (db) => Object.values(db.data['audit-log'] || {}).map((a) => a.ac
     await dl.saveNightly(mgr, { date: '2026-11-06', items: [{ name: 'Late' }] }, { db, now: () => Date.parse('2026-11-07T02:00:00-05:00') }); // 2 AM is still the 6th
   });
 
+  await check('saved specials list: create, duplicate name, edit keeps lastUsed, delete; nights mark lastUsed and keep order', async () => {
+    const db = staffDb();
+    const a = await dl.saveLibrarySpecial(mgr, { special: { name: 'Crab Dip', ingredients: 'sherry, old bay', allergens: ['Shellfish', 'Milk'], price: '14' } }, dep(db));
+    const rec = db.data.menu.specialsLibrary[a.id];
+    assert.strictEqual(rec.price, 1400); assert.strictEqual(rec.by, 'Garrett K.'); assert.deepStrictEqual(rec.allergens, ['Shellfish', 'Milk']);
+    await rejects(dl.saveLibrarySpecial(mgr, { special: { name: 'crab  dip!' } }, dep(db)), 'already-exists');
+    await rejects(dl.saveLibrarySpecial(mgr, { special: { name: '' } }, dep(db)), 'invalid-argument');
+    await rejects(dl.saveLibrarySpecial(mgr, { id: 'nope', special: { name: 'Z' } }, dep(db)), 'not-found');
+    const b = await dl.saveLibrarySpecial(mgr, { special: { name: 'Po Boy' } }, dep(db));
+    await dl.saveNightly(mgr, { date: '2026-11-06', items: [{ name: 'Po Boy', libId: b.id }, { name: 'Crab Dip', libId: a.id, price: 1500 }, { name: 'One-off' }] }, dep(db));
+    const night = db.data.menu.nightlySpecials['2026-11-06'].items;
+    assert.deepStrictEqual(night.map((i) => i.name), ['Po Boy', 'Crab Dip', 'One-off'], 'order kept');
+    assert.strictEqual(night[1].price, 1500, 'tonight can differ from the saved price');
+    assert.strictEqual(db.data.menu.specialsLibrary[a.id].lastUsed, '2026-11-06');
+    await rejects(dl.saveNightly(mgr, { date: '2026-11-06', items: [{ name: 'X', libId: 'bad id!' }] }, dep(db)), 'invalid-argument');
+    await dl.saveLibrarySpecial(mgr, { id: a.id, special: { name: 'Crab Dip', ingredients: 'sherry', price: '15' } }, dep(db));
+    assert.strictEqual(db.data.menu.specialsLibrary[a.id].lastUsed, '2026-11-06', 'edit keeps lastUsed');
+    assert.strictEqual(db.data.menu.specialsLibrary[a.id].price, 1500);
+    await dl.removeLibrarySpecial(mgr, { id: a.id }, dep(db));
+    assert.ok(!db.data.menu.specialsLibrary[a.id]);
+    assert.strictEqual(db.data.menu.nightlySpecials['2026-11-06'].items[1].name, 'Crab Dip', 'the night keeps its copy');
+    await rejects(dl.removeLibrarySpecial(mgr, { id: a.id }, dep(db)), 'not-found');
+  });
+
   await check('uploadDrinkPhoto: manager only, real images only, size, saves with a token', async () => {
     const saved = [];
     const files = { file: (name) => ({ save: async (buf, o) => saved.push({ name, buf, o }) }) };
@@ -248,7 +272,7 @@ const audits = (db) => Object.values(db.data['audit-log'] || {}).map((a) => a.ac
 
   await check('index.js exports the drink callables in us-east1', async () => {
     const ix = require('./index.js');
-    for (const f of ['uploadDrinkPhoto', 'saveDrink', 'removeDrink', 'importDrinks', 'saveSpecial', 'removeSpecial', 'saveNightly']) {
+    for (const f of ['uploadDrinkPhoto', 'saveDrink', 'removeDrink', 'importDrinks', 'saveSpecial', 'removeSpecial', 'saveNightly', 'saveLibrarySpecial', 'removeLibrarySpecial']) {
       const ep = ix[f].__endpoint; assert.ok(ep.callableTrigger && ep.region[0] === 'us-east1', f);
     }
   });

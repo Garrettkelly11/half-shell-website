@@ -14,7 +14,8 @@
  *   menu/toastDrinks/{key}      from Toast (the sync); guests see it once config/drinksPublic is true
  *   menu/drinks/{id}            the extras; guests see it only once config/drinksPublic is true
  *   menu/drinkSpecials/{id}     same
- *   menu/nightlySpecials/{date} staff only: the food specials for the paper sheet
+ *   menu/nightlySpecials/{date} staff only: that night's food specials, in menu order
+ *   menu/specialsLibrary/{id}   staff only: every food special a manager has saved, to pick from
  * Photos: the page shrinks the picture, sends it to uploadDrinkPhoto (checks the
  * rank and that it really is an image), which saves it to Firebase Storage and
  * returns the link. Only that link is ever saved on a drink or special.
@@ -255,8 +256,48 @@ async function saveNightly(auth, data, deps) {
   const cutoff = D.addDays(today, -14), old = {};
   Object.keys(all).forEach((d) => { if (d < cutoff) old[d] = null; });
   if (Object.keys(old).length) await db.ref('menu/nightlySpecials').update(old);
+  // Saved specials used tonight remember the night (the list shows "last on").
+  const lib = (await val(db, 'menu/specialsLibrary')) || {}, used = {};
+  v.nightly.items.forEach((i) => { if (i.libId && lib[i.libId] && !(lib[i.libId].lastUsed >= v.nightly.date)) used[`${i.libId}/lastUsed`] = v.nightly.date; });
+  if (Object.keys(used).length) await db.ref('menu/specialsLibrary').update(used);
   await db.ref('audit-log').push(auditEntry('nightly_specials_set', `${v.nightly.date}: ${v.nightly.items.length} item(s)`, actor, now));
   return { ok: true, count: v.nightly.items.length };
+}
+
+const nameKey = (n) => String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+/** data: { id?, special } one food special on the saved list. Returns { ok, id }. */
+async function saveLibrarySpecial(auth, data, deps) {
+  const { db } = deps; const now = (deps.now || Date.now)();
+  const actor = await manager(auth, db, 'save specials');
+  const v = D.validateLibrarySpecial(data && data.special);
+  if (!v.ok) throw new SyncError('invalid-argument', v.errors.join(' '));
+  const all = (await val(db, 'menu/specialsLibrary')) || {};
+  let id = data.id;
+  if (id && (typeof id !== 'string' || !D.LIB_ID.test(id) || !Object.prototype.hasOwnProperty.call(all, id))) throw new SyncError('not-found', 'That special is no longer on the list.');
+  const clash = Object.keys(all).find((k) => k !== id && nameKey(all[k].name) === nameKey(v.special.name));
+  if (clash) throw new SyncError('already-exists', `"${all[clash].name}" is already on the list. Edit that one instead.`);
+  if (!id) {
+    if (Object.keys(all).length >= D.LIMITS.library) throw new SyncError('resource-exhausted', 'The list is full. Delete specials you no longer make first.');
+    id = 'f' + now.toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+  const rec = Object.assign({}, v.special, { by: actor, at: now });
+  if (data.id && all[id].lastUsed) rec.lastUsed = all[id].lastUsed;
+  await db.ref(`menu/specialsLibrary/${id}`).set(rec);
+  await db.ref('audit-log').push(auditEntry(data.id ? 'food_special_updated' : 'food_special_created', rec.name, actor, now));
+  return { ok: true, id };
+}
+
+/** data: { id } takes a special off the saved list. Nights already saved keep their copy. */
+async function removeLibrarySpecial(auth, data, deps) {
+  const { db } = deps; const now = (deps.now || Date.now)();
+  const actor = await manager(auth, db, 'delete specials');
+  const id = data && data.id;
+  const s = typeof id === 'string' && D.LIB_ID.test(id) ? await val(db, `menu/specialsLibrary/${id}`) : null;
+  if (!s) throw new SyncError('not-found', 'That special is no longer on the list.');
+  await db.ref(`menu/specialsLibrary/${id}`).set(null);
+  await db.ref('audit-log').push(auditEntry('food_special_deleted', s.name, actor, now));
+  return { ok: true };
 }
 
 const crypto = require('crypto');
@@ -284,4 +325,4 @@ async function uploadDrinkPhoto(auth, data, deps) {
   return { ok: true, url: `${STORAGE_PREFIX(bucket)}${encodeURIComponent(name)}?alt=media&token=${token}` };
 }
 
-module.exports = { uploadDrinkPhoto, saveDrink, removeDrink, setOnMenu, importDrinks, saveSpecial, removeSpecial, saveNightly };
+module.exports = { uploadDrinkPhoto, saveDrink, removeDrink, setOnMenu, importDrinks, saveSpecial, removeSpecial, saveNightly, saveLibrarySpecial, removeLibrarySpecial };

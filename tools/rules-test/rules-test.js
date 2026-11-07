@@ -104,7 +104,7 @@ function visit(extra) {
   await check('drinks and drink specials: staff only until drinksPublic, then everyone reads; nobody writes', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       await ctx.database().ref('menu').update({ drinks: { gin: { name: 'Gin' } }, toastDrinks: { gin: { name: 'Gin', price: 900 } }, drinkSpecials: { s1: { kind: 'price' } },
-        nightlySpecials: { '2026-11-06': { items: [{ name: 'Bisque' }] } } });
+        nightlySpecials: { '2026-11-06': { items: [{ name: 'Bisque' }] } }, specialsLibrary: { f1: { name: 'Bisque' } } });
       await ctx.database().ref('config/drinksPublic').remove();
     });
     for (const p of ['menu/drinks', 'menu/toastDrinks', 'menu/drinkSpecials']) {
@@ -131,6 +131,10 @@ function visit(extra) {
     await assertFails(anon.ref('menu/nightlySpecials').once('value'));
     await assertFails(custA.ref('menu/nightlySpecials/2026-11-06').once('value'));
     await assertFails(staff.ref('menu/nightlySpecials/2026-11-07').set({ items: [] }));
+    await assertSucceeds(staff.ref('menu/specialsLibrary').once('value'));
+    await assertFails(anon.ref('menu/specialsLibrary').once('value'));
+    await assertFails(custA.ref('menu/specialsLibrary/f1').once('value'));
+    await assertFails(staff.ref('menu/specialsLibrary/f2').set({ name: 'X' }));
     await env.withSecurityRulesDisabled(async (ctx) => { await ctx.database().ref('config/drinksPublic').remove(); });
   });
 

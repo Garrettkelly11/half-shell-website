@@ -8,7 +8,8 @@
  * database live (staff can read menu/drinks even before the bar menu is
  * public) and writes only through the Cloud Functions in cloud/drinks-lib.js,
  * which re-check the rank and re-validate everything. Logic (validation,
- * import, schedules) is src/drinks-core.js and src/drinks-xlsx.js.
+ * import, schedules) is src/drinks-core.js and src/drinks-xlsx.js; the
+ * specials PDF is src/specials-pdf.js.
  */
 window.hsDrinksAdmin = (function () {
   'use strict';
@@ -390,18 +391,14 @@ window.hsDrinksAdmin = (function () {
     sp.banner = make('div', { class: 'cat-note', hidden: true, role: 'status' });
     sp.form = make('form', { class: 'cat-form', hidden: true, novalidate: true });
     sp.list = make('div', { class: 'cat-list' });
-    sp.nbox = make('div', { class: 'cat-form' });
+    buildFood(root);
     kids(root, [
-      make('div', { class: 'section-title' }, 'Drink specials'),
+      make('div', { class: 'section-title' }, 'Drink specials (bar menu)'),
       make('p', { class: 'cat-confirm' }, 'Prices come from Toast. A price special shows a lower price on the bar menu for a while; it is display only, so set the matching discount in Toast too. A limited-time drink shows on the bar menu only while its special runs (it must already be in Toast).'),
       sp.banner,
       kids(make('div', { class: 'cat-toolbar' }), [make('span', { class: 'spacer' }), button('Add drink special', '', function () { openSpecialForm(null, null); })]),
       sp.form, sp.list,
-      make('div', { class: 'section-title' }, 'Tonight’s food specials'),
-      make('p', { class: 'cat-confirm' }, 'For the paper sheet only. Guests do not see these on the website. Add each special, tick the allergens, save, then print.'),
-      sp.nbox,
     ]);
-    buildNightly();
   }
   function describeSpecial(s) {
     var when = niceDate(s.startDate) + (s.endDate !== s.startDate ? ' – ' + niceDate(s.endDate) : '');
@@ -495,91 +492,291 @@ window.hsDrinksAdmin = (function () {
     sync(); f.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
-  // ── tonight's food specials + the paper sheet ──
-  var nd = { date: null, items: [], dirty: false };
-  function blankItem() { return { name: '', ingredients: '', description: '', allergens: [], price: '' }; }
-  function fromSaved(i) { return { name: i.name, ingredients: i.ingredients || '', description: i.description || '', allergens: (i.allergens || []).slice(), price: i.price == null ? '' : priceText(i.price) }; }
-  function buildNightly() {
-    nd.date = today();
-    nd.dateEl = make('input', { type: 'date', value: nd.date, min: today(), max: D.addDays(today(), 30) });
+  // ═══════════ FOOD SPECIALS: new special, tonight's list, saved list ═══════════
+  // The saved list (menu/specialsLibrary) keeps every special a manager makes.
+  // Tonight's list (menu/nightlySpecials/{date}) holds ordered copies; a copy
+  // can differ from the saved one (tonight's price, say) and keeps libId.
+  var lib = {};
+  var nd = { date: null, items: [], dirty: false, edit: null, drag: null };
+  function fromSaved(i) { return { name: i.name, ingredients: i.ingredients || '', description: i.description || '', allergens: (i.allergens || []).slice(), price: i.price == null ? null : i.price, libId: i.libId || null }; }
+  function fromLib(id) { var r = fromSaved(lib[id]); r.libId = id; return r; }
+  function libRows() { return Object.keys(lib).map(function (id) { return Object.assign({ id: id }, lib[id]); }).sort(function (a, b) { return a.name.localeCompare(b.name); }); }
+  function onTonight(id) { return nd.items.some(function (i) { return i.libId === id; }); }
+  function itemMeta(i) {
+    var bits = [];
+    if (i.ingredients) bits.push(i.ingredients);
+    if (i.price != null) bits.push(D.money(i.price));
+    if (i.allergens && i.allergens.length) bits.push('Contains ' + i.allergens.join(', ').toLowerCase());
+    return bits.join(' · ');
+  }
+  function markDirty() { nd.dirty = true; drawTonight(); drawLibrary(); }
+
+  function buildFood(root) {
+    // 1. Create (and edit) a special.
+    nd.formTitle = make('div', { class: 'section-title' }, 'Create a new special');
+    nd.form = make('form', { class: 'cat-form dx-food-form', novalidate: true });
+    // 2. Tonight's list.
+    nd.dateEl = make('input', { type: 'date', min: D.addDays(today(), 0), max: D.addDays(today(), 30) });
     nd.copyEl = make('select', {});
-    nd.rows = make('div', { class: 'dx-items' });
+    nd.rows = make('ol', { class: 'cat-list dx-tonight', 'aria-label': 'Tonight’s specials, in menu order' });
     nd.msg = make('div', { class: 'cat-note', hidden: true, role: 'status' });
-    nd.save = button('Save', '', saveNight);
-    nd.dateEl.addEventListener('change', function () { if (D.isDate(nd.dateEl.value)) { nd.date = nd.dateEl.value; nd.dirty = false; loadNight(); } });
-    nd.copyEl.addEventListener('change', function () {
-      var src = nightly[nd.copyEl.value]; if (!src) return;
-      nd.items = src.items.map(fromSaved); nd.dirty = true; drawNightly();
+    nd.state = make('span', { class: 'dx-state' });
+    nd.save = button('Save tonight’s list', '', function () { saveNight(); });
+    nd.pdf = button('Export PDF menu', 'secondary', exportPdf);
+    // 3. Saved list.
+    nd.search = make('input', { type: 'search', placeholder: 'Find a special…', 'aria-label': 'Find a saved special' });
+    nd.libMsg = make('div', { class: 'cat-note', hidden: true, role: 'status' });
+    nd.lib = make('div', { class: 'cat-list' });
+
+    nd.dateEl.addEventListener('change', function () {
+      if (!D.isDate(nd.dateEl.value)) return;
+      if (nd.dirty && !confirm('Tonight’s list has changes that are not saved. Switch nights and lose them?')) { nd.dateEl.value = nd.date; return; }
+      nd.date = nd.dateEl.value; nd.dirty = false; loadNight();
     });
-    kids(sp.nbox, [kids(make('div', { class: 'cat-toolbar' }), [field('Night', nd.dateEl), field('Copy from another night', nd.copyEl)]), nd.rows, nd.msg,
-      kids(make('div', { class: 'cat-form-foot' }), [button('Add a special', 'secondary', function () {
-        if (nd.items.length < D.LIMITS.nightlyItems) { nd.items.push(blankItem()); nd.dirty = true; drawNightly(); }
-      }), make('span', { class: 'spacer' }), button('Print the sheet', 'secondary', printSheet), nd.save])]);
+    nd.copyEl.addEventListener('change', function () {
+      var src = nightly[nd.copyEl.value]; nd.copyEl.value = '';
+      if (!src) return;
+      nd.items = src.items.slice(0, D.LIMITS.nightlyItems).map(fromSaved); markDirty();
+    });
+    nd.search.addEventListener('input', drawLibrary);
+
+    kids(root, [
+      nd.formTitle,
+      make('p', { class: 'cat-confirm' }, 'Food specials are for the paper menu only; guests never see them on the website. A new special is saved to your list so you can pick it again another night.'),
+      nd.form,
+      make('div', { class: 'section-title' }, 'Tonight’s specials'),
+      make('p', { class: 'cat-confirm' }, 'This is the order they print in. Drag a row, or use the arrows, to move it. Save, then export the PDF: one Letter sheet with two menus side by side; cut down the middle.'),
+      kids(make('div', { class: 'cat-toolbar' }), [field('Night', nd.dateEl), field('Copy another night’s list', nd.copyEl)]),
+      nd.rows, nd.msg,
+      kids(make('div', { class: 'cat-form-foot dx-tonight-foot' }), [nd.state, make('span', { class: 'spacer' }), nd.pdf, nd.save]),
+      make('div', { class: 'section-title' }, 'All specials'),
+      make('p', { class: 'cat-confirm' }, 'Every special you have saved. Add one to tonight, or edit it for next time.'),
+      kids(make('div', { class: 'cat-toolbar' }), [nd.search]),
+      nd.libMsg, nd.lib,
+    ]);
+    nd.date = today(); nd.dateEl.value = nd.date;
+    openFoodForm(null);
     loadNight();
   }
+
+  /**
+   * The one form: mode 'new' (create, save to list), 'lib' (edit a saved
+   * special) or 'night' (edit a row on tonight's list: index).
+   */
+  function openFoodForm(mode, ref) {
+    var f = clear(nd.form);
+    mode = mode || 'new';
+    var src = mode === 'lib' ? fromLib(ref) : mode === 'night' ? nd.items[ref] : { name: '', ingredients: '', description: '', allergens: [], price: null };
+    nd.edit = { mode: mode, ref: ref };
+    nd.formTitle.textContent = { new: 'Create a new special', lib: 'Edit a saved special', night: 'Edit for tonight' }[mode];
+    var name = make('input', { type: 'text', maxlength: String(D.LIMITS.name), value: src.name, placeholder: 'e.g. Crab dip' });
+    var price = make('input', { type: 'text', inputmode: 'decimal', value: priceText(src.price), placeholder: 'e.g. 14' });
+    var ing = make('input', { type: 'text', maxlength: String(D.LIMITS.ingredients), value: src.ingredients, placeholder: 'e.g. jumbo lump, sherry cream, Old Bay' });
+    var desc = make('textarea', { maxlength: String(D.LIMITS.description), rows: '2', placeholder: 'Optional. Prints in italics under the name.' }); desc.value = src.description;
+    var all = checkGroup(D.ALLERGENS, src.allergens, 'Allergens');
+    var msg = make('div', { class: 'cat-note error', hidden: true, role: 'alert' });
+    var alsoLib = null;
+    var grid = kids(make('div', { class: 'cat-form-grid' }), [field('Name', name), field('Price ($, optional)', price, { hint: 'Prints as a bare number: 14, 14.5' }),
+      field('Ingredients', ing, { long: true, hint: 'Comma separated. Prints in capitals after the name, as on the menu.' }),
+      field('Description', desc, { long: true }), group('Contains (allergens)', all.node)]);
+    f.appendChild(grid);
+    if (mode === 'night' && src.libId && lib[src.libId]) {
+      alsoLib = make('input', { type: 'checkbox' });
+      var l = make('label', { class: 'dx-check' }); l.appendChild(alsoLib); l.appendChild(document.createTextNode(' Also update the saved special for next time'));
+      f.appendChild(l);
+    }
+    function read() {
+      return { name: name.value, price: price.value, ingredients: ing.value, description: desc.value, allergens: all.values() };
+    }
+    function check() {
+      var v = D.validateLibrarySpecial(read());
+      if (!v.ok) { note(msg, v.errors.join(' '), 'error'); name.focus(); return null; }
+      return v.special;
+    }
+    function busy(on) { Array.prototype.forEach.call(f.querySelectorAll('button'), function (b) { b.disabled = on; }); }
+    function saveLib(id, s, then) {
+      busy(true); note(msg, 'Saving…', '');
+      call('saveLibrarySpecial', { id: id || undefined, special: s }).then(function (r) {
+        busy(false);
+        if (!r.ok) { note(msg, r.error, 'error'); return; }
+        note(msg, '', ''); then(r.data.id);
+      });
+    }
+    function addTonight(item) {
+      if (nd.items.length >= D.LIMITS.nightlyItems) { note(nd.msg, 'Tonight’s list is full (' + D.LIMITS.nightlyItems + ').', 'error'); return false; }
+      nd.items.push(item); markDirty(); return true;
+    }
+    var foot = make('div', { class: 'cat-form-foot' });
+    if (mode === 'new') {
+      kids(foot, [
+        button('Save to list', 'secondary', function () { var s = check(); if (s) saveLib(null, s, function () { note(nd.libMsg, '“' + s.name + '” saved to your list.', 'ok'); openFoodForm(null); }); }),
+        button('Save and add to tonight', '', function () {
+          var s = check(); if (!s) return;
+          saveLib(null, s, function (id) {
+            var it = fromSaved(s); it.libId = id;
+            if (addTonight(it)) note(nd.msg, '“' + s.name + '” saved and added to tonight. Save tonight’s list when you are done.', 'ok');
+            openFoodForm(null);
+          });
+        }),
+      ]);
+    } else if (mode === 'lib') {
+      kids(foot, [
+        button('Save changes', '', function () {
+          var s = check(); if (!s) return;
+          saveLib(ref, s, function () {
+            // Tonight's unsaved copy follows the edit.
+            var hit = false;
+            nd.items.forEach(function (it, i) { if (it.libId === ref) { var n = fromSaved(s); n.libId = ref; nd.items[i] = n; hit = true; } });
+            if (hit) markDirty();
+            note(nd.libMsg, '“' + s.name + '” updated.' + (hit ? ' It is on tonight’s list too: save tonight’s list to keep the change there.' : ''), 'ok');
+            openFoodForm(null);
+          });
+        }),
+        button('Cancel', 'secondary', function () { openFoodForm(null); }),
+      ]);
+    } else {
+      kids(foot, [
+        button('Update tonight’s list', '', function () {
+          var s = check(); if (!s) return;
+          var it = fromSaved(s); it.libId = src.libId || null;
+          if (alsoLib && alsoLib.checked) {
+            saveLib(src.libId, s, function () { nd.items[ref] = it; markDirty(); openFoodForm(null); });
+          } else { nd.items[ref] = it; markDirty(); openFoodForm(null); }
+        }),
+        button('Cancel', 'secondary', function () { openFoodForm(null); }),
+      ]);
+    }
+    kids(f, [msg, foot]);
+    f.onsubmit = function (e) { e.preventDefault(); };
+    if (mode !== 'new') { f.scrollIntoView({ block: 'start', behavior: 'smooth' }); name.focus({ preventScroll: true }); }
+  }
+
   function loadNight() {
     var saved = nightly[nd.date];
     nd.items = saved ? saved.items.map(fromSaved) : [];
-    if (!nd.items.length) nd.items.push(blankItem());
-    drawNightly();
+    drawTonight(); drawLibrary();
   }
-  function drawNightlyCopy() {
+  function drawCopy() {
     clear(nd.copyEl); nd.copyEl.appendChild(make('option', { value: '' }, 'Choose a night…'));
     Object.keys(nightly).sort().reverse().forEach(function (d) { if (d !== nd.date) nd.copyEl.appendChild(make('option', { value: d }, niceDate(d) + ' (' + nightly[d].items.length + ')')); });
+    nd.copyEl.disabled = nd.copyEl.options.length < 2;
   }
-  function drawNightly() {
+  function move(from, to) {
+    if (to < 0 || to >= nd.items.length || from === to) return;
+    var it = nd.items.splice(from, 1)[0]; nd.items.splice(to, 0, it); markDirty();
+    var btns = nd.rows.children[to] && nd.rows.children[to].querySelectorAll('.dx-move');
+    if (btns && btns.length) (to > from ? btns[1] : btns[0]).focus();
+  }
+  function drawTonight() {
     if (!nd.rows) return;
-    drawNightlyCopy(); clear(nd.rows);
+    drawCopy(); clear(nd.rows);
+    var saved = nightly[nd.date];
+    nd.state.textContent = nd.dirty ? 'Not saved yet' : saved ? 'Saved' + (saved.by ? ' by ' + saved.by : '') : '';
+    nd.state.className = 'dx-state' + (nd.dirty ? ' dirty' : '');
+    if (!nd.items.length) {
+      nd.rows.appendChild(make('li', { class: 'cat-empty' }, 'Nothing on ' + (nd.date === today() ? 'tonight’s' : niceDate(nd.date) + '’s') + ' list yet. Add specials from your list below, or create a new one above.'));
+      return;
+    }
     nd.items.forEach(function (it, i) {
-      var name = make('input', { type: 'text', maxlength: String(D.LIMITS.name), value: it.name, placeholder: 'Name of the special' });
-      var price = make('input', { type: 'text', inputmode: 'decimal', value: it.price, placeholder: '0.00' });
-      var ing = make('input', { type: 'text', maxlength: String(D.LIMITS.ingredients), value: it.ingredients, placeholder: 'crab, cream, sherry…' });
-      var desc = make('textarea', { maxlength: String(D.LIMITS.description) }); desc.value = it.description;
-      var all = checkGroup(D.ALLERGENS, it.allergens, 'Allergens');
-      var set = function (k, el) { el.addEventListener('input', function () { it[k] = el.value; nd.dirty = true; }); };
-      set('name', name); set('price', price); set('ingredients', ing); set('description', desc);
-      all.node.addEventListener('change', function () { it.allergens = all.values(); nd.dirty = true; });
-      var grid = kids(make('div', { class: 'cat-form-grid' }), [field('Name', name), field('Price ($, optional)', price), field('Ingredients', ing, { long: true }),
-        field('Description', desc, { long: true }), group('Contains (allergens)', all.node)]);
-      nd.rows.appendChild(kids(make('div', { class: 'dx-item' }), [grid, kids(make('div', { class: 'cat-form-foot' }), [
-        button('Remove', 'secondary', function () { nd.items.splice(i, 1); if (!nd.items.length) nd.items.push(blankItem()); nd.dirty = true; drawNightly(); })])]));
+      var row = make('li', { class: 'cat-row dx-row dx-trow', draggable: 'true' });
+      row.appendChild(make('span', { class: 'dx-grip', 'aria-hidden': 'true' }, '⠿'));
+      row.appendChild(make('span', { class: 'dx-num' }, String(i + 1)));
+      var name = kids(make('div', { class: 'dx-name' }), [make('strong', {}, it.name)]);
+      if (!it.libId || !lib[it.libId]) name.appendChild(make('span', { class: 'dx-pill' }, 'not on your list'));
+      var meta = itemMeta(it); if (meta) name.appendChild(make('div', { class: 'cat-row-meta' }, meta));
+      if (it.description) name.appendChild(make('div', { class: 'cat-row-meta dx-desc' }, it.description));
+      row.appendChild(name);
+      var up = button('↑', 'secondary dx-move', function () { move(i, i - 1); }); up.setAttribute('aria-label', 'Move ' + it.name + ' up'); up.disabled = i === 0;
+      var down = button('↓', 'secondary dx-move', function () { move(i, i + 1); }); down.setAttribute('aria-label', 'Move ' + it.name + ' down'); down.disabled = i === nd.items.length - 1;
+      var acts = kids(make('div', { class: 'dx-acts' }), [up, down, button('Edit', 'secondary', function () { openFoodForm('night', i); })]);
+      if (!it.libId || !lib[it.libId]) acts.appendChild(button('Save to list', 'secondary', function (e) {
+        var b = e.target; b.disabled = true;
+        call('saveLibrarySpecial', { special: it }).then(function (r) {
+          b.disabled = false;
+          if (!r.ok) { note(nd.msg, r.error, 'error'); return; }
+          it.libId = r.data.id; markDirty(); note(nd.msg, '“' + it.name + '” added to your list.', 'ok');
+        });
+      }));
+      acts.appendChild(button('Remove', 'secondary quiet', function () { nd.items.splice(i, 1); markDirty(); }));
+      row.appendChild(acts);
+      // Drag to reorder (mouse); the arrows do the same on touch screens and keyboards.
+      row.addEventListener('dragstart', function (e) { nd.drag = i; row.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(i)); } catch (x) {} });
+      row.addEventListener('dragend', function () { nd.drag = null; row.classList.remove('dragging'); Array.prototype.forEach.call(nd.rows.children, function (r) { r.classList.remove('drop-above', 'drop-below'); }); });
+      row.addEventListener('dragover', function (e) {
+        if (nd.drag == null) return; e.preventDefault();
+        var below = e.clientY > row.getBoundingClientRect().top + row.offsetHeight / 2;
+        row.classList.toggle('drop-below', below); row.classList.toggle('drop-above', !below);
+      });
+      row.addEventListener('dragleave', function () { row.classList.remove('drop-above', 'drop-below'); });
+      row.addEventListener('drop', function (e) {
+        e.preventDefault(); if (nd.drag == null) return;
+        var below = row.classList.contains('drop-below'), to = i + (below ? 1 : 0), from = nd.drag;
+        if (from < to) to--;
+        nd.drag = null; move(from, to);
+      });
+      nd.rows.appendChild(row);
     });
   }
-  function nightPayload() { return { date: nd.date, items: nd.items.filter(function (i) { return i.name.trim() || i.ingredients.trim() || i.description.trim(); }) }; }
+
+  function drawLibrary() {
+    if (!nd.lib) return;
+    clear(nd.lib);
+    var q = nd.search.value.trim().toLowerCase(), rows = libRows();
+    if (!rows.length) { nd.lib.appendChild(make('div', { class: 'cat-empty' }, 'No saved specials yet. Create one above and it will be kept here.')); return; }
+    var shown = rows.filter(function (r) { return !q || (r.name + ' ' + (r.ingredients || '') + ' ' + (r.description || '')).toLowerCase().indexOf(q) >= 0; });
+    if (!shown.length) { nd.lib.appendChild(make('div', { class: 'cat-empty' }, 'No saved special matches “' + nd.search.value.trim() + '”.')); return; }
+    shown.forEach(function (r) {
+      var row = make('div', { class: 'cat-row dx-row' }), on = onTonight(r.id);
+      var name = kids(make('div', { class: 'dx-name' }), [make('strong', {}, r.name)]);
+      if (on) name.appendChild(make('span', { class: 'dx-pill live' }, 'on tonight'));
+      var meta = itemMeta(r) + (r.lastUsed ? (itemMeta(r) ? ' · ' : '') + 'last on ' + niceDate(r.lastUsed) : '');
+      if (meta) name.appendChild(make('div', { class: 'cat-row-meta' }, meta));
+      var add = button(on ? 'On tonight' : 'Add to tonight', on ? 'secondary' : '', function () {
+        if (nd.items.length >= D.LIMITS.nightlyItems) { note(nd.libMsg, 'Tonight’s list is full (' + D.LIMITS.nightlyItems + ').', 'error'); return; }
+        nd.items.push(fromLib(r.id)); markDirty();
+        note(nd.libMsg, '“' + r.name + '” added to tonight. Save tonight’s list when you are done.', 'ok');
+      });
+      add.disabled = on;
+      kids(row, [name, kids(make('div', { class: 'dx-acts' }), [add, button('Edit', 'secondary', function () { openFoodForm('lib', r.id); }),
+        armed(button('', 'secondary quiet'), 'Delete', function () {
+          call('removeLibrarySpecial', { id: r.id }).then(function (x) { note(nd.libMsg, x.ok ? '“' + r.name + '” deleted from your list. Nights already saved keep it.' : x.error, x.ok ? 'ok' : 'error'); });
+        })])]);
+      nd.lib.appendChild(row);
+    });
+  }
+
+  function nightPayload() {
+    return { date: nd.date, items: nd.items.map(function (i) {
+      var o = { name: i.name, ingredients: i.ingredients, description: i.description, allergens: i.allergens, price: i.price == null ? '' : i.price };
+      if (i.libId) o.libId = i.libId;
+      return o;
+    }) };
+  }
   function saveNight() {
     var v = D.validateNightly(nightPayload());
-    if (!v.ok) { note(nd.msg, v.errors.join(' '), 'error'); return; }
+    if (!v.ok) { note(nd.msg, v.errors.join(' '), 'error'); return Promise.resolve(false); }
     nd.save.disabled = true; note(nd.msg, 'Saving…', '');
-    call('saveNightly', v.nightly).then(function (r) {
+    return call('saveNightly', v.nightly).then(function (r) {
       nd.save.disabled = false;
-      if (r.ok) nd.dirty = false;
-      note(nd.msg, r.ok ? (r.data.count ? 'Saved ' + r.data.count + (r.data.count === 1 ? ' special' : ' specials') + ' for ' + niceDate(nd.date) + '.' : 'Cleared the specials for ' + niceDate(nd.date) + '.') : r.error, r.ok ? 'ok' : 'error');
+      if (r.ok) { nd.dirty = false; drawTonight(); }
+      note(nd.msg, r.ok ? (r.data.count ? 'Saved ' + r.data.count + (r.data.count === 1 ? ' special' : ' specials') + ' for ' + niceDate(nd.date) + '.' : 'Cleared the list for ' + niceDate(nd.date) + '.') : r.error, r.ok ? 'ok' : 'error');
+      return r.ok;
     });
   }
-  function printSheet() {
+  function exportPdf() {
     var v = D.validateNightly(nightPayload());
     if (!v.ok) { note(nd.msg, v.errors.join(' '), 'error'); return; }
-    if (!v.nightly.items.length) { note(nd.msg, 'Add at least one special to print.', 'error'); return; }
-    var old = document.getElementById('dx-print'); if (old) old.remove();
-    var sheet = make('div', { id: 'dx-print' });
-    kids(sheet, [make('img', { src: 'assets/logo.png', alt: '', class: 'dx-print-logo' }), make('h1', {}, 'Specials'),
-      make('div', { class: 'dx-print-date' }, new Date(nd.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))]);
-    v.nightly.items.forEach(function (i) {
-      var row = make('div', { class: 'dx-print-item' }), top = make('div', { class: 'dx-print-top' });
-      top.appendChild(make('span', { class: 'dx-print-name' }, i.name));
-      if (i.price != null) top.appendChild(make('span', { class: 'dx-print-price' }, D.money(i.price)));
-      row.appendChild(top);
-      if (i.ingredients) row.appendChild(make('div', { class: 'dx-print-ing' }, i.ingredients));
-      if (i.description) row.appendChild(make('div', { class: 'dx-print-desc' }, i.description));
-      if (i.allergens.length) row.appendChild(make('div', { class: 'dx-print-all' }, 'Contains: ' + i.allergens.join(', ')));
-      sheet.appendChild(row);
-    });
-    sheet.appendChild(make('p', { class: 'dx-print-fine' }, 'Consumer advisory: eating raw or undercooked oysters, clams or mussels may cause severe illness. Please tell your server about any allergy before you order.'));
-    document.body.appendChild(sheet);
-    document.body.classList.add('dx-printing');
-    var after = function () { document.body.classList.remove('dx-printing'); sheet.remove(); window.removeEventListener('afterprint', after); };
-    window.addEventListener('afterprint', after);
-    setTimeout(function () { window.print(); }, 50);
+    if (!v.nightly.items.length) { note(nd.msg, 'Add at least one special to export the menu.', 'error'); return; }
+    if (!window.HS_SPECIALS_PDF) { note(nd.msg, 'The PDF maker did not load. Reload the page and try again.', 'error'); return; }
+    nd.pdf.disabled = true; nd.pdf.textContent = 'Making the PDF…';
+    var saving = nd.dirty ? saveNight() : Promise.resolve(true);
+    saving.then(function (saved) {
+      return window.HS_SPECIALS_PDF.download(v.nightly).then(function (out) {
+        if (!out.fits) note(nd.msg, 'Too many specials, or too much text, to fit on the card: the PDF was made but the bottom runs into the advisory. Remove a special or shorten descriptions, then export again.', 'error');
+        else if (saved) note(nd.msg, 'PDF saved to your downloads. Print it on Letter paper at 100% (actual size), then cut down the middle.', 'ok');
+      });
+    }).catch(function (e) { note(nd.msg, 'Could not make the PDF: ' + ((e && e.message) || 'try again') + '.', 'error'); })
+      .then(function () { nd.pdf.disabled = false; nd.pdf.textContent = 'Export PDF menu'; });
   }
 
   // ═══════════ wiring ═══════════
@@ -593,11 +790,12 @@ window.hsDrinksAdmin = (function () {
     watch('menu/drinkSpecials', function (v) { specials = v || {}; if (built) { drawSpecials(); drawDrinks(); } });
     watch('menu/nightlySpecials', function (v) {
       nightly = v || {};
-      if (built && nd.rows) { if (nd.dirty) drawNightlyCopy(); else loadNight(); }
+      if (built && nd.rows) { if (nd.dirty) drawTonight(); else loadNight(); }
     });
+    watch('menu/specialsLibrary', function (v) { lib = v || {}; if (built && nd.rows) { drawTonight(); drawLibrary(); } });
     setInterval(function () { if (built && manager) drawSpecials(); }, 60000);
   }
-  function stop() { refs.forEach(function (r) { r.off(); }); refs = []; started = false; drinks = {}; specials = {}; nightly = {}; toast = {}; }
+  function stop() { refs.forEach(function (r) { r.off(); }); refs = []; started = false; drinks = {}; specials = {}; nightly = {}; toast = {}; lib = {}; }
   function buildAll() { if (built) return; built = true; buildDrinks(); buildSpecials(); drawDrinks(); drawSpecials(); }
   return {
     signedIn: function (claims) {

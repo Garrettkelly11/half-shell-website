@@ -34,6 +34,10 @@
       "nightlySpecials": {
         ".read": "auth != null && root.child('staff').child(auth.uid).exists()",
         ".write": false
+      },
+      "specialsLibrary": {
+        ".read": "auth != null && root.child('staff').child(auth.uid).exists()",
+        ".write": false
       }
     },
     "audit-log": {
