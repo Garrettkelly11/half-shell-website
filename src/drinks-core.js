@@ -469,7 +469,7 @@
       if (!rec && !live[id]) return;                    // not added to the menu (a live limited-time special does add it for its window)
       if (!id || (limitedIds[id] && !live[id])) return;
       var sizes = Array.isArray(t.sizes) ? t.sizes.filter(function (z) { return z && str(z.name) && isInt(z.price); }) : [];
-      var it = Object.assign({ tags: [], allergens: [] }, rec || {}, { id: id, name: cleanName(t.name), category: str(t.group) || 'Drinks', order: isInt(t.order) ? t.order : 1e9 });
+      var it = Object.assign({ tags: [], allergens: [] }, rec || {}, { id: id, name: cleanName(t.name), category: str(t.group) || 'Drinks', path: str(t.path) || str(t.group), order: isInt(t.order) ? t.order : 1e9 });
       if (sizes.length) it.sizes = sizes; else if (isInt(t.price)) it.price = t.price;
       if (it.price != null && priceOverride[id] != null && priceOverride[id] < it.price) { it.was = it.price; it.price = priceOverride[id]; it.special = true; }
       if (live[id]) { it.limited = true; it.note = live[id].note; it.endDate = live[id].endDate; }
@@ -488,6 +488,30 @@
       });
       return { category: n, items: groups[n] };
     });
+  }
+
+  // ── Bar menu tabs: Cocktails, Beer, Wine ──
+  // Each Toast section goes under one tab by its top-level Toast group (the
+  // first part of its path, e.g. "Beer" in "Beer › Draft Beer"), then by its
+  // own name. Anything that is neither beer nor wine (house cocktails,
+  // spirits, zero-proof) goes under Cocktails.
+  var BAR_TABS = [{ id: 'cocktails', label: 'Cocktails' }, { id: 'beer', label: 'Beer' }, { id: 'wine', label: 'Wine' }];
+  var BEER_RE = /\b(beers?|drafts?|cans?|bottles?|ciders?|seltzers?|ales?|lagers?|ipas?)\b/i;
+  var WINE_RE = /\b(wines?|bubbles|sparkling|champagnes?|prosecco|cava|ros[eé]|port|sherry|sake|vino)(?![a-z])/i;
+  function barTab(path, group) {
+    var top = str(String(path || '').split('›')[0]), leaf = str(group);
+    var pick = function (t) { return WINE_RE.test(t) ? 'wine' : BEER_RE.test(t) ? 'beer' : null; };
+    return pick(top) || pick(leaf) || 'cocktails';
+  }
+  /** buildMenu's sections split into the three tabs, in Toast's order: [{ id, label, sections: [{ category, items }] }]. */
+  function barTabs(groups) {
+    var out = BAR_TABS.map(function (t) { return { id: t.id, label: t.label, sections: [] }; });
+    var at = { cocktails: out[0], beer: out[1], wine: out[2] };
+    (groups || []).forEach(function (g) {
+      var first = g.items && g.items[0];
+      at[barTab(first && first.path, g.category)].sections.push(g);
+    });
+    return out;
   }
 
   // ── Food specials: staff only, for the paper sheet ──
@@ -546,6 +570,6 @@
     validateDrink: validateDrink, parseCSV: parseCSV, drinksFromRows: drinksFromRows,
     diffImport: diffImport, mergeFields: mergeFields, toCSV: toCSV,
     validateSpecial: validateSpecial, specialActive: specialActive, specialStatus: specialStatus,
-    buildMenu: buildMenu, validateNightly: validateNightly, validateLibrarySpecial: validateLibrarySpecial, menuPrice: menuPrice, LIB_ID: LIB_ID,
+    buildMenu: buildMenu, BAR_TABS: BAR_TABS, barTab: barTab, barTabs: barTabs, validateNightly: validateNightly, validateLibrarySpecial: validateLibrarySpecial, menuPrice: menuPrice, LIB_ID: LIB_ID,
   };
 });

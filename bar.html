@@ -23,7 +23,7 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Montserrat:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"></noscript>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
+    html { scroll-padding-top: calc(var(--nav-h) + 0.75rem); }
     body { color-scheme: dark; font-family: 'Playfair Display', Georgia, serif; background: #14110e; color: #f1e6d2; min-height: 100vh; display: flex; flex-direction: column; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
@@ -38,22 +38,62 @@
     /* ── Preview banner (staff only, before the owners approve) ── */
     .preview { background: #c79a55; color: #14110e; font-family: 'Lato', sans-serif; font-size: 0.8rem; font-weight: 700; text-align: center; padding: 0.55rem 1rem; letter-spacing: 0.03em; }
 
-    /* ── Tools: search, filters, category jump bar ── */
-    .tools { position: sticky; top: 0; z-index: 20; background: #14110e; border-bottom: 1px solid #3a2f23; }
-    .tools-inner { max-width: 900px; margin: 0 auto; padding: 0.6rem 1rem 0.5rem; }
-    .search { width: 100%; padding: 0.55rem 0.8rem; border: 1px solid #3a2f23; border-radius: 4px; background: #1d1812; font-family: 'Lato', sans-serif; font-size: 1rem; color: #f1e6d2; }
+    /* ── Ribbons: Cocktails / Beer / Wine, then that tab's sections ── */
+    :root { --rib-off: #2b2219; --rib-on: #c79a55; --ink: #14110e; --nav-h: 7rem; }
+    .bar-nav { position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 10px rgba(0,0,0,0.45); }
+    .bar-nav[hidden] { display: none; }
+    .tabs { display: flex; background: var(--rib-off); }
+    .tab { flex: 1 1 0; min-width: 0; min-height: 52px; border: 0; background: var(--rib-off); color: #f1e6d2; cursor: pointer;
+      font-family: 'Lato', sans-serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden;
+      padding: 0 0.35rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+      transition: flex-grow 0.38s cubic-bezier(.2,.8,.2,1), background-color 0.25s, color 0.25s, font-size 0.25s, letter-spacing 0.25s;
+      -webkit-tap-highlight-color: transparent; }
+    .tab + .tab { box-shadow: inset 1px 0 0 rgba(241,230,210,0.08); }
+    .tab[aria-selected="true"] { flex-grow: 4; background: var(--rib-on); color: var(--ink); font-size: 1.02rem; letter-spacing: 0.16em; text-transform: uppercase; box-shadow: none; }
+    .tab[aria-selected="true"] + .tab { box-shadow: none; }
+    .tab:hover:not([aria-selected="true"]) { background: #3a2e22; }
+    .tab:focus-visible { outline: 3px solid #f1e6d2; outline-offset: -5px; }
+    .tab .n { font-size: 0.7em; font-weight: 400; letter-spacing: 0; opacity: 0.8; }
+    .tab .n:empty { display: none; }
+    .subbar { background: var(--rib-on); color: var(--ink); min-height: 6px; }
+    .sub { display: flex; gap: 0.25rem; overflow-x: auto; padding: 0 0.6rem; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+    .sub::-webkit-scrollbar { display: none; }
+    .sub:empty { display: none; }
+    .sub a { flex: none; display: inline-flex; align-items: center; min-height: 40px; padding: 0 0.8rem; margin: 3px 0; border-radius: 20px;
+      font-family: 'Lato', sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; color: var(--ink); text-decoration: none; white-space: nowrap;
+      transition: background-color 0.2s, color 0.2s; -webkit-tap-highlight-color: transparent; }
+    .sub a.on { background: var(--ink); color: var(--rib-on); }
+    .sub a:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+    .sub.fade { animation: subIn 0.3s ease; }
+    @keyframes subIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+
+    /* ── Finder: search and filters (scrolls with the page) ── */
+    .finder { max-width: 900px; margin: 0 auto; width: 100%; padding: 1rem 1rem 0; }
+    .finder[hidden] { display: none; }
+    .search { width: 100%; padding: 0.55rem 0.8rem; border: 1px solid #3a2f23; border-radius: 4px; background: #1d1812; font-family: 'Lato', sans-serif; font-size: 1rem; color: #f1e6d2; min-height: 44px; }
     .search:focus { outline: 2px solid #c79a55; outline-offset: 1px; }
     .chips { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.55rem 0 0.15rem; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
     .chips::-webkit-scrollbar { display: none; }
-    .chip { flex: none; font-family: 'Lato', sans-serif; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #f1e6d2; background: transparent; border: 1.5px solid #5a4630; border-radius: 20px; padding: 0.5rem 1rem; min-height: 44px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+    .chips[hidden] { display: none; }
+    .chip { flex: none; font-family: 'Lato', sans-serif; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #f1e6d2; background: transparent; border: 1.5px dashed #5a4630; border-radius: 20px; padding: 0.5rem 1rem; min-height: 44px; cursor: pointer; display: inline-flex; align-items: center; transition: background 0.15s, color 0.15s, border-color 0.15s; }
     .chip:hover { background: #2a2218; border-color: #c79a55; }
-    .chip.on { background: #c79a55; border-color: #c79a55; color: #14110e; }
+    .chip.on { border-style: solid; background: #e0b36e; border-color: #e0b36e; color: #14110e; }
     .chip:focus-visible { outline: 3px solid #c79a55; outline-offset: 2px; }
-    .chips.filters .chip { border-style: dashed; }
-    .chips.filters .chip.on { border-style: solid; background: #e0b36e; border-color: #e0b36e; color: #14110e; }
+    .elsewhere { font-family: 'Lato', sans-serif; font-size: 0.85rem; color: #bfae92; text-align: center; padding: 1.5rem 0 0.5rem; }
+    .elsewhere button { font: inherit; font-weight: 700; color: #14110e; background: #c79a55; border: 0; border-radius: 20px; padding: 0.5rem 0.9rem; margin: 0.4rem 0.2rem 0; min-height: 40px; cursor: pointer; }
+
+    /* ── Panels: one per tab, side by side; swipe or tap to slide ── */
+    .viewport { overflow: hidden; touch-action: pan-y; }
+    .track { display: flex; align-items: flex-start; will-change: transform; }
+    .track.anim { transition: transform 0.38s cubic-bezier(.2,.8,.2,1); }
+    .panel { flex: 0 0 100%; min-width: 0; }
+    .panel.rest { height: 0; overflow: hidden; visibility: hidden; }
+    .panel-empty { text-align: center; padding: 3rem 1rem; font-style: italic; color: #a8977c; }
 
     /* ── Menu ── */
-    main { flex: 1; padding: 1.5rem 1rem 2.5rem; max-width: 900px; margin: 0 auto; width: 100%; }
+    main { flex: 1; width: 100%; padding-bottom: 2.5rem; }
+    .panel-inner { padding: 1.25rem 1rem 0; max-width: 900px; margin: 0 auto; }
+    main > .state { max-width: 900px; margin: 0 auto; }
     .section { margin-bottom: 2rem; }
     .section-header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.9rem; padding-bottom: 0.5rem; border-bottom: 2px solid #c79a55; }
     .section-header h2 { font-size: 1.35rem; font-weight: 400; }
@@ -91,7 +131,10 @@
         .items { grid-template-columns: minmax(0, 1fr); }
       .item-photo { width: 72px; height: 72px; }
     }
-    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .chip { transition: none; } }
+    @media (max-width: 480px) { .tab:not([aria-selected="true"]) .n { display: none; } }
+    @media (max-width: 380px) { .tab { font-size: 0.72rem; letter-spacing: 0; padding: 0 0.15rem; } .tab[aria-selected="true"] { font-size: 0.95rem; letter-spacing: 0.12em; } }
+    @media (max-width: 340px) { .tab { font-size: 0.66rem; } }
+    @media (prefers-reduced-motion: reduce) { .chip, .tab, .sub a, .track.anim { transition: none; } .sub.fade { animation: none; } }
   </style>
 </head>
 <body>
@@ -99,26 +142,26 @@
 <header>
   <img src="assets/logo.png" alt="Half Shell Raw Bar" class="header-logo" width="80" height="80" />
   <h1>The Bar at Half Shell</h1>
-  <p>Cocktails, beer, wine and more</p>
+  <p>Cocktails, beer and wine</p>
 </header>
 
 <div class="preview" id="preview" role="note" hidden>Staff preview. Guests can not see the bar menu yet.</div>
 
-<div class="tools" id="tools" hidden>
-  <div class="tools-inner">
-    <label class="sr-only" for="search">Search drinks</label>
-    <input class="search" id="search" type="search" placeholder="Search drinks" autocomplete="off" />
-    <div class="chips filters" id="filters" role="group" aria-label="Show only"></div>
-    <nav class="chips" id="jump" aria-label="Jump to a section"></nav>
-  </div>
+<div class="bar-nav" id="barnav" hidden>
+  <div class="tabs" id="tabs" role="tablist" aria-label="Drink menu"></div>
+  <div class="subbar"><nav class="sub" id="sub" aria-label="Jump to a section"></nav></div>
 </div>
 
 <main>
+  <div class="finder" id="finder" hidden>
+    <label class="sr-only" for="search">Search drinks</label>
+    <input class="search" id="search" type="search" placeholder="Search drinks" autocomplete="off" />
+    <div class="chips" id="filters" role="group" aria-label="Show only" hidden></div>
+  </div>
   <div class="state" id="loading" role="status">Loading the bar menu&hellip;</div>
   <div class="state" id="soon" hidden><h2 id="soon-h">The bar menu is coming soon</h2><p id="soon-p">Ask your server what we are pouring tonight.</p></div>
   <div class="state" id="offline" hidden><h2>We could not load the menu</h2><p>Check your connection and try again, or ask your server.</p></div>
-  <div class="state" id="empty" hidden><h2>Nothing matches</h2><p>Try a different search or clear a filter.</p></div>
-  <div id="menu"></div>
+  <div class="viewport" id="viewport" hidden><div class="track" id="track"></div></div>
 </main>
 
 <p class="fine" id="fine" hidden>
@@ -189,7 +232,6 @@
     var m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(iso || ''); if (!m) return '';
     return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
-  function slugId(s) { return 'sec-' + s.toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
 
   function matches(it) {
     if (query) {
@@ -199,14 +241,192 @@
     return Object.keys(filterTags).every(function (t) { return (it.tags || []).indexOf(t) >= 0; });
   }
 
+  // ── Tabs and panels ──
+  var TABS = D.BAR_TABS, cur = 0, panels = [], tabBtns = [], built = false, lastTabs = null;
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function slugId(tab, s) { return tab + '-' + s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+
+  function buildShell() {
+    built = true;
+    var tabs = $('tabs'), track = $('track');
+    TABS.forEach(function (t, i) {
+      var b = h('button', 'tab'); b.type = 'button'; b.id = 'tab-' + t.id;
+      b.setAttribute('role', 'tab'); b.setAttribute('aria-controls', 'panel-' + t.id);
+      b.appendChild(h('span', 'l', t.label)); b.appendChild(h('span', 'n'));
+      b.addEventListener('click', function () { go(i, true); });
+      b.addEventListener('keydown', function (e) {
+        var k = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (e.key === 'Home') k = -i; if (e.key === 'End') k = TABS.length - 1 - i;
+        if (!k) return; e.preventDefault();
+        var j = Math.max(0, Math.min(TABS.length - 1, i + k)); go(j, true); tabBtns[j].focus();
+      });
+      tabs.appendChild(b); tabBtns.push(b);
+      var p = h('section', 'panel'); p.id = 'panel-' + t.id;
+      p.setAttribute('role', 'tabpanel'); p.setAttribute('aria-labelledby', b.id);
+      track.appendChild(p); panels.push(p);
+    });
+    var want = TABS.map(function (t) { return t.id; }).indexOf((location.hash || '').slice(1).split('-')[0]);
+    setTab(want >= 0 ? want : 0);
+    new ResizeObserver(navHeight).observe($('barnav'));
+    swipe();
+  }
+  function navHeight() { document.documentElement.style.setProperty('--nav-h', $('barnav').offsetHeight + 'px'); }
+
+  // Shows tab i with no animation: ribbon, panels at rest, second ribbon.
+  function setTab(i) {
+    cur = i;
+    tabBtns.forEach(function (b, j) { b.setAttribute('aria-selected', j === i ? 'true' : 'false'); b.tabIndex = j === i ? 0 : -1; });
+    panels.forEach(function (p, j) { p.classList.toggle('rest', j !== i); p.style.transform = ''; if (j === i) p.removeAttribute('inert'); else p.setAttribute('inert', ''); });
+    place(false);
+    drawSub(true);
+    try { history.replaceState(null, '', '#' + TABS[i].id); } catch (e) {}
+  }
+  function place(anim, dx) {
+    var t = $('track');
+    t.classList.toggle('anim', !!anim && !reduce);
+    t.style.transform = 'translateX(calc(' + (-cur * 100) + '% + ' + (dx || 0) + 'px))';
+  }
+  // Where a neighbour panel must sit so its top shows just under the ribbons.
+  function peekOffset() {
+    var vp = $('viewport').getBoundingClientRect().top, nav = $('barnav').getBoundingClientRect().bottom;
+    return Math.max(0, nav - vp);
+  }
+  function wake(j, off) { var p = panels[j]; if (!p) return; p.classList.remove('rest'); p.style.transform = off ? 'translateY(' + off + 'px)' : ''; }
+
+  // Slides to tab i. From a tap, a swipe that let go, or the arrow keys.
+  var sliding = false;
+  function go(i, fromTap, dx) {
+    if (i === cur && !dx) { if (fromTap && peekOffset() > 0) scrollToMenu(); return; }
+    var off = peekOffset(), from = cur;
+    var menuTop = $('viewport').getBoundingClientRect().top + window.scrollY - $('barnav').offsetHeight;
+    if (i !== cur) wake(i, off);
+    cur = i;
+    tabBtns.forEach(function (b, j) { b.setAttribute('aria-selected', j === i ? 'true' : 'false'); b.tabIndex = j === i ? 0 : -1; });
+    drawSub(i !== from);
+    sliding = true;
+    var done = function () {
+      $('track').removeEventListener('transitionend', done);
+      if (!sliding) return; sliding = false;
+      var had = panels[i].style.transform;
+      setTab(i);
+      if (had && i !== from) window.scrollTo(0, menuTop); // the new tab's top stays just under the ribbons
+    };
+    if (reduce) { place(false); done(); return; }
+    $('track').addEventListener('transitionend', done);
+    requestAnimationFrame(function () { place(true); });
+    setTimeout(done, 600); // in case transitionend never comes
+  }
+  function scrollToMenu() {
+    var y = $('viewport').getBoundingClientRect().top + window.scrollY - $('barnav').offsetHeight;
+    window.scrollTo({ top: Math.max(0, y), behavior: reduce ? 'auto' : 'smooth' });
+  }
+
+  // ── Swipe: follow the finger, then snap ──
+  function swipe() {
+    var vp = $('viewport'), st = null;
+    vp.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' || !e.isPrimary || sliding) return;
+      st = { x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId, axis: null, dx: 0 };
+    });
+    vp.addEventListener('pointermove', function (e) {
+      if (!st || e.pointerId !== st.id) return;
+      var dx = e.clientX - st.x, dy = e.clientY - st.y;
+      if (!st.axis) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        st.axis = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y';
+        if (st.axis === 'y') { st = null; return; }
+        try { vp.setPointerCapture(e.pointerId); } catch (x) {}
+        var off = peekOffset(); wake(cur - 1, off); wake(cur + 1, off);
+      }
+      var edge = (cur === 0 && dx > 0) || (cur === TABS.length - 1 && dx < 0);
+      st.dx = edge ? dx * 0.3 : dx; // rubber band at the ends
+      st.v = dx / Math.max(1, e.timeStamp - st.t);
+      place(false, st.dx);
+    });
+    function end(e, cancelled) {
+      if (!st || e.pointerId !== st.id) return;
+      var s0 = st; st = null;
+      if (s0.axis !== 'x') return;
+      var w = vp.offsetWidth, next = cur;
+      if (!cancelled && (Math.abs(s0.dx) > w * 0.22 || Math.abs(s0.v) > 0.45)) next = cur + (s0.dx < 0 ? 1 : -1);
+      next = Math.max(0, Math.min(TABS.length - 1, next));
+      if (next === cur) { // snap back
+        sliding = true; place(true);
+        setTimeout(function () { sliding = false; setTab(cur); }, reduce ? 0 : 400);
+      } else go(next, false, s0.dx);
+    }
+    vp.addEventListener('pointerup', function (e) { end(e, false); });
+    vp.addEventListener('pointercancel', function (e) { end(e, true); });
+    // Trackpads: a sideways two-finger swipe also turns the page.
+    var acc = 0, quiet = 0;
+    vp.addEventListener('wheel', function (e) {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || sliding) return;
+      if (e.timeStamp < quiet) return;
+      acc += e.deltaX;
+      if (Math.abs(acc) > 70) {
+        var n = Math.max(0, Math.min(TABS.length - 1, cur + (acc > 0 ? 1 : -1)));
+        acc = 0; quiet = e.timeStamp + 700;
+        if (n !== cur) go(n, false);
+      }
+    }, { passive: true });
+  }
+
+  // ── Second ribbon: the tab's sections, only when there are two or more ──
+  var spy = null;
+  function drawSub(animate) {
+    var sub = $('sub'); sub.textContent = '';
+    if (spy) { spy.disconnect(); spy = null; }
+    var secs = panels[cur] ? panels[cur].querySelectorAll('.section') : [];
+    if (secs.length >= 2) {
+      Array.prototype.forEach.call(secs, function (sec) {
+        var a = h('a', null, sec.dataset.label); a.href = '#' + sec.id;
+        a.addEventListener('click', function (e) {
+          e.preventDefault();
+          var y = sec.getBoundingClientRect().top + window.scrollY - $('barnav').offsetHeight - 8;
+          window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
+          mark(sec.id);
+        });
+        sub.appendChild(a);
+      });
+      // Light up the section being read.
+      spy = new IntersectionObserver(function (entries) {
+        var top = null;
+        Array.prototype.forEach.call(secs, function (s) { var r = s.getBoundingClientRect(); if (r.top - $('barnav').offsetHeight < window.innerHeight * 0.35) top = s; });
+        mark(top ? top.id : secs[0].id);
+      }, { rootMargin: '0px', threshold: [0, 0.25, 0.5, 1] });
+      Array.prototype.forEach.call(secs, function (s) { spy.observe(s); });
+      mark(secs[0].id);
+    }
+    if (animate) { sub.classList.remove('fade'); void sub.offsetWidth; sub.classList.add('fade'); }
+  }
+  function mark(id) {
+    var sub = $('sub');
+    Array.prototype.forEach.call(sub.children, function (a) {
+      var on = a.getAttribute('href') === '#' + id;
+      if (on && !a.classList.contains('on')) {
+        var l = a.offsetLeft - 12, r = a.offsetLeft + a.offsetWidth + 12;
+        if (l < sub.scrollLeft || r > sub.scrollLeft + sub.clientWidth) sub.scrollTo({ left: Math.max(0, l), behavior: reduce ? 'auto' : 'smooth' });
+      }
+      a.classList.toggle('on', on);
+      if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+    });
+  }
+
   function render() {
-    var menuEl = $('menu'), jump = $('jump'), filters = $('filters');
     if (!drinks || !toast) return;
     $('loading').hidden = true;
     var all = D.buildMenu(drinks, specials, toast, Date.now());
     var total = all.reduce(function (n, g) { return n + g.items.length; }, 0);
+    if (total === 0) {
+      if (!isPublicNow) { $('soon-h').textContent = 'No drinks to show yet'; $('soon-p').textContent = 'Toast’s drink list has not been copied here yet. Run Sync Toast (or wait up to 15 minutes), then reload.'; }
+      $('soon').hidden = false; $('barnav').hidden = true; $('finder').hidden = true; $('viewport').hidden = true; $('fine').hidden = true;
+      return;
+    }
+    $('soon').hidden = true; $('barnav').hidden = false; $('finder').hidden = false; $('viewport').hidden = false; $('fine').hidden = false;
+    if (!built) buildShell();
+
     // Filter chips: only tags that exist on the menu right now.
-    var present = {};
+    var filters = $('filters'), present = {};
     all.forEach(function (g) { g.items.forEach(function (it) { (it.tags || []).forEach(function (t) { present[t] = true; }); }); });
     filters.textContent = '';
     D.TAGS.filter(function (t) { return present[t]; }).forEach(function (t) {
@@ -217,28 +437,47 @@
     });
     filters.hidden = !filters.childNodes.length;
 
-    menuEl.textContent = ''; jump.textContent = '';
-    var shown = 0;
-    all.forEach(function (g) {
-      var items = g.items.filter(matches);
-      if (!items.length) return;
-      shown += items.length;
-      var sec = h('section', 'section'); sec.id = slugId(g.category);
-      var hd = h('div', 'section-header');
-      hd.appendChild(h('h2', null, g.category));
-      hd.appendChild(h('span', 'section-count', items.length + (items.length === 1 ? ' drink' : ' drinks')));
-      sec.appendChild(hd);
-      var grid = h('div', 'items');
-      items.forEach(function (it) { grid.appendChild(itemEl(it)); });
-      sec.appendChild(grid);
-      menuEl.appendChild(sec);
-      var a = h('a', 'chip', g.category); a.href = '#' + sec.id; jump.appendChild(a);
+    var filtering = !!query || Object.keys(filterTags).length > 0;
+    var tabs = D.barTabs(all), counts = [];
+    tabs.forEach(function (t, i) {
+      var inner = h('div', 'panel-inner'), n = 0;
+      t.sections.forEach(function (g) {
+        var items = g.items.filter(matches);
+        if (!items.length) return;
+        n += items.length;
+        var sec = h('section', 'section'); sec.id = slugId(t.id, g.category); sec.dataset.label = g.category;
+        var hd = h('div', 'section-header');
+        hd.appendChild(h('h2', null, g.category));
+        hd.appendChild(h('span', 'section-count', items.length + (items.length === 1 ? ' drink' : ' drinks')));
+        sec.appendChild(hd);
+        var grid = h('div', 'items');
+        items.forEach(function (it) { grid.appendChild(itemEl(it)); });
+        sec.appendChild(grid);
+        inner.appendChild(sec);
+      });
+      counts.push(n);
+      tabBtns[i].querySelector('.n').textContent = filtering ? String(n) : '';
+      tabBtns[i].setAttribute('aria-label', t.label + (filtering ? ', ' + n + (n === 1 ? ' match' : ' matches') : ''));
+      if (!n) {
+        var e = h('div', 'panel-empty');
+        if (filtering) e.appendChild(h('div', null, 'No ' + t.label.toLowerCase() + ' matches.'));
+        else e.textContent = 'No ' + t.label.toLowerCase() + ' on the list right now. Ask your server what we are pouring.';
+        inner.appendChild(e);
+      }
+      panels[i].textContent = ''; panels[i].appendChild(inner);
     });
-    jump.hidden = !jump.childNodes.length;
-    $('empty').hidden = !(total > 0 && shown === 0);
-    $('soon').hidden = total > 0 ? true : $('soon').hidden;
-    if (total === 0) { if (!isPublicNow) { $('soon-h').textContent = 'No drinks to show yet'; $('soon-p').textContent = 'Toast\u2019s drink list has not been copied here yet. Run Sync Toast (or wait up to 15 minutes), then reload.'; } $('soon').hidden = false; $('tools').hidden = true; $('fine').hidden = true; }
-    else { $('tools').hidden = false; $('fine').hidden = false; }
+    // A search that finds nothing here but something on another tab says where.
+    tabs.forEach(function (t, i) {
+      if (counts[i] || !filtering) return;
+      var others = tabs.map(function (o, j) { return { j: j, o: o, n: counts[j] }; }).filter(function (x) { return x.n && x.j !== i; });
+      var box = panels[i].querySelector('.panel-empty');
+      if (!others.length) { box.firstChild.textContent = 'Nothing matches. Try a different search or clear a filter.'; return; }
+      var line = h('div', 'elsewhere', 'Found on ');
+      others.forEach(function (x) { var b = h('button', null, x.o.label + ' (' + x.n + ')'); b.type = 'button'; b.onclick = function () { go(x.j, true); }; line.appendChild(b); });
+      box.appendChild(line);
+    });
+    drawSub(false);
+    navHeight();
   }
 
   function fail(which) { $('loading').hidden = true; $(which).hidden = false; }
@@ -276,7 +515,7 @@
     }
     function wire() {
       wired = true;
-      var broke = function () { wired = false; drinks = null; toast = null; $('menu').textContent = ''; $('jump').textContent = ''; $('tools').hidden = true; $('fine').hidden = true; if (!isPublic && !user) location.replace('landing.html'); else fail(isPublic ? 'offline' : 'soon'); };
+      var broke = function () { wired = false; drinks = null; toast = null; $('viewport').hidden = true; $('barnav').hidden = true; $('finder').hidden = true; $('fine').hidden = true; if (!isPublic && !user) location.replace('landing.html'); else fail(isPublic ? 'offline' : 'soon'); };
       db.ref('menu/drinks').on('value', function (s) { drinks = s.val() || {}; render(); }, broke);
       db.ref('menu/toastDrinks').on('value', function (s) { toast = s.val() || {}; render(); }, broke);
       db.ref('menu/drinkSpecials').on('value', function (s) { specials = s.val() || {}; render(); }, function () {});

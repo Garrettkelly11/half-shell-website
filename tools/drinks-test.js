@@ -247,6 +247,30 @@ t('matchStatus', () => {
   assert.strictEqual(C.matchStatus({ name: 'Lager' }, null), 'missing');
 });
 
+t('bar tabs: Toast sections sort into Cocktails, Beer, Wine', () => {
+  const tab = (path, group) => C.barTab(path, group);
+  assert.strictEqual(tab('Beer › Draft Beer', 'Draft Beer'), 'beer');
+  assert.strictEqual(tab('Beer › Cans', 'Cans'), 'beer'); // the lemonades in Cans stay with Beer, as in Toast
+  assert.strictEqual(tab('House Cocktails', 'House Cocktails'), 'cocktails');
+  ['Red Wine', 'Interesting White Wines', 'Bubbles', 'Port and Sherry', 'Oyster & Lobster White Wines', 'Rosé'].forEach((g) => assert.strictEqual(tab(g, g), 'wine', g));
+  assert.strictEqual(tab('Liquor › Vodka', 'Vodka'), 'cocktails');
+  assert.strictEqual(tab('Soda/Tea/Coffee', 'Soda/Tea/Coffee'), 'cocktails');
+  assert.strictEqual(tab('', 'Ciders'), 'beer', 'no path: the section name decides');
+  assert.strictEqual(tab(undefined, undefined), 'cocktails');
+  const T0 = [{ name: 'DFT Guinness', group: 'Draft Beer', path: 'Beer › Draft Beer', order: 1, inStock: true, price: 700 },
+    { name: 'Old Fashioned', group: 'House Cocktails', path: 'House Cocktails', order: 0, inStock: true, price: 1400 },
+    { name: 'Sancerre', group: 'Oyster & Lobster White Wines', path: 'Oyster & Lobster White Wines', order: 2, inStock: true, price: 1500 },
+    { name: 'BTL Corona', group: 'Bottles', path: 'Beer › Bottles', order: 3, inStock: true, price: 700 }];
+  const T = {}; T0.forEach((t) => { T[C.toastKey(t.name)] = t; });
+  const recs = { g: { name: 'Guinness' }, o: { name: 'Old Fashioned' }, s: { name: 'Sancerre' }, c: { name: 'Corona' } };
+  const tabs = C.barTabs(C.buildMenu(recs, {}, T, at('2026-11-06', '19:00')));
+  assert.deepStrictEqual(tabs.map((t) => t.id), ['cocktails', 'beer', 'wine']);
+  assert.deepStrictEqual(tabs[1].sections.map((s) => s.category), ['Draft Beer', 'Bottles'], 'Toast order kept');
+  assert.deepStrictEqual(tabs[0].sections.map((s) => s.category), ['House Cocktails']);
+  assert.strictEqual(tabs[2].sections[0].items[0].name, 'Sancerre');
+  assert.deepStrictEqual(C.barTabs([]).map((t) => t.sections.length), [0, 0, 0]);
+});
+
 t('food specials: saved list, libId, menuPrice', () => {
   const ok = C.validateLibrarySpecial({ name: ' Crab Dip ', ingredients: 'sherry', allergens: 'shellfish', price: '14.50' });
   assert.ok(ok.ok); assert.strictEqual(ok.special.name, 'Crab Dip'); assert.strictEqual(ok.special.price, 1450);
