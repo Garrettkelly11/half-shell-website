@@ -800,14 +800,14 @@
     var pct = nextAt ? Math.max(0, Math.min(100, ((e.value - from) / (nextAt - from)) * 100)) : 100;
     var big = P.stampLine(d, e.value);
     view.appendChild(el('a', { class: 'card feature', href: '#stamp/' + fid,
-      'aria-label': d.name + ' medal, ' + (tier ? TIER_NAMES[tier] : 'not earned yet') + '. ' + big + '.' + (nextAt ? ' ' + e.value + ' of ' + nextAt + ' to ' + TIER_NAMES[nextTier] + '.' : '') }, [
+      'aria-label': d.name + ' medal, ' + (tier ? tierName(d, tier) : 'not earned yet') + '. ' + big + '.' + (nextAt ? ' ' + e.value + ' of ' + nextAt + ' to ' + tierName(d, nextTier) + '.' : '') }, [
       el('div', { class: 'feature-art', 'aria-hidden': 'true', html: ART.render(d, tier, { size: 120, label: ' ' }) }),
       el('div', { class: 'feature-txt', 'aria-hidden': 'true' }, [
         el('div', { class: 'feature-name', text: d.name + ' medal' }),
         el('div', { class: 'feature-big', text: big }),
-        el('div', { class: 'feature-tier', text: tier ? TIER_NAMES[tier] : 'No medal yet' }),
+        el('div', { class: 'feature-tier', text: tier ? tierName(d, tier) : 'No medal yet' }),
         el('span', { class: 'feature-bar' }, [el('i', { style: 'width:' + Math.round(pct) + '%' })]),
-        el('div', { class: 'feature-next', text: nextAt ? e.value + ' / ' + nextAt + ' to ' + TIER_NAMES[nextTier] : 'Top tier' })
+        el('div', { class: 'feature-next', text: nextAt ? e.value + ' / ' + nextAt + ' to ' + tierName(d, nextTier) : 'Top tier' })
       ])
     ]));
   }
@@ -1186,8 +1186,13 @@
 
   // ── Stamps (5.6) ──────────────────────────────────────────────────────────
   var TIER_NAMES = (window.HS_STAMPS && window.HS_STAMPS.TIER_NAMES) || {};
+  /** A tier's name on one stamp (Variety has its own; data/stamps.js). The map legend keeps TIER_NAMES. */
+  function tierName(def, tier) {
+    var S = window.HS_STAMPS;
+    return S && S.tierName ? S.tierName(def, tier) : (TIER_NAMES[tier] || tier);
+  }
   function progressText(e) {
-    return e.next && e.def.kind !== 'single' ? (e.value + ' / ' + e.next.at + ' to ' + (TIER_NAMES[e.next.tier] || e.next.tier)) : '';
+    return e.next && e.def.kind !== 'single' ? (e.value + ' / ' + e.next.at + ' to ' + tierName(e.def, e.next.tier)) : '';
   }
   function stamps() {
     var ev = s.evaluated || {}, stored = s.state.stamps || {};
@@ -1198,7 +1203,7 @@
       var grid = el('div', { class: 'stamp-grid' });
       ids.filter(function (id) { return g[1](ev[id].def); }).forEach(function (id) {
         var e = ev[id], tier = P.shownTier(stored[id], e), prog = progressText(e);
-        grid.appendChild(el('a', { href: '#stamp/' + id, class: 'stamp-link', 'aria-label': e.def.name + (tier ? (tier === 'single' ? ', earned' : ', ' + TIER_NAMES[tier]) : ', not earned yet') + (prog ? ', ' + prog : '') }, [
+        grid.appendChild(el('a', { href: '#stamp/' + id, class: 'stamp-link', 'aria-label': e.def.name + (tier ? (tier === 'single' ? ', earned' : ', ' + tierName(e.def, tier)) : ', not earned yet') + (prog ? ', ' + prog : '') }, [
           el('figure', {}, [el('div', { html: ART.render(e.def, tier, { size: 92, label: ' ' }), 'aria-hidden': 'true' }),
             el('figcaption', { text: e.def.name }), prog ? el('figcaption', { text: prog }) : null])
         ]));
@@ -1216,7 +1221,7 @@
     var st = (s.state.stamps || {})[id], tier = P.shownTier(st, e), d = e.def;
     view.appendChild(el('div', { class: 'field-label', text: d.kind === 'region' ? 'Region stamp' : 'Stamp' }));
     view.appendChild(el('div', { style: 'text-align:center;margin:.4rem 0 .6rem', html: ART.render(d, tier, { size: 168 }) }));
-    view.appendChild(el('h2', { class: 'page-h', style: 'text-align:center', text: d.name + (tier && tier !== 'single' ? ' · ' + TIER_NAMES[tier] : '') }));
+    view.appendChild(el('h2', { class: 'page-h', style: 'text-align:center', text: d.name + (tier && tier !== 'single' ? ' · ' + tierName(d, tier) : '') }));
     view.appendChild(el('p', { class: 'body', style: 'text-align:center', text: d.description }));
     if (d.kind === 'single') {
       view.appendChild(el('p', { class: 'sub', style: 'text-align:center', text: tier && st && st.tierEarnedAt && st.tierEarnedAt.single ? 'Earned ' + fmtStamp(st.tierEarnedAt.single) : 'Not earned yet' }));
@@ -1224,7 +1229,7 @@
       var ul = el('ul', { class: 'palate' });
       (window.HS_STAMPS.TIERS || []).forEach(function (t, i) {
         var at = d.thresholds[i], got = st && st.tierEarnedAt && st.tierEarnedAt[t];
-        ul.appendChild(el('li', {}, [el('b', { text: TIER_NAMES[t] }), ' — ' + P.stampLine(d, at),
+        ul.appendChild(el('li', {}, [el('b', { text: tierName(d, t) }), ' — ' + P.stampLine(d, at),
           el('small', { text: got ? 'Earned ' + fmtStamp(got) : (e.value >= at ? 'Earned' : e.value + ' / ' + at) })]));
       });
       view.appendChild(ul);

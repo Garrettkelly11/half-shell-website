@@ -344,10 +344,19 @@ check('thresholds match the owners\' table (03/11/2026)', () => {
     regular: [6, 20, 50, 100], critic: [30, 150, 450, 1500], 'salt-lover': [18, 72, 216, 600], 'sweet-tooth': [18, 72, 216, 600] };
   assert.deepStrictEqual(Object.fromEntries(S.LADDERS.map(l => [l.id, l.thresholds])), want);
   assert.deepStrictEqual(S.REGION.thresholds, [3, 36, 108, 300]);
-  assert.strictEqual(S.FEATURED, 'volume');
+  assert.strictEqual(S.FEATURED, 'variety');
   assert.deepStrictEqual(S.SINGLES.map(x => x.id),
     ['first-slurp', 'coast-to-coast', 'home-waters', 'passport-stamp', 'flight-crew', 'birthday-shuck']);
   assert.deepStrictEqual(S.TIER_COLORS, { bronze: '#9a6a3a', silver: '#8a9aa3', gold: '#c8962e', pearl: ['#e8e4f0', '#cfe3e6', '#f3e6d8'] });
+});
+check('Variety names its own tiers; every other stamp keeps Bronze to Pearl (10/11/2026)', () => {
+  assert.deepStrictEqual(S.TIERS.map(t => S.tierName('variety', t)),
+    ['Oyster Novice', 'Oyster Fan', 'Oyster Aficionado', 'Oyster Master']);
+  assert.strictEqual(S.tierName(defs.find(d => d.id === 'variety'), 'gold'), 'Oyster Aficionado');
+  defs.filter(d => d.id !== 'variety' && d.kind !== 'single').forEach(d =>
+    assert.deepStrictEqual(S.TIERS.map(t => S.tierName(d, t)), ['Bronze', 'Silver', 'Gold', 'Pearl'], d.id));
+  assert.deepStrictEqual(S.TIERS, ['bronze', 'silver', 'gold', 'pearl']);   // what the database stores is unchanged
+  assert.strictEqual(S.tierName('volume', 'single'), '');
 });
 check('Variety and Atlas Pearl = the whole current catalog', () => {
   assert.strictEqual(defs.find(d => d.id === 'variety').thresholds[3], OYSTERS.length);

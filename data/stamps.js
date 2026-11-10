@@ -17,6 +17,12 @@
  * Thresholds raised 03/11/2026 (owners, before launch): oyster counts x3,
  * Regular x2, Atlas 5/9/12/all (only 14 regions exist), Variety unchanged.
  * Tiers already earned are kept (tiers never go backwards).
+ *
+ * 10/11/2026 (Garrett, before launch): Variety is the big medal on Overview,
+ * and its four levels read Oyster Novice, Oyster Fan, Oyster Aficionado and
+ * Oyster Master. Only the words change: the tiers saved in the database are
+ * still bronze, silver, gold and pearl, and so are the stamp's colors. A
+ * ladder's own names go in its tierNames; tierName() below picks them.
  */
 (function (root) {
   'use strict';
@@ -24,7 +30,7 @@
   var HS_STAMPS = {
     TIERS: ['bronze', 'silver', 'gold', 'pearl'],
     // The big medal at the top of Overview (owners, 03/11/2026).
-    FEATURED: 'volume',
+    FEATURED: 'variety',
     TIER_NAMES: { single: '', bronze: 'Bronze', silver: 'Silver', gold: 'Gold', pearl: 'Pearl' },
     TIER_COLORS: {
       bronze: '#9a6a3a',
@@ -45,6 +51,7 @@
       { id: 'volume', name: 'Volume', measure: 'eaten', thresholds: [36, 180, 900, 4500],
         description: 'Every oyster you log.', line: '{n} {n:oyster}' },
       { id: 'variety', name: 'Variety', measure: 'varieties', thresholds: [5, 15, 30, 'all'],
+        tierNames: { bronze: 'Oyster Novice', silver: 'Oyster Fan', gold: 'Oyster Aficionado', pearl: 'Oyster Master' },
         description: 'Different oysters on our list you have tried.', line: '{n} different {n:oyster}' },
       { id: 'atlas', name: 'Atlas', measure: 'regions', thresholds: [5, 9, 12, 'all'],
         description: 'Regions you have tasted from.', line: 'Oysters from {n} {n:region}' },
@@ -72,6 +79,19 @@
       { id: 'birthday-shuck', name: 'Birthday Shuck', test: 'birthday',
         description: 'Oysters during your birthday week.', line: 'Oysters in your birthday week' }
     ]
+  };
+
+  /**
+   * What a tier is called on one stamp: the stamp's own name for it if it
+   * has one (Variety), else Bronze, Silver, Gold or Pearl. `stamp` is a stamp
+   * id or anything with an id (a definition from passport-core).
+   */
+  HS_STAMPS.tierName = function (stamp, tier) {
+    var id = stamp && typeof stamp === 'object' ? stamp.id : stamp;
+    var own = null;
+    HS_STAMPS.LADDERS.forEach(function (l) { if (l.id === id && l.tierNames) own = l.tierNames; });
+    if (own && own[tier]) return own[tier];
+    return tier in HS_STAMPS.TIER_NAMES ? HS_STAMPS.TIER_NAMES[tier] : (tier || '');
   };
 
   root.HS_STAMPS = HS_STAMPS;

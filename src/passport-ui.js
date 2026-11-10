@@ -101,7 +101,8 @@
     var added = 0, timer = null, userMoved = false, current = 0;
     function slideFor(id, i) {
       var stored = stamps[id], ev = session.evaluated[id], def = ev.def, tier = stored.tier;
-      var tierName = tier === 'single' ? '' : names[tier] || tier;
+      var S = root.HS_STAMPS;
+      var tierName = tier === 'single' ? '' : (S && S.tierName ? S.tierName(def, tier) : names[tier] || tier);
       var slide = make('div', 'hs-slide');
       slide.setAttribute('role', 'group');
       slide.setAttribute('aria-roledescription', 'stamp');

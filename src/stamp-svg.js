@@ -80,6 +80,8 @@
     var S = root.HS_STAMPS || {};
     var colors = S.TIER_COLORS || {};
     var names = S.TIER_NAMES || {};
+    // A stamp may name its own tiers (Variety: Oyster Novice … Oyster Master).
+    var tierWord = tier && tier !== 'single' ? (S.tierName ? S.tierName(def, tier) : names[tier] || tier) : '';
     var size = opts.size || 96;
     var n = ++uid;
     var earned = !!tier;
@@ -98,7 +100,7 @@
         '<radialGradient id="hss' + n + '" cx="0.35" cy="0.3" r="0.5"><stop offset="0" stop-color="#fff" stop-opacity="0.85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>';
       fill = 'url(#hsp' + n + ')';
     }
-    var label = opts.label || (def.name + (earned ? (tier === 'single' ? ', earned' : ', ' + (names[tier] || tier)) : ', not earned yet'));
+    var label = opts.label || (def.name + (earned ? (tier === 'single' ? ', earned' : ', ' + tierWord) : ', not earned yet'));
     var dash = earned ? '' : ' stroke-dasharray="4 4"';
     var r1 = 44, r2 = 37;
     // The name runs inside the inner ring; hexagons are narrower at the top.
@@ -112,7 +114,9 @@
       var d = MARKS[def.id] || MARKS.volume;
       center = '<g transform="translate(-12 -12)" fill="none" stroke="' + color + '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + d + '"/></g>';
     }
-    var bottom = earned ? (tier === 'single' ? '' : String(names[tier] || tier).toUpperCase()) : '';
+    var bottom = String(tierWord).toUpperCase();
+    // Longer tier names (OYSTER AFICIONADO) are set smaller and tighter to stay on the arc.
+    var bfs = bottom.length > 12 ? 5.2 : 6.2, bls = bottom.length > 12 ? 0.6 : 1;
     var arcTop = 'M ' + -rText + ' 0 A ' + rText + ' ' + rText + ' 0 0 1 ' + rText + ' 0';
     var arcBottom = 'M ' + -rText + ' 0 A ' + rText + ' ' + rText + ' 0 0 0 ' + rText + ' 0';
     var inner = '<g fill="none" stroke="' + color + '" stroke-width="' + (tier === 'silver' ? 1.6 : 1) + '"' +
@@ -126,7 +130,7 @@
       '<path id="hsb' + n + '" d="' + arcBottom + '" fill="none"/>' +
       '<text font-family="Lato, sans-serif" font-weight="700" font-size="' + fs + '" letter-spacing="0.5" fill="' + color + '">' +
       '<textPath href="#hst' + n + '" startOffset="50%" text-anchor="middle">' + esc(def.name.toUpperCase()) + '</textPath></text>' +
-      (bottom ? '<text font-family="Lato, sans-serif" font-weight="700" font-size="6.2" letter-spacing="1" fill="' + color + '" dy="4.5">' +
+      (bottom ? '<text font-family="Lato, sans-serif" font-weight="700" font-size="' + bfs + '" letter-spacing="' + bls + '" fill="' + color + '" dy="4.5">' +
         '<textPath href="#hsb' + n + '" startOffset="50%" text-anchor="middle">' + esc(bottom) + '</textPath></text>' : '') +
       center;
     return '<svg xmlns="http://www.w3.org/2000/svg" class="hs-stamp' + (earned ? '' : ' hs-stamp-blank') + '" width="' + size + '" height="' + size +
