@@ -274,41 +274,6 @@
     }
     .logout-link:hover { color: #c0392b; }
 
-    /* Coming Soon Overlay - Simplified & Robust */
-    .coming-soon-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 140px;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-
-    .coming-soon-overlay h3 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.8rem;
-      color: #f3f8f6;
-      margin: 0 0 15px 0;
-      text-align: center;
-    }
-
-    .coming-soon-overlay p {
-      font-family: 'Lato', sans-serif;
-      font-size: 0.85rem;
-      color: #bcd4ce;
-      max-width: 250px;
-      text-align: center;
-      margin: 0;
-      line-height: 1.5;
-    }
-
     .login-container {
       position: relative;
     }
@@ -325,18 +290,10 @@
 
     @media (max-width: 400px) {
       .login-container { padding: 2rem 1.25rem; }
-      .coming-soon-overlay {
-        bottom: 120px;
-      }
-
-      .coming-soon-overlay h3 {
-        font-size: 1.5rem;
-      }
     }
 
     /* ── Passport sign-up (Passport step 3) ── */
     .stay-note {
-      display: none;              /* shown with the preview link, so the public view keeps its layout */
       font-family: 'Montserrat', sans-serif;
       font-style: italic;
       font-size: 0.72rem;
@@ -499,12 +456,6 @@
     <h2>Welcome</h2>
     <p class="state-hint">Enter your phone number to log in or create an account.</p>
 
-    <!-- Coming Soon Overlay (removed on this phone by user.html?preview=1) -->
-    <div class="coming-soon-overlay">
-      <h3>Coming Soon</h3>
-      <p>Customer sign-in is launching very soon. Stay tuned!</p>
-    </div>
-
     <div class="error-msg" id="phone-error" role="alert"></div>
 
     <label for="phone-input">Phone Number</label>
@@ -660,14 +611,6 @@
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
                 'August', 'September', 'October', 'November', 'December'];
   var STATES = ['phone', 'otp', 'loading', 'create', 'blocked'];
-
-  // ── Preview (Garrett, 20/10/2026): "Coming soon" stays for everyone else ──
-  var preview = S.isPreview();
-  if (preview) {
-    var overlay = document.querySelector('.coming-soon-overlay');
-    if (overlay) overlay.parentNode.removeChild(overlay);
-    document.getElementById('stay-note').style.display = 'block';
-  }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   function showState(name) {
@@ -826,7 +769,6 @@
 
     // ── Phone ──
     $('send-code-btn').addEventListener('click', function () {
-      if (!preview) return;                     // "Coming soon" for the public
       showError('phone-error', '');
       var phone = toE164($('phone-input').value);
       if (!phone) { showError('phone-error', COPY.badPhone); return; }
