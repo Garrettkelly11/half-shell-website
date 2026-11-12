@@ -1565,7 +1565,7 @@ var OYSTERS = [
     salinity: "medium-high",
     salinityText: "Clean and Bright",
     region: "wa",
-    origin: "Samish Bay",
+    origin: "Samish Bay, Washington",
     farmer: null,
     farmerUrl: null,
     species: "Magallana Gigas",
