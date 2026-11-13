@@ -1579,5 +1579,26 @@ var OYSTERS = [
     photoUrl: null,
     photoAlt: "No Photo",
     price: null
+  },
+  {
+    id: "grace-point",
+    name: "Grace Point",
+    salinity: "medium",
+    salinityText: "Sweet on the front",
+    region: "nc",
+    origin: "Pamlico Sound, North Carolina",
+    farmer: "Lighthouse Shoal Oyster Company",
+    farmerUrl: null,
+    species: "Crassostrea Virginica",
+    farmingMethod: "Floating Cages",
+    growOut: "12-24 months",
+    seasonalAvailability: "Year-Round",
+    size: "Medium",
+    shell: "Craggy and rough, with a distinctly deep cup",
+    tastingNotes: "This oyster opens with a delicate vegetal sweetness, which is accompanied by a rich salinity that never threatens to overtake the overall experience.  This oyster masterfully balances salinity with a slight freshwater influence.",
+    notable: "The company that grows this oyster, Lighthouse Shoal Oyster Company, was named after a nearby creek that had a lighthouse at it's mouth in the 1800's. To this day the spot where it stood has become a popular local fishing location.",
+    photoUrl: null,
+    photoAlt: "No Photo",
+    price: null
   }
 ];
