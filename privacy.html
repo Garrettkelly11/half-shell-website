@@ -67,10 +67,10 @@
 </header>
 
 <main>
-  <p class="updated">Effective <time datetime="2026-10-29">October 29, 2026</time> · Last updated <time datetime="2026-11-03">November 3, 2026</time></p>
+  <p class="updated">Effective <time datetime="2026-10-29">October 29, 2026</time> · Last updated <time datetime="2026-11-17">November 17, 2026</time></p>
 
   <p>This notice explains how Half Shell Raw Bar in Charlotte, North Carolina (“Half Shell,” “we,” “us”) handles information on hsoysters.com. It covers the public pages of hsoysters.com and the Oyster Passport, an optional account for keeping track of the oysters you eat with us. You don’t need a passport to use the menu.</p>
-  <p>This notice doesn’t cover staff accounts or the employee page, or our Wi-Fi network itself. It also doesn’t cover what happens in the restaurant, such as paying your check, except as described in <a href="#planned">section 11</a>.</p>
+  <p>This notice doesn’t cover staff accounts or the employee page, or our Wi-Fi network itself. It also doesn’t cover what happens in the restaurant, such as paying your check, except as described in <a href="#check-matching">section 11</a>.</p>
 
   <nav class="toc" aria-labelledby="toc-title">
     <h2 id="toc-title">Contents</h2>
@@ -106,7 +106,7 @@
       <li><a href="#your-data">8. Your choices: see, change, export and delete</a></li>
       <li><a href="#age">9. Age requirements</a></li>
       <li><a href="#security">10. Security</a></li>
-      <li><a href="#planned">11. Planned: check matching</a></li>
+      <li><a href="#check-matching">11. Check matching</a></li>
       <li><a href="#changes">12. Changes to this notice</a></li>
       <li><a href="#contact">13. Contact us</a></li>
     </ul>
@@ -147,7 +147,7 @@
       <p>Adding a card is optional. You can remove a card at any time in your passport’s Profile.</p>
       <ul>
         <li><b>What we keep:</b> the last 4 digits, the card type (Visa, Mastercard, Amex, Discover or Other) and when you added the card. We never ask for or store the full card number, the expiry date or the security code. We can’t charge a card with what we keep.</li>
-        <li><b>What we use them for:</b> nothing yet. We only store them. Once check matching starts (<a href="#planned">section 11</a>), we will use them only to match your checks to your passport.</li>
+        <li><b>What we use them for:</b> only to match your checks to your passport (<a href="#check-matching">section 11</a>).</li>
         <li><b>Apple Pay or Google Pay:</b> your Wallet app shows a different last 4 for that card. Add that one.</li>
       </ul>
     </section>
@@ -159,6 +159,8 @@
         <li><b>Oysters:</b> which oysters and how many, when you added each one, and which Curated Flights you logged.</li>
         <li><b>Ratings and notes:</b> any ratings (out of 10), “two words” and notes.</li>
         <li><b>Stamps:</b> which stamps and levels you earn, when you earn them, and whether you have seen each one.</li>
+        <li><b>Your checks:</b> the oysters on checks matched to your passport (<a href="#check-matching">section 11</a>), and whether you hid a check, and any ratings, “two words” and notes you add to one.</li>
+        <li><b>Notices:</b> when you closed a notice in your passport, so it doesn’t show again.</li>
         <li><b>Account details:</b> when you created your passport, when you last changed your profile, and whether you have used your one birthday correction.</li>
       </ul>
     </section>
@@ -183,10 +185,11 @@
     <h2>3. How we use information</h2>
     <ul>
       <li><b>To run your passport:</b> to save your visits, ratings and stamps, to show your name in your passport, and to suggest oysters based on your ratings.</li>
-      <li><b>Phone number:</b> to sign you in. When you ask, Google texts a one-time code to it on our behalf. Message and data rates may apply. We send no other texts. The number saved in your passport will also be used for check matching once it starts (<a href="#planned">section 11</a>).</li>
+      <li><b>Phone number:</b> to sign you in. When you ask, Google texts a one-time code to it on our behalf. Message and data rates may apply. We send no other texts. The number saved in your passport is also used for check matching (<a href="#check-matching">section 11</a>).</li>
       <li><b>Birthday:</b> to apply our age rules (<a href="#age">section 9</a>); to show a birthday reward, when we are offering one, from 3 days before to 3 days after your birthday; and for the Birthday Shuck stamp.</li>
       <li><b>Email:</b> used only to contact you about your passport or a privacy request. We never use it for marketing.</li>
-      <li><b>Card digits and here-today records:</b> stored now for check matching, which hasn’t started (<a href="#planned">section 11</a>). We don’t use them for anything else.</li>
+      <li><b>Card digits and here-today records:</b> only for check matching (<a href="#check-matching">section 11</a>).</li>
+      <li><b>Totals for our managers:</b> to count, across all passports, things like how many passports there are and how each oyster is rated, so we can run the restaurant better (<a href="#where">section 6</a>).</li>
       <li><b>Google Analytics data:</b> only to understand how the site and passport are used, so we can improve them. Never for advertising.</li>
       <li><b>Security and the law:</b> to keep the site and passport secure, to prevent abuse, and to meet our legal obligations.</li>
     </ul>
@@ -296,7 +299,8 @@
     <p>Who can see your passport:</p>
     <ul>
       <li><b>You,</b> while signed in with your phone number.</li>
-      <li><b>Our site administrator,</b> through the Firebase console, to run the passport and handle requests. Right now no one else at Half Shell can see passports, including restaurant staff and the employee page. If that changes, we will update this notice first.</li>
+      <li><b>Our site administrator,</b> through the Firebase console, to run the passport and handle requests. No one else at Half Shell can see your passport, including restaurant staff.</li>
+      <li><b>Our managers</b> see totals across all passports on the employee page: for example, how many passports there are, how many guests were active, how many earned each stamp, and each oyster’s average rating and number of ratings. The totals never show a name, phone number, email, birthday, card or note. An oyster rated by only one or two guests still shows the average of those ratings.</li>
       <li><b>Google,</b> which runs Firebase for us (<a href="#service-providers">section 4.1</a>).</li>
     </ul>
   </section>
@@ -307,6 +311,8 @@
       <li><b>Your passport:</b> until you delete it. We don’t delete inactive passports automatically.</li>
       <li><b>Our backups:</b> we back up our database daily. Each backup is deleted automatically once it is 30 days old. So anything you change or delete, including your whole passport, leaves our backups within 31 days.</li>
       <li><b>Google’s systems:</b> Google says that after a sign-in is deleted, it removes the data from its live and backup systems within 180 days. Google may keep phone numbers used to sign in, to prevent spam and abuse.</li>
+      <li><b>Checks matched to your passport:</b> kept with your passport until you delete it. Our sales records keep your account ID on a matched check until you delete your passport.</li>
+      <li><b>Totals for our managers:</b> replaced each morning. They hold no account IDs.</li>
       <li><b>Unfinished sign-ups:</b> if you confirm your phone number but don’t finish creating a passport, a sign-in record with your phone number stays in Firebase. You can’t delete it from the site. Email <a href="mailto:privacy@hsoysters.com">privacy@hsoysters.com</a> and we will delete it.</li>
       <li><b>Google Analytics:</b> event-level data is kept for 14 months. Reports built from it can be kept longer.</li>
       <li><b>Emails you send us:</b> these stay in our mailbox.</li>
@@ -346,16 +352,19 @@
     <p>Phone-number sign-in has weak points. Anyone who can receive texts at your number can open your passport, and phone numbers get reassigned. If you are giving up your number, delete your passport first. On a shared device, sign out when you are done.</p>
   </section>
 
-  <section id="planned">
-    <h2>11. Planned: check matching</h2>
-    <p>Check matching will add the oysters on your checks to your passport automatically. It isn’t running yet. Before it starts, we will update this notice and tell you in your passport. As planned:</p>
+  <section id="check-matching">
+    <span id="planned"></span>
+    <h2>11. Check matching</h2>
+    <p>Check matching adds the oysters on your checks to your passport, so you don’t have to log them yourself.</p>
     <ul>
-      <li>Each night, a job will copy checks from our point-of-sale system (Toast) into our sales records, a data warehouse in Google BigQuery.</li>
-      <li>It will link a check to your passport if the check has your phone number, or if it was paid with a card you added and you have a here-today record for that business day.</li>
-      <li>It can link checks from the business day before you created your passport onward.</li>
-      <li>Matched orders will be saved with your passport.</li>
-      <li>Our sales records will also hold a copy of passport information, identified only by your account ID, never your phone number or birthday. Card digits will be compared and not stored there.</li>
-      <li>If you delete your passport, your matched orders are deleted and your account ID is removed from our sales records.</li>
+      <li>Each morning, a job copies the last few days’ checks from our point-of-sale system (Toast) into our sales records, a data warehouse in Google BigQuery.</li>
+      <li>It matches a check to your passport if the check has your phone number, or if it was paid with a card you added (same last 4 digits and card type) and you have a here-today record for that business day.</li>
+      <li>It matches checks from the business day before you created your passport onward. It looks again at the last 3 business days each morning, so a check usually shows up the morning after your visit.</li>
+      <li>It saves which oysters were on a matched check, and how many, with your passport. Nothing else from the check is saved there.</li>
+      <li>If a check matches two passports (for example, two people added the same card), it shows in both.</li>
+      <li>You can rate a check and add notes to it. You can hide a check that isn’t yours. A hidden check doesn’t count toward your stamps or totals.</li>
+      <li>Our sales records keep the account ID of each passport a check matched, never your phone number, name, birthday or card digits. Card digits are compared while the job runs and never stored there.</li>
+      <li>If you delete your passport, your matched checks are deleted with it, and your account ID is removed from our sales records the next morning.</li>
     </ul>
   </section>
 
