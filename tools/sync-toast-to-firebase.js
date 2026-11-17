@@ -2,7 +2,9 @@
 /**
  * Toast → Firebase sync — standalone script for GitHub Actions.
  *
- * Runs in the GitHub Actions environment (not Firebase Functions). Reads
+ * Runs in the GitHub Actions environment (not Firebase Functions), started by
+ * the employee page, a Toast webhook or the menu's safety net (no schedule;
+ * see .github/workflows/sync-oysters.yml). Reads
  * credentials from environment variables set as GitHub Secrets, then:
  *   1. Authenticates with Toast (OAuth client-credentials flow)
  *   2. Fetches /menus/v2/menus and reads only Food Menu › Raw Bar (and any
@@ -66,6 +68,9 @@ for (const [k, v] of Object.entries({ TOAST_CLIENT_ID: CLIENT_ID, TOAST_CLIENT_S
 }
 
 const DRY_RUN = process.argv.includes('--dry-run');
+// What started this run (workflow input `trigger`): the employee page, a Toast
+// webhook or the menu's safety net (cloud/sync-trigger.js). Shown in the audit log.
+const TRIGGER = String(process.env.SYNC_TRIGGER || 'Manual sync').slice(0, 80);
 const TOAST_RATE_LIMIT_MS = 1100; // Toast allows ~1 req/sec
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -223,7 +228,7 @@ function logWhy(plan, sources, outside, overrides, now, scope) {
 // ─── Main sync ───────────────────────────────────────────────────────────────
 (async () => {
   const now = Date.now();
-  console.log(`\nHalf Shell Toast sync — ${new Date(now).toISOString()}`);
+  console.log(`\nHalf Shell Toast sync — ${new Date(now).toISOString()} — started by: ${TRIGGER}`);
 
   try {
     const token           = await getToken();
@@ -300,6 +305,9 @@ function logWhy(plan, sources, outside, overrides, now, scope) {
       process.exit(0);
     }
     await db.ref('menu').update({ ...plan.updates, ...priced.updates, ...drinkUpdates });
+    // When the last sync finished: the menu's safety net (refreshMenu) syncs
+    // only if this is over 30 minutes old. server/ is server-only.
+    await db.ref('server/lastSync').set({ at: now, trigger: TRIGGER });
     console.log(`Firebase updated: +${added} added, ~${updated} refreshed, -${removed} removed. ` +
       `Overrides: ${plan.forcedOn} on, ${plan.forcedOff} off, ${plan.expired} expired cleared` +
       (plan.migrated.length ? `, carried over from the old page: ${plan.migrated.join(', ')}` : '') + '.');
@@ -309,7 +317,7 @@ function logWhy(plan, sources, outside, overrides, now, scope) {
       timestamp: now,
       action: 'toast_sync',
       details: `added:${added} updated:${updated} removed:${removed} unmatched:${unmatched.length} skipped_86d:${skipped} overrides_on:${plan.forcedOn} overrides_off:${plan.forcedOff} expired:${plan.expired} prices_changed:${priced.changed.length} drinks:${drinkKeys.length}${drinkUpdates.toastDrinks ? ' updated' : ''}`,
-      actor: 'GitHub Actions (scheduled)',
+      actor: `GitHub Actions (${TRIGGER})`,
       readable_timestamp: new Date(now).toISOString(),
     });
 
@@ -324,7 +332,7 @@ function logWhy(plan, sources, outside, overrides, now, scope) {
         timestamp: now,
         action: 'toast_sync_error',
         details: err.message,
-        actor: 'GitHub Actions (scheduled)',
+        actor: `GitHub Actions (${TRIGGER})`,
         readable_timestamp: new Date(now).toISOString(),
       });
     } catch (_) {}

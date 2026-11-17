@@ -690,6 +690,24 @@ setTimeout(() => { if (lastServingIds === null) render(new Set()); }, 8000);
     document.head.appendChild(s);
   }
 
+  // Safety net for the Toast webhook (11/17/2026): opening the menu, or coming
+  // back to the tab, asks the server to sync if nothing has synced in 30
+  // minutes. The server decides and keeps one cooldown for every guest
+  // (cloud/sync-trigger.js); this only avoids asking more than once a minute.
+  // A fresh sync reaches this page through the live listener below.
+  let lastFreshen = 0;
+  function freshenMenu() {
+    if (Date.now() - lastFreshen < 60000) return;
+    lastFreshen = Date.now();
+    fetch('https://us-east1-half-shell-oyster-menu.cloudfunctions.net/refreshMenu', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"data":{}}',
+    }).catch(function () {});
+  }
+  freshenMenu();
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') freshenMenu();
+  });
+
   loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js', function () {
     loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js', function () {
       firebase.initializeApp(firebaseConfig);   // from src/firebase-config.js

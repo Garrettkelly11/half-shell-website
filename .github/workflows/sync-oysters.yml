@@ -1,32 +1,29 @@
 name: Sync Oyster Menu from Toast
 
-# Intended to run every 15 minutes between 11 AM and 11 PM Eastern Time,
-# year-round, regardless of daylight saving.
-#
-# GitHub Actions cron is UTC-only and has no timezone/DST awareness, so a
-# fixed UTC window (the old approach) silently drifts an hour off twice a
-# year at DST transitions. Fix: schedule a UTC window wide enough to cover
-# BOTH EDT (UTC-4) and EST (UTC-5), then have the "Check business hours"
-# step below compute the actual America/New_York wall-clock hour (which
-# the OS tzdata converts correctly across DST) and skip the run if it's
-# outside 11 AM–11:59 PM ET. Manual (workflow_dispatch) runs always proceed.
-#
-# Minutes are also offset off :00/:15/:30/:45 — GitHub's own docs warn that
-# exact quarter-hour marks are peak load for the scheduler and are the most
-# likely to be delayed or dropped, which is why this had been firing every
-# few hours instead of every 15 minutes.
+# No schedule (removed 11/17/2026): GitHub ran the 15-minute cron only a few
+# times a day. Every run is now started through the API by a server function
+# (cloud/index.js), with the same GitHub token:
+#   - startToastSync: the employee page's Sync Toast button
+#   - toastWebhook:   Toast stock and menu events, 5-minute cooldown; an event
+#                     inside the cooldown asks for a catch-up run with
+#                     delay_seconds, so this run waits, then reads Toast
+#   - refreshMenu:    a guest opens the menu and nothing has synced in 30 min
+# Runs can also be started by hand from the Actions tab.
 on:
-  schedule:
-    # Union of the 11 AM–11:59 PM ET window under EDT and EST:
-    #   EDT: 15:00–03:59 UTC   EST: 16:00–04:59 UTC   ->  15:00–04:59 UTC
-    - cron: '7,22,37,52 15-23 * * *'  # 15:00–23:59 UTC
-    - cron: '7,22,37,52 0-4 * * *'    # 00:00–04:59 UTC
   workflow_dispatch:
     inputs:
       dry_run:
         description: 'Dry run: read Toast and Firebase, print the writes, write nothing'
         type: boolean
         default: false
+      trigger:
+        description: 'What started this run (shown in the log and the audit log)'
+        type: string
+        default: 'Manual sync'
+      delay_seconds:
+        description: 'Wait this many seconds before reading Toast (webhook catch-up run; max 300)'
+        type: string
+        default: '0'
 
 # Read-only token: the sync writes to Firebase with its own secret and never
 # pushes to the repo, so nothing here needs write access to main.
@@ -41,35 +38,20 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Check business hours (11 AM-11:59 PM America/New_York, DST-safe)
-        id: hours
-        run: |
-          HOUR=$(TZ="America/New_York" date +%H)
-          if [ "$HOUR" -ge 11 ] && [ "$HOUR" -le 23 ]; then
-            echo "in_window=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "in_window=false" >> "$GITHUB_OUTPUT"
-          fi
-          echo "Current America/New_York hour: $HOUR"
-
       - name: Set up Node.js
-        if: github.event_name == 'workflow_dispatch' || steps.hours.outputs.in_window == 'true'
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
 
       - name: Install dependencies
-        if: github.event_name == 'workflow_dispatch' || steps.hours.outputs.in_window == 'true'
         run: npm install firebase-admin@^13
 
       - name: Write Firebase service account credentials
-        if: github.event_name == 'workflow_dispatch' || steps.hours.outputs.in_window == 'true'
         env:
           FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_ADMIN_CREDENTIALS }}
         run: echo "$FIREBASE_CREDENTIALS" > /tmp/firebase-key.json
 
       - name: Verify secrets are present
-        if: github.event_name == 'workflow_dispatch' || steps.hours.outputs.in_window == 'true'
         env:
           TOAST_CLIENT_ID:     ${{ secrets.TOAST_CLIENT_ID }}
           TOAST_CLIENT_SECRET: ${{ secrets.TOAST_CLIENT_SECRET }}
@@ -79,14 +61,24 @@ jobs:
           echo "TOAST_CLIENT_SECRET length: $(echo -n "$TOAST_CLIENT_SECRET" | wc -c)"
           echo "TOAST_LOCATION_ID length:   $(echo -n "$TOAST_LOCATION_ID" | wc -c)"
 
+      - name: Wait out the webhook cooldown
+        if: inputs.delay_seconds != '' && inputs.delay_seconds != '0'
+        env:
+          DELAY: ${{ inputs.delay_seconds }}
+        run: |
+          case "$DELAY" in *[!0-9]*) echo "delay_seconds must be a whole number"; exit 1;; esac
+          if [ "$DELAY" -gt 300 ]; then DELAY=300; fi
+          echo "Catch-up run: waiting ${DELAY}s before reading Toast"
+          sleep "$DELAY"
+
       - name: Run Toast → Firebase sync
-        if: github.event_name == 'workflow_dispatch' || steps.hours.outputs.in_window == 'true'
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-key.json
           TOAST_CLIENT_ID:       ${{ secrets.TOAST_CLIENT_ID }}
           TOAST_CLIENT_SECRET:   ${{ secrets.TOAST_CLIENT_SECRET }}
           TOAST_LOCATION_ID:     ${{ secrets.TOAST_RESTAURANT_GUID }}
           FIREBASE_DATABASE_URL: https://half-shell-oyster-menu-default-rtdb.firebaseio.com
+          SYNC_TRIGGER:          ${{ inputs.trigger }}
         run: node tools/sync-toast-to-firebase.js ${{ inputs.dry_run && '--dry-run' || '' }}
 
       - name: Clean up credentials
