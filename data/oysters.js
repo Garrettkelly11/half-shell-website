@@ -856,7 +856,7 @@ var OYSTERS = [
     farmingMethod: "Wild/semi-wild harvesting in glacial-depth bay; traditional PEI oyster culture",
     growOut: "5–8 years",
     seasonalAvailability: "Year-round; salinity and sweetness vary seasonally as snowmelt dilutes the bay in spring",
-    size: "Medium — teardrop shaped, 2.5–3.5\"",
+    size: "Large",
     shell: "Narrow teardrop or deep-cupped depending on grade; subtle pea-green tint",
     tastingNotes: "An iconic oyster. Bright, clean brine with cucumber-lime freshness - our Seaglass Martini in oyster form.",
     notable: "Won 'World's Best Oyster' at the 1900 Paris World Fair — one of the most storied oysters in North America. Malpeque is the generic regional name for PEI oysters; 'true' Malpeques come from Malpeque Bay specifically. The name has become nearly synonymous with 'Canadian oyster.'",
