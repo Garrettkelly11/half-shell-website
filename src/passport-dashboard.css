@@ -1,0 +1,40 @@
+/* Passport tab on the employee page (src/passport-dashboard.js). Prefixed pd-. */
+.page-tab[hidden] { display: none; }
+/* A fifth tab doesn't fit a phone: the tab row scrolls sideways instead of widening the page. */
+.page-tabs { overflow-x: auto; scrollbar-width: none; }
+.page-tabs::-webkit-scrollbar { display: none; }
+.page-tab { flex: none; }
+.pd-section { margin: 1.5rem 0 2rem; }
+.pd-h { font-family: 'Playfair Display', Georgia, serif; font-weight: 400; font-size: 1.1rem; color: #0e2d3a; margin-bottom: 0.4rem; }
+.pd-note { font-family: 'Lato', sans-serif; font-size: 0.82rem; color: #46707c; margin: 0 0 0.8rem; line-height: 1.45; }
+.pd-note.warn { color: #7a4a12; background: #fbf0e1; padding: 0.5rem 0.7rem; border-radius: 4px; }
+.pd-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
+.pd-tile { background: #fff; border: 1px solid #d3e3df; border-radius: 6px; padding: 0.7rem 0.8rem; font-family: 'Lato', sans-serif; display: flex; flex-direction: column; gap: 0.15rem; }
+.pd-tile b { font-family: 'Playfair Display', Georgia, serif; font-weight: 400; font-size: 1.6rem; color: #0e2d3a; line-height: 1.1; }
+.pd-tile span { font-size: 0.8rem; color: #0e2d3a; }
+.pd-tile small { font-size: 0.7rem; color: #5b7f89; }
+.pd-chart-wrap { position: relative; background: #fcfcfb; border: 1px solid #e1ece9; border-radius: 6px; padding: 0.5rem; }
+.pd-chart { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.pd-grid { stroke: #e7eeec; stroke-width: 1; }
+.pd-axis { font-family: 'Lato', sans-serif; font-size: 11px; fill: #5b7f89; }
+.pd-endlabel { font-family: 'Lato', sans-serif; font-size: 11px; fill: #0e2d3a; }
+.pd-cross { stroke: #9bb5bc; stroke-width: 1; stroke-dasharray: 3 3; }
+.pd-legend { display: flex; gap: 1rem; font-family: 'Lato', sans-serif; font-size: 0.78rem; color: #0e2d3a; padding: 0 0.2rem 0.3rem; }
+.pd-legend i, .pd-tip i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 0.35rem; vertical-align: -1px; }
+.pd-tip { position: absolute; top: 2rem; width: 175px; background: #0e2d3a; color: #fff; font-family: 'Lato', sans-serif; font-size: 0.75rem; padding: 0.45rem 0.6rem; border-radius: 4px; pointer-events: none; line-height: 1.5; }
+.pd-tip[hidden] { display: none; }
+.pd-tip-sub { color: #bcd4ce; }
+.pd-toggle { margin: 0.6rem 0 0; min-height: 44px; }
+.pd-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.pd-table { border-collapse: collapse; width: 100%; font-family: 'Lato', sans-serif; font-size: 0.82rem; }
+.pd-table th, .pd-table td { text-align: left; padding: 0.45rem 0.6rem; border-bottom: 1px solid #e1ece9; white-space: nowrap; }
+.pd-table thead tr, .pd-table tbody tr, .pd-table th, .pd-table td { background: none; }
+.pd-table thead th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #46707c; border-bottom: 2px solid #bcd4ce; }
+.pd-table tbody tr:nth-child(even) th, .pd-table tbody tr:nth-child(even) td { background: #f3f8f6; }
+.pd-table tbody th { font-weight: 400; color: #0e2d3a; }
+.pd-oysters td { text-align: right; font-variant-numeric: tabular-nums; }
+.pd-sort { background: none; border: 0; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; min-height: 44px; padding: 0; text-align: left; }
+.pd-filters { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: center; margin-bottom: 0.6rem; }
+.pd-search { font-family: 'Lato', sans-serif; font-size: 0.9rem; padding: 0.5rem 0.7rem; min-height: 44px; border: 1px solid #bcd4ce; border-radius: 4px; flex: 1 1 200px; max-width: 320px; }
+.pd-check { display: inline-flex; align-items: center; gap: 0.4rem; font-family: 'Lato', sans-serif; font-size: 0.85rem; color: #0e2d3a; min-height: 44px; cursor: pointer; }
+.pd-check input { width: 1.2rem; height: 1.2rem; accent-color: #2a7f94; }

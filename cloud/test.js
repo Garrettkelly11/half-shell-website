@@ -657,6 +657,17 @@ async function rejects(promise, code) {
     assert.ok(!Object.keys(r.updates).some((k) => k.startsWith('stamps/volume/')));
     assert.strictEqual(db.data.users.g1.stamps.volume.tier, 'gold');
   });
+  await check('awardStamps: linked checks count (P2); hidden ones do not', async () => {
+    stamps._resetCache();
+    const orders = { '2026-11-01': { 'chk-a': { pulledAt: 1, items: { 'carolina-envy': { qty: 40 } } } } };
+    const db = fakeDb({ users: { g1: { profile: { name: 'Jane Doe', dob: '1990-01-01' } } }, menu: { serving: {} }, toastOrders: { g1: orders } });
+    const r = await award(db);
+    assert.strictEqual(r.updates['stamps/volume/tier'], 'bronze', '40 oysters from a check');
+    stamps._resetCache();
+    const db2 = fakeDb({ users: { g1: { profile: { name: 'Jane Doe', dob: '1990-01-01' },
+      checkNotes: { '2026-11-01': { 'chk-a': { hidden: true } } } } }, menu: { serving: {} }, toastOrders: { g1: orders } });
+    assert.deepStrictEqual((await award(db2)).updates, {});
+  });
   await check('awardStamps: live catalog down -> uses the deploy-time copy', async () => {
     stamps._resetCache();
     const db = stampDb({ profile: { name: 'Jane Doe', dob: '1990-01-01' }, visits: { v1: visit('2026-11-01', { 'carolina-envy': 1 }) } });

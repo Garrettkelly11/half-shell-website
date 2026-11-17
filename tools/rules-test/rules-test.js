@@ -325,6 +325,58 @@ function visit(extra) {
     await assertFails(custA.ref('toastOrders/' + A).remove());
   });
 
+  // ── checkNotes, noticesSeen (P2) ──
+  await reset();
+  await check('checkNotes: hide, rate, words and note on a check; private to the owner', async () => {
+    const base = 'users/' + A + '/checkNotes/2026-11-14/0a1b-2c3d';
+    await assertSucceeds(custA.ref(base).set({ hidden: true, ratePromptDismissed: true,
+      items: { 'beach-plum': { score: 8.5, twoWords: 'melon finish', note: 'best of the night' } } }));
+    await assertSucceeds(custA.ref(base + '/hidden').set(false));
+    await assertFails(custA.ref(base + '/items/beach-plum/score').set(8.3));
+    await assertFails(custA.ref(base + '/items/beach-plum/score').set(11));
+    await assertFails(custA.ref(base + '/items/beach-plum/qty').set(12));
+    await assertFails(custA.ref(base + '/items/beach-plum/twoWords').set('x'.repeat(41)));
+    await assertFails(custA.ref(base + '/items/Beach Plum/score').set(8));
+    await assertFails(custA.ref(base + '/hidden').set('yes'));
+    await assertFails(custA.ref(base + '/pulledAt').set(1));
+    await assertFails(custA.ref('users/' + A + '/checkNotes/2026-13-01/x').set({ hidden: true }));
+    await assertFails(custA.ref('users/' + A + '/checkNotes/2026-11-14/bad_guid').set({ hidden: true }));
+    await assertFails(custA.ref('users/' + A + '/checkNotes/2026-11-14/' + 'x'.repeat(61)).set({ hidden: true }));
+    await assertFails(custB.ref(base).once('value'));
+    await assertFails(custB.ref(base + '/hidden').set(true));
+    await assertFails(staff.ref(base).once('value'));
+  });
+  await check('noticesSeen/{key} = ms, not in the future', async () => {
+    await assertSucceeds(custA.ref('users/' + A + '/noticesSeen/checkMatching').set(Date.now()));
+    await assertFails(custA.ref('users/' + A + '/noticesSeen/checkMatching').set(Date.now() + 3600e3));
+    await assertFails(custA.ref('users/' + A + '/noticesSeen/check-matching').set(1));
+    await assertFails(custA.ref('users/' + A + '/noticesSeen/checkMatching').set('yes'));
+  });
+
+  // ── config/checkMatching, passportStats (P2, manager dashboard) ──
+  await reset();
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.database().ref().update({ 'config/checkMatching': true, passportStats: { asOf: 1, totals: { passports: 2 } },
+      ['staff/merroir:8']: { name: 'Jane D.', rank: 10 }, ['staff/merroir:9']: { name: 'Pat Q.', rank: 10 } });
+  });
+  await check('config/checkMatching: anyone reads; nobody writes', async () => {
+    await assertSucceeds(anon.ref('config/checkMatching').once('value'));
+    await assertFails(custA.ref('config/checkMatching').set(false));
+    await assertFails(staff.ref('config/checkMatching').set(false));
+  });
+  await check('passportStats: managers read; staff, guests and anyone else cannot; nobody writes', async () => {
+    const lowStaff = env.authenticatedContext('merroir:8', { staff_rank: 10, firebase: { sign_in_provider: 'custom' } }).database();
+    const demoted = env.authenticatedContext('merroir:9', { staff_rank: 20, firebase: { sign_in_provider: 'custom' } }).database();
+    const notStaff = env.authenticatedContext('merroir:77', { staff_rank: 99, firebase: { sign_in_provider: 'custom' } }).database();
+    await assertSucceeds(staff.ref('passportStats').once('value'));
+    await assertFails(lowStaff.ref('passportStats').once('value'));
+    await assertFails(demoted.ref('passportStats').once('value'));
+    await assertFails(notStaff.ref('passportStats').once('value'));
+    await assertFails(custA.ref('passportStats').once('value'));
+    await assertFails(anon.ref('passportStats').once('value'));
+    await assertFails(staff.ref('passportStats/asOf').set(2));
+  });
+
   // ── delete account ──
   await check('a customer can delete their whole node', async () => {
     await assertSucceeds(custA.ref('users/' + A).remove());

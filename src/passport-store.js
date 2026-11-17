@@ -257,6 +257,8 @@
     this.timer = null;
     this.saveError = null;
     this.birthdayReward = null;
+    this.toastOrders = {};                   // toastOrders/{uid}: checks the warehouse linked (P2)
+    this.checkMatching = false;              // config/checkMatching: check matching is running
 
     // Changes saved on this phone but not yet sent (a reload, a lost signal).
     // Stamp tiers saved by an older version of this page are dropped: the
@@ -273,6 +275,17 @@
       self.birthdayReward = typeof v === 'string' && v.trim() ? v.trim() : null;
       self.emit('change');
     }, function () { /* no reward shown */ });
+    db.ref('config/checkMatching').once('value').then(function (s) {
+      self.checkMatching = s.val() === true;
+      self.emit('change');
+    }, function () { /* no notice shown */ });
+    // Checks linked by the warehouse's morning run (P2). Kept live; a new
+    // check can mean a new stamp, so stamps are looked at again.
+    db.ref('toastOrders/' + user.uid).on('value', function (s) {
+      self.toastOrders = s.val() || {};
+      self.refreshStamps(false);
+      self.emit('change');
+    }, function () { /* the passport works without them */ });
     if (opts.served) {
       db.ref('menu/serving').on('value', function (s) {
         self.served = Object.keys(s.val() || {}).sort();
@@ -290,7 +303,7 @@
       else self.checkTimeout();
     });
     root.addEventListener('pagehide', function () { self.flush(); });
-    setMember(P.measures(this.state.visits, this.oysters, this.regions).visits);
+    setMember(P.measures(this.visits(), this.oysters, this.regions).visits);
   }
   Session.prototype.on = function (fn) { this.listeners.push(fn); };
   Session.prototype.emit = function (what) {
@@ -303,6 +316,27 @@
     return String((this.state.profile && this.state.profile.name) || '').split(' ')[0];
   };
   Session.prototype.openVisit = function () { return this.P.openVisit(this.state); };
+  /**
+   * The visits that count for stamps, stats, palate and ratings: the guest's
+   * own visits plus linked checks that aren't hidden (P2, HS_PASSPORT.countedVisits).
+   */
+  Session.prototype.visits = function () {
+    return this.P.countedVisits(this.state.visits || {}, this.toastOrders, this.state.checkNotes || {});
+  };
+  /**
+   * What the guest sees listed as visits: their own visits plus checks that
+   * aren't hidden, each with the quantity it really had (Overview, History).
+   */
+  Session.prototype.listedVisits = function () {
+    var out = {}, own = this.state.visits || {}, ch = this.checks();
+    Object.keys(own).forEach(function (k) { out[k] = own[k]; });
+    Object.keys(ch).forEach(function (k) { if (!ch[k].hidden) out[k] = ch[k]; });
+    return out;
+  };
+  /** Every linked check as a visit, hidden ones included (History lists them). */
+  Session.prototype.checks = function () {
+    return this.P.checkVisits(this.toastOrders, this.state.checkNotes || {});
+  };
 
   /** Applies a change: memory, this phone, then the database within 5 s. */
   Session.prototype.apply = function (updates, opts) {
@@ -381,7 +415,7 @@
    */
   Session.prototype.refreshStamps = function (initial) {
     var P = this.P, now = this.now();
-    var ev = P.evaluateStamps({ visits: this.state.visits || {}, oysters: this.oysters, regions: this.regions,
+    var ev = P.evaluateStamps({ visits: this.visits(), oysters: this.oysters, regions: this.regions,
       dob: this.state.profile && this.state.profile.dob, today: this.today(), todayFlights: this.todayFlights() });
     this.evaluated = ev;
     if (Object.keys(P.stampUpdates(this.state.stamps, ev, now)).length) this.askForStamps();

@@ -577,5 +577,76 @@ check('You might like: the same picks from 10-point scores as from the old stars
     P.recommendations(fixAgg, fixVisits, ['y', 'x', 'a', 'z'], FIX, REGIONS).map(x => [x.id, Math.round(x.score * 1e6) / 1e6, x.because]));
 });
 
+
+// ── Checks (P2) ──
+const TO = {
+  '2026-11-14': {
+    'aaa-1': { pulledAt: 100, items: { 'beach-plum': { qty: 6 }, kumamoto: { qty: 2 } } },
+    'bbb-2': { pulledAt: 100, items: { 'beach-plum': { qty: 3 } } },
+  },
+  '2026-11-15': { 'ccc-3': { pulledAt: 200, items: { shigoku: { qty: 4 }, 'Bad Id': { qty: 1 }, kumamoto: { qty: 0 } } } },
+  'not-a-date': { 'ddd-4': { items: { shigoku: { qty: 1 } } } },
+};
+check('check visit ids round-trip; hand-logged ids are not checks', () => {
+  const id = P.checkVisitId('2026-11-14', 'aaa-1');
+  assert.strictEqual(id, 'chk_2026-11-14_aaa-1');
+  assert.deepStrictEqual(P.parseCheckVisitId(id), { date: '2026-11-14', guid: 'aaa-1' });
+  assert.strictEqual(P.parseCheckVisitId('-NabcPushKey'), null);
+  assert.strictEqual(P.checkNotesBase(id), 'checkNotes/2026-11-14/aaa-1');
+  assert.strictEqual(P.checkNotesBase('-Nabc'), null);
+});
+check('checkVisits: shape, notes joined, bad entries skipped', () => {
+  const notes = { '2026-11-14': { 'aaa-1': { hidden: false, items: { kumamoto: { score: 8.5, twoWords: 'melon finish', note: 'yes' } } } } };
+  const cv = P.checkVisits(TO, notes);
+  assert.deepStrictEqual(Object.keys(cv).sort(), ['chk_2026-11-14_aaa-1', 'chk_2026-11-14_bbb-2', 'chk_2026-11-15_ccc-3']);
+  const a = cv['chk_2026-11-14_aaa-1'];
+  assert.strictEqual(a.source, 'toast'); assert.strictEqual(a.date, '2026-11-14'); assert.strictEqual(a.closedAt, 100);
+  assert.deepStrictEqual(a.items.kumamoto, { qty: 2, addedAt: 100, score: 8.5, twoWords: 'melon finish', note: 'yes' });
+  assert.deepStrictEqual(Object.keys(cv['chk_2026-11-15_ccc-3'].items), ['shigoku']);
+  assert.ok(P.isCheckVisit(a));
+});
+check('countedVisits: no hand logs → the checks count as they are', () => {
+  const cv = P.countedVisits({}, TO, {});
+  const m = P.measures(cv, OYSTERS, REGIONS);
+  assert.strictEqual(m.eaten, 6 + 2 + 3 + 4);
+  assert.strictEqual(m.visits, 2);
+});
+check('countedVisits: per oyster per day the larger counts (checks summed first)', () => {
+  // Hand-logged 8 beach plum and 1 kumamoto on 14/11; checks have 9 beach plum and 2 kumamoto.
+  const visits = { v1: { date: '2026-11-14', startedAt: 1, lastChangedAt: 1, closedAt: 2, source: 'manual',
+    items: { 'beach-plum': { qty: 8, addedAt: 1 }, kumamoto: { qty: 1, addedAt: 1 } } } };
+  const cv = P.countedVisits(visits, TO, {});
+  const m = P.measures(cv, OYSTERS, REGIONS);
+  assert.strictEqual(m.eaten, 9 + 2 + 4, 'max(8, 9) + max(1, 2) + 4 the next day');
+  assert.strictEqual(cv['chk_2026-11-14_aaa-1'].items['beach-plum'].qty, 1);
+  assert.strictEqual(cv['chk_2026-11-14_aaa-1'].items.kumamoto.qty, 1);
+  assert.ok(!cv['chk_2026-11-14_bbb-2'], 'adds nothing, unrated → left out');
+  assert.strictEqual(m.visits, 2, 'still two days');
+});
+check('countedVisits: hand logs above the checks → checks add nothing; a rated check item stays at qty 0', () => {
+  const visits = { v1: { date: '2026-11-14', source: 'manual', items: { 'beach-plum': { qty: 12, addedAt: 1 }, kumamoto: { qty: 2, addedAt: 1 } } } };
+  const notes = { '2026-11-14': { 'bbb-2': { items: { 'beach-plum': { score: 9 } } } } };
+  const cv = P.countedVisits(visits, TO, notes);
+  assert.ok(!cv['chk_2026-11-14_aaa-1']);
+  assert.deepStrictEqual(cv['chk_2026-11-14_bbb-2'].items['beach-plum'], { qty: 0, addedAt: 100, score: 9 });
+  const m = P.measures(cv, OYSTERS, REGIONS);
+  assert.strictEqual(m.eaten, 12 + 2 + 4);
+  assert.strictEqual(m.rated, 1);
+  const agg = P.aggregateRatings(cv);
+  assert.strictEqual(agg['beach-plum'].rating, 9);
+});
+check('countedVisits: a hidden check counts for nothing', () => {
+  const notes = { '2026-11-15': { 'ccc-3': { hidden: true } } };
+  const cv = P.countedVisits({}, TO, notes);
+  assert.ok(!cv['chk_2026-11-15_ccc-3']);
+  assert.strictEqual(P.measures(cv, OYSTERS, REGIONS).eaten, 11);
+  assert.ok(P.checkVisits(TO, notes)['chk_2026-11-15_ccc-3'].hidden, 'still listed for Unhide');
+});
+check('countedVisits: checks earn stamps (Volume, First Slurp)', () => {
+  const ev = P.evaluateStamps({ visits: P.countedVisits({}, TO, {}), oysters: OYSTERS, regions: REGIONS, today: '2026-11-17', todayFlights: [] });
+  assert.strictEqual(ev['first-slurp'].tier, 'single');
+  assert.strictEqual(ev.volume.value, 15);
+});
+
 console.log(failed ? `\n${failed} of ${passed + failed} checks failed.` : `\nAll ${passed} checks passed.`);
 process.exit(failed ? 1 : 0);

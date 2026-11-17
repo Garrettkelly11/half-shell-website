@@ -597,6 +597,7 @@
     }
   </style>
   <link rel="stylesheet" href="src/drinks-admin.css">
+  <link rel="stylesheet" href="src/passport-dashboard.css">
 </head>
 <body>
 
@@ -653,6 +654,8 @@
       <button class="page-tab" type="button" role="tab" data-tab="oysters" aria-selected="false">Oysters</button>
       <button class="page-tab" type="button" role="tab" data-tab="drinks" aria-selected="false">Drinks</button>
       <button class="page-tab" type="button" role="tab" data-tab="specials" aria-selected="false">Specials</button>
+      <!-- Passport totals (managers; shown once the warehouse writes passportStats, P2) -->
+      <button class="page-tab" type="button" role="tab" data-tab="passport" aria-selected="false" hidden>Passport</button>
     </div>
 
     <div class="tab-panel" id="tab-menu">
@@ -791,6 +794,7 @@
     <!-- Drinks and Specials tabs (managers and up): built by src/drinks-admin.js -->
     <div class="tab-panel" id="tab-drinks" hidden></div>
     <div class="tab-panel" id="tab-specials" hidden></div>
+    <div class="tab-panel" id="tab-passport" hidden></div>
 
   </main>
 
@@ -881,12 +885,14 @@ auth.onAuthStateChanged(async user => {
     if (window.hsOystersTab) window.hsOystersTab.signedIn(staffClaims);
     if (window.hsHappyHour) window.hsHappyHour.signedIn(staffClaims);
     if (window.hsDrinksAdmin) window.hsDrinksAdmin.signedIn(staffClaims);
+    if (window.hsPassportDash) window.hsPassportDash.signedIn(staffClaims);
   } else {
     staffName = null;
     staffClaims = null;
     if (window.hsOystersTab) window.hsOystersTab.signedOut();
     if (window.hsHappyHour) window.hsHappyHour.signedIn(null);
     if (window.hsDrinksAdmin) window.hsDrinksAdmin.signedOut();
+    if (window.hsPassportDash) window.hsPassportDash.signedOut();
     signOutBtn.hidden = true;
     if (overridesRef) { overridesRef.off(); overridesRef = null; overrides = {}; }
     lock();
@@ -1341,7 +1347,8 @@ window.hsOystersTab = (function () {
   const C = HS_CATALOG;
   const tabs = document.getElementById('page-tabs');
   const panels = { menu: document.getElementById('tab-menu'), oysters: document.getElementById('tab-oysters'),
-    drinks: document.getElementById('tab-drinks'), specials: document.getElementById('tab-specials') };
+    drinks: document.getElementById('tab-drinks'), specials: document.getElementById('tab-specials'),
+    passport: document.getElementById('tab-passport') };
   const el = id => document.getElementById(id);
   const banner = el('cat-banner'), result = el('cat-result'), list = el('cat-list');
   const form = el('cat-form'), regionForm = el('region-form'), regionList = el('region-list');
@@ -1901,6 +1908,11 @@ if (typeof staffClaims !== 'undefined' && staffClaims) window.hsHappyHour.signed
 <script src="src/drinks-admin.js"></script>
 <script>
 if (typeof staffClaims !== 'undefined' && staffClaims) window.hsDrinksAdmin.signedIn(staffClaims);
+</script>
+<script src="data/stamps.js"></script>
+<script src="src/passport-dashboard.js"></script>
+<script>
+if (typeof staffClaims !== 'undefined' && staffClaims) window.hsPassportDash.signedIn(staffClaims);
 </script>
 </body>
 </html>

@@ -285,6 +285,108 @@
       .replace(/^-+|-+$/g, '').slice(0, 60);
   }
 
+  // ── Checks (P2: oysters on a guest's Toast check) ─────────────────────────
+  // toastOrders/{uid}/{businessDate}/{checkGuid} = { items: { oysterId: { qty } }, pulledAt }
+  //   written each morning by the warehouse job; the guest can't write it.
+  // users/{uid}/checkNotes/{businessDate}/{checkGuid} = { hidden?, ratePromptDismissed?,
+  //   items: { oysterId: { score?, twoWords?, note? } } }   the guest's own.
+  var CHECK_PREFIX = 'chk_';
+  var CHECK_GUID_RE = /^[A-Za-z0-9-]{1,60}$/;
+  /** The id a check has wherever visits are listed ('#visit/chk_2026-11-15_<guid>'). */
+  function checkVisitId(date, guid) { return CHECK_PREFIX + date + '_' + guid; }
+  /** { date, guid } for a check's visit id, else null (a hand-logged visit). */
+  function parseCheckVisitId(id) {
+    var m = /^chk_(\d{4}-\d{2}-\d{2})_([A-Za-z0-9-]{1,60})$/.exec(id || '');
+    return m ? { date: m[1], guid: m[2] } : null;
+  }
+  function isCheckVisit(v) { return !!v && v.source === 'toast'; }
+  /**
+   * Every check as a visit, hidden ones included: { id: { date, source: 'toast',
+   * checkGuid, hidden, ratePromptDismissed, startedAt, lastChangedAt, closedAt,
+   * items: { oysterId: { qty, addedAt, score?, twoWords?, note? } } } }.
+   * qty is what the check had. Entries that aren't in the expected shape are skipped.
+   */
+  function checkVisits(toastOrders, checkNotes) {
+    var out = {};
+    Object.keys(toastOrders || {}).forEach(function (date) {
+      if (!isRealDate(date)) return;
+      var day = toastOrders[date] || {};
+      Object.keys(day).forEach(function (guid) {
+        var c = day[guid];
+        if (!CHECK_GUID_RE.test(guid) || !c || typeof c !== 'object') return;
+        var notes = (checkNotes && checkNotes[date] && checkNotes[date][guid]) || {};
+        var at = typeof c.pulledAt === 'number' ? c.pulledAt : 0, its = {};
+        Object.keys(c.items || {}).forEach(function (oid) {
+          var q = c.items[oid] && c.items[oid].qty;
+          if (!SLUG_RE.test(oid) || !validQty(q)) return;
+          var n = (notes.items && notes.items[oid]) || {}, x = { qty: q, addedAt: at };
+          if (validScore(n.score)) x.score = n.score;
+          if (typeof n.twoWords === 'string' && n.twoWords) x.twoWords = n.twoWords;
+          if (typeof n.note === 'string' && n.note) x.note = n.note;
+          its[oid] = x;
+        });
+        if (!Object.keys(its).length) return;
+        out[checkVisitId(date, guid)] = { date: date, source: 'toast', checkGuid: guid, hidden: notes.hidden === true,
+          ratePromptDismissed: notes.ratePromptDismissed === true,
+          startedAt: at, lastChangedAt: at, closedAt: at || 1, closeReason: 'check', items: its };
+      });
+    });
+    return out;
+  }
+  /**
+   * The visits that count (stamps, stats, palate, ratings): the guest's own
+   * visits plus each check that isn't hidden. Per day and oyster, the larger
+   * of the hand-logged quantity and the checks' quantity counts (Build Sheet
+   * 8). The day's checks are added together first [CALL], and only what they
+   * hold beyond the hand-logged quantity is counted on the check visits, in
+   * check id order. A check item that adds nothing is kept (qty 0) only if
+   * the guest rated it or wrote about it; a check that adds nothing is left out.
+   */
+  function countedVisits(visits, toastOrders, checkNotes) {
+    var out = {}, manual = {};
+    Object.keys(visits || {}).forEach(function (vid) {
+      var v = visits[vid];
+      out[vid] = v;
+      if (!v || !v.date) return;
+      var it = items(v), d = manual[v.date] || (manual[v.date] = {});
+      Object.keys(it).forEach(function (oid) { d[oid] = (d[oid] || 0) + (it[oid].qty || 0); });
+    });
+    var checks = checkVisits(toastOrders, checkNotes), byDay = {};
+    Object.keys(checks).sort().forEach(function (id) {
+      if (!checks[id].hidden) (byDay[checks[id].date] = byDay[checks[id].date] || []).push(id);
+    });
+    Object.keys(byDay).forEach(function (date) {
+      var ids = byDay[date], total = {}, left = {};
+      ids.forEach(function (id) {
+        var it = checks[id].items;
+        Object.keys(it).forEach(function (oid) { total[oid] = (total[oid] || 0) + it[oid].qty; });
+      });
+      Object.keys(total).forEach(function (oid) { left[oid] = Math.max(0, total[oid] - ((manual[date] && manual[date][oid]) || 0)); });
+      ids.forEach(function (id) {
+        var c = checks[id], kept = {};
+        Object.keys(c.items).forEach(function (oid) {
+          var x = c.items[oid], q = Math.min(left[oid], x.qty);
+          left[oid] -= q;
+          if (q > 0 || itemScore(x) !== null || x.twoWords || x.note) {
+            var y = {}; Object.keys(x).forEach(function (k) { y[k] = x[k]; });
+            y.qty = q;
+            kept[oid] = y;
+          }
+        });
+        if (!Object.keys(kept).length) return;
+        var v = {}; Object.keys(c).forEach(function (k) { v[k] = c[k]; });
+        v.items = kept;
+        out[id] = v;
+      });
+    });
+    return out;
+  }
+  /** Where a check's notes live, relative to users/{uid}. */
+  function checkNotesBase(id) {
+    var c = parseCheckVisitId(id);
+    return c ? 'checkNotes/' + c.date + '/' + c.guid : null;
+  }
+
   // ── Ratings ───────────────────────────────────────────────────────────────
   /** A rating out of 10: 0.5 to 10 in steps of 0.5. */
   function validScore(v) {
@@ -660,6 +762,9 @@
     closeUpdates: closeUpdates, timeoutUpdates: timeoutUpdates, saveUpdates: saveUpdates, addUpdates: addUpdates,
     logFlightUpdates: logFlightUpdates, backdatedUpdates: backdatedUpdates, hereOnCarry: hereOnCarry,
     flightSlug: flightSlug,
+    // checks (P2)
+    checkVisitId: checkVisitId, parseCheckVisitId: parseCheckVisitId, isCheckVisit: isCheckVisit,
+    checkVisits: checkVisits, countedVisits: countedVisits, checkNotesBase: checkNotesBase,
     // ratings, stats, stamps
     validScore: validScore, itemScore: itemScore, scoreUpdates: scoreUpdates,
     aggregateRatings: aggregateRatings, formatRating: formatRating, measures: measures,

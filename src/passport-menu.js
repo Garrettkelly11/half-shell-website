@@ -101,7 +101,7 @@
 
   // ── Oyster cards (tonight's menu) ─────────────────────────────────────────
   function lastVisitWith(id) {
-    var visits = s.state.visits || {};
+    var visits = s.listedVisits();
     var ids = Object.keys(visits).filter(function (k) { return visits[k].items && visits[k].items[id]; });
     ids.sort(function (a, b) { return visits[b].date.localeCompare(visits[a].date) || (visits[b].startedAt || 0) - (visits[a].startedAt || 0); });
     return ids[0] || null;
@@ -114,7 +114,7 @@
   function decorateCards() {
     var grid = view.grid;
     if (!grid) return;
-    var visits = s.state.visits || {};
+    var visits = s.visits();              // checks count too (P2)
     var agg = P.aggregateRatings(visits);
     var recs = P.recommendations(agg, visits, view.served, s.oysters, s.regions) || [];
     var o = s.openVisit();

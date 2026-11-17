@@ -5,7 +5,8 @@
  *
  *   - the page still works out stamps locally, to draw progress and to know
  *     when to ask (src/passport-store.js), but never writes a tier;
- *   - awardStamps (a callable in index.js) reads the guest's saved visits,
+ *   - awardStamps (a callable in index.js) reads the guest's saved visits
+ *     and the checks the warehouse linked to them (toastOrders, P2),
  *     works the stamps out with the same code the page uses
  *     (src/passport-core.js, data/stamps.js, data/flights.js,
  *     data/regions.js) and writes new tiers with seen: false;
@@ -103,9 +104,10 @@ async function awardStamps(auth, deps) {
   const now = (deps.now || Date.now)();
   const uid = auth.uid;
 
-  const [userSnap, servingSnap] = await Promise.all([
+  const [userSnap, servingSnap, ordersSnap] = await Promise.all([
     db.ref(`users/${uid}`).once('value'),
     db.ref('menu/serving').once('value'),
+    db.ref(`toastOrders/${uid}`).once('value'),
   ]);
   const user = userSnap.val() || {};
   if (!user.profile) throw new SyncError('failed-precondition', 'No passport for this account.');
@@ -117,8 +119,11 @@ async function awardStamps(auth, deps) {
   for (const [vid, v] of Object.entries(user.visits || {})) {
     if (v && typeof v.date === 'string' && v.date <= today) visits[vid] = v;   // future dates don't count
   }
+  // P2: checks linked by the warehouse count too (hidden ones don't; per
+  // oyster and day the larger of hand-logged and checked counts).
+  const counted = P.countedVisits(visits, ordersSnap.val() || {}, user.checkNotes || {});
   const evaluated = P.evaluateStamps({
-    visits, oysters, regions: REGIONS, dob: user.profile.dob, today,
+    visits: counted, oysters, regions: REGIONS, dob: user.profile.dob, today,
     todayFlights: todayFlights(F, oysters, Object.keys(servingSnap.val() || {}), now),
   });
   const updates = P.stampUpdates(user.stamps || {}, evaluated, now);

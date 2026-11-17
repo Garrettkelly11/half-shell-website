@@ -216,6 +216,9 @@
     .vc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
     .tl-score { font-family: 'Roboto Mono', monospace; font-size: 0.78rem; font-weight: 700; color: var(--rust); }
     .visit-card.just-saved { border-color: var(--orange); background: #fff7ec; }
+    .qty-fixed { font-family: 'Playfair Display', Georgia, serif; font-size: 1.05rem; min-width: 2.6rem; text-align: right; }
+    details.hidden-checks { margin: 0.4rem 0 0.8rem; }
+    details.hidden-checks summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 0.85rem; color: var(--muted); }
     .tl-words { font-style: italic; color: var(--muted); }
     .tl-note { font-size: 0.78rem; color: var(--muted); margin: 0.1rem 0 0.25rem; }
     .map-wrap { margin: 0 -0.4rem; }
@@ -448,8 +451,13 @@
   }
 
   // ── Changes ───────────────────────────────────────────────────────────────
-  function itemBase(visitId, oid) { return 'visits/' + visitId + '/items/' + oid; }
-  function touch(u, visitId) { u['visits/' + visitId + '/lastChangedAt'] = s.now(); return u; }
+  // A check's visit id (chk_<date>_<guid>, P2) keeps its ratings and notes in
+  // checkNotes/<date>/<guid>; the check itself can't be changed.
+  function itemBase(visitId, oid) {
+    var cb = P.checkNotesBase(visitId);
+    return (cb ? cb + '/items/' : 'visits/' + visitId + '/items/') + oid;
+  }
+  function touch(u, visitId) { if (!P.parseCheckVisitId(visitId)) u['visits/' + visitId + '/lastChangedAt'] = s.now(); return u; }
   /** +/− on an item of any visit (the open one or a past one). */
   function changeQty(visitId, oid, delta, where) {
     var v = (s.state.visits || {})[visitId], cur = v && v.items && v.items[oid];
@@ -467,7 +475,9 @@
   }
   /** Rates an item out of 10 (null clears it). */
   function setScore(visitId, oid, score) {
-    s.apply(touch(P.scoreUpdates(itemBase(visitId, oid), score), visitId));
+    var u = P.scoreUpdates(itemBase(visitId, oid), score);
+    if (P.parseCheckVisitId(visitId)) delete u[itemBase(visitId, oid) + '/rating'];   // checks never had the old 1–5 rating
+    s.apply(touch(u, visitId));
     if (score !== null) S.track('rating_given', { oyster: oid, score: score });
   }
   function setField(visitId, oid, field, value) {
@@ -578,6 +588,8 @@
           el('button', { type: 'button', class: 'btn small danger', text: 'Remove', on: { click: function () { ui.confirm = null; changeQty(visitId, oid, -1); } } }),
           el('button', { type: 'button', class: 'btn small ghost', text: 'Keep', on: { click: function () { ui.confirm = null; render(); } } })
         ]));
+      } else if (P.parseCheckVisitId(visitId)) {
+        row.appendChild(el('span', { class: 'qty-fixed', 'aria-label': name + ' count ' + it.qty, text: '×' + it.qty }));
       } else {
         row.appendChild(stepper(name, it.qty,
           function () { if (it.qty <= 1) { ui.confirm = key; render(); } else changeQty(visitId, oid, -1); },
@@ -691,15 +703,15 @@
 
   // ── Overview (5.3) ────────────────────────────────────────────────────────
   function overview() {
-    var st = s.state, visits = st.visits || {};
+    var st = s.state, visits = s.visits(), listed = s.listedVisits();   // counted / as listed (P2)
     var m = P.measures(visits, s.oysters, s.regions);
     view.appendChild(el('div', { class: 'field-label', text: 'Overview' }));
 
-    // 1. Rate the last visit
-    var closed = Object.keys(visits).filter(function (k) { return visits[k].closedAt; }).sort(function (a, b) {
-      return visits[b].date.localeCompare(visits[a].date) || visits[b].closedAt - visits[a].closedAt;
+    // 1. Rate the last visit (or the last check)
+    var closed = Object.keys(listed).filter(function (k) { return listed[k].closedAt; }).sort(function (a, b) {
+      return listed[b].date.localeCompare(listed[a].date) || listed[b].closedAt - listed[a].closedAt;
     });
-    var last = closed[0], lv = last && visits[last];
+    var last = closed[0], lv = last && listed[last];
     var unrated = lv ? Object.keys(lv.items || {}).filter(function (k) { return P.itemScore(lv.items[k]) === null; }) : [];
     // Only for a visit closed before this page opened: "one prompt on next open" (5.3).
     if (lv && unrated.length && !lv.ratePromptDismissed && lv.closedAt < openedAt) {
@@ -708,7 +720,22 @@
         el('div', { class: 'btn-row' }, [
           el('a', { class: 'btn small', href: '#visit/' + last, text: 'Rate' }),
           el('button', { type: 'button', class: 'btn small ghost', text: 'Not now', on: { click: function () {
-            var u = {}; u['visits/' + last + '/ratePromptDismissed'] = true; s.apply(u);
+            var u = {}; u[(P.checkNotesBase(last) || 'visits/' + last) + '/ratePromptDismissed'] = true; s.apply(u);
+          } } })
+        ])
+      ]));
+    }
+    // 2. Check matching has started (P2; privacy.html promised to say so here)
+    if (s.checkMatching && !(st.noticesSeen && st.noticesSeen.checkMatching)) {
+      var hasCard = Object.keys(st.cards || {}).length > 0;
+      view.appendChild(el('div', { class: 'card accent' }, [
+        el('h2', { class: 'page-h', text: 'Your checks count now' }),
+        el('p', { class: 'body', text: 'Oysters on your checks go into your passport by themselves, the morning after your visit. We find your check by a card you’ve added or by your phone number. You can rate a check or hide one that isn’t yours.' }),
+        el('div', { class: 'btn-row' }, [
+          hasCard ? null : el('a', { class: 'btn small', href: '#profile', text: 'Add a card' }),
+          el('a', { class: 'btn small ghost', href: 'privacy.html#check-matching', text: 'How it works' }),
+          el('button', { type: 'button', class: 'btn small ghost', text: 'Got it', on: { click: function () {
+            s.apply({ 'noticesSeen/checkMatching': s.now() }, { noStamps: true });
           } } })
         ])
       ]));
@@ -737,16 +764,16 @@
     if (!m.eaten) view.appendChild(el('p', { class: 'body', text: 'Your passport is empty. Add oysters from tonight’s menu to get your first stamp.' }));
 
     // Recent visits (03/11/2026)
-    var recentIds = Object.keys(visits).filter(function (k) { return !P.isEmpty(visits[k]); }).sort(function (a, b) {
-      return visits[b].date.localeCompare(visits[a].date) || (visits[b].startedAt || 0) - (visits[a].startedAt || 0);
+    var recentIds = Object.keys(listed).filter(function (k) { return !P.isEmpty(listed[k]); }).sort(function (a, b) {
+      return listed[b].date.localeCompare(listed[a].date) || (listed[b].startedAt || 0) - (listed[a].startedAt || 0);
     });
     if (recentIds.length) {
       view.appendChild(el('div', { class: 'field-label', text: 'Recent visits' }));
       recentIds.slice(0, 3).forEach(function (id) {
-        var v = visits[id], it = v.items || {};
+        var v = listed[id], it = v.items || {}, chk = P.isCheckVisit(v);
         var names = Object.keys(it).sort(function (a, b) { return (it[b].qty || 0) - (it[a].qty || 0) || ((it[a].addedAt || 0) - (it[b].addedAt || 0)); }).map(nameOf);
-        view.appendChild(el('a', { class: 'recent', href: '#visit/' + id, 'aria-label': fmtDate(v.date) + ', ' + plural(P.visitTotal(v), 'oyster') + (v.closedAt ? '' : ', open') + '. Open this visit.' }, [
-          el('span', { class: 'date', text: fmtDate(v.date) + (v.closedAt ? '' : ' · open') }),
+        view.appendChild(el('a', { class: 'recent', href: '#visit/' + id, 'aria-label': fmtDate(v.date) + ', ' + plural(P.visitTotal(v), 'oyster') + (chk ? ', from your check' : v.closedAt ? '' : ', open') + '. Open this visit.' }, [
+          el('span', { class: 'date', text: fmtDate(v.date) + (chk ? ' · check' : v.closedAt ? '' : ' · open') }),
           el('span', { class: 'what', text: plural(P.visitTotal(v), 'oyster') + ' · ' + names.join(', ') })
         ]));
       });
@@ -938,6 +965,7 @@
 
   // ── One visit (rate, edit, delete) ────────────────────────────────────────
   function visitView(id) {
+    if (P.parseCheckVisitId(id)) return checkView(id);
     var v = (s.state.visits || {})[id];
     if (!v) { go('#history'); return; }
     view.appendChild(el('div', { class: 'field-label', text: v.closedAt ? 'Past visit' : 'My Flight' }));
@@ -965,6 +993,29 @@
     ]));
   }
 
+  // ── One check (P2): rate, note, hide ────────────────────────────────────────
+  function checkView(id) {
+    var v = s.checks()[id], base = P.checkNotesBase(id);
+    if (!v) { go('#history'); return; }
+    view.appendChild(el('div', { class: 'field-label', text: 'From your check' }));
+    view.appendChild(el('h2', { class: 'page-h', text: fmtDate(v.date) }));
+    view.appendChild(el('p', { class: 'sub', text: plural(P.visitTotal(v), 'oyster') + (v.hidden ? ' · hidden' : '') }));
+    view.appendChild(el('p', { class: 'hint', text: v.hidden
+      ? 'This check is hidden. It doesn’t count toward your stamps or totals.'
+      : 'These came from your check. If it isn’t yours, hide it and it won’t count.' }));
+    view.appendChild(itemRows(id, v));
+    view.appendChild(el('hr', { class: 'perf' }));
+    view.appendChild(el('div', { class: 'btn-row' }, [
+      el('a', { class: 'btn', href: '#history', text: 'Done' }),
+      el('button', { type: 'button', class: 'btn ghost', text: v.hidden ? 'Unhide check' : 'Hide check', on: { click: function () {
+        var u = {}; u[base + '/hidden'] = v.hidden ? null : true;
+        s.apply(u); s.flush();
+        toast(v.hidden ? 'Check brought back.' : 'Check hidden. It won’t count.');
+        go('#history');
+      } } })
+    ]));
+  }
+
   // ── History (5.5): Timeline · Map · Favorites ─────────────────────────────
   function history(arg) {
     var mode = arg === 'map' || arg === 'favorites' ? arg : 'timeline';
@@ -978,29 +1029,39 @@
     ({ timeline: timeline, map: mapView, favorites: favorites })[mode]();
   }
   function timeline() {
-    var visits = s.state.visits || {};
-    var ids = Object.keys(visits).sort(function (a, b) {
-      return visits[b].date.localeCompare(visits[a].date) || (visits[b].startedAt || 0) - (visits[a].startedAt || 0);
-    });
+    var visits = s.listedVisits(), checks = s.checks();
+    var newest = function (list) {
+      return function (a, b) { return list[b].date.localeCompare(list[a].date) || (list[b].startedAt || 0) - (list[a].startedAt || 0); };
+    };
+    var ids = Object.keys(visits).sort(newest(visits));
     if (!ids.length) view.appendChild(el('p', { class: 'body', text: 'Your passport is empty. Add oysters from tonight’s menu to get your first stamp.' }));
-    ids.forEach(function (id) {
-      var v = visits[id], items = v.items || {};
-      var ul = el('ul');
-      Object.keys(items).sort(function (a, b) { return (items[a].addedAt || 0) - (items[b].addedAt || 0); }).forEach(function (oid) {
-        var it = items[oid];
-        ul.appendChild(el('li', {}, [
-          el('span', { class: 'tl-name', text: nameOf(oid) + ' ×' + it.qty }),
-          P.itemScore(it) !== null ? el('span', { class: 'tl-score', 'aria-label': 'rated ' + P.formatRating(P.itemScore(it)) + ' out of 10', text: ' ' + P.formatRating(P.itemScore(it)) + '/10' }) : null,
-          it.twoWords ? el('span', { class: 'tl-words', text: ' “' + it.twoWords + '”' }) : null,
-          it.note ? el('div', { class: 'tl-note', text: it.note }) : null
-        ]));
-      });
-      view.appendChild(el('a', { class: 'visit-card' + (id === justSaved ? ' just-saved' : ''), href: '#visit/' + id, 'aria-label': fmtDate(v.date) + ', ' + plural(P.visitTotal(v), 'oyster') + '. Edit or delete.' }, [
-        el('div', { class: 'vc-head' }, [el('span', { class: 'date', text: fmtDate(v.date) + (v.closedAt ? '' : ' · open') }),
-          el('span', { class: 'sub', text: plural(P.visitTotal(v), 'oyster') })]), ul
+    ids.forEach(function (id) { view.appendChild(visitCard(id, visits[id])); });
+    // Hidden checks (P2): out of the way, but can be brought back.
+    var hidden = Object.keys(checks).filter(function (k) { return checks[k].hidden; }).sort(newest(checks));
+    if (hidden.length) {
+      var det = el('details', { class: 'hidden-checks' }, [el('summary', { text: 'Hidden checks (' + hidden.length + ')' })]);
+      hidden.forEach(function (id) { det.appendChild(visitCard(id, checks[id])); });
+      view.appendChild(det);
+    }
+    view.appendChild(el('div', { class: 'btn-row' }, [el('a', { class: 'btn ghost block', href: '#past', text: 'Log a past visit' })]));
+  }
+  function visitCard(id, v) {
+    var items = v.items || {}, chk = P.isCheckVisit(v);
+    var ul = el('ul');
+    Object.keys(items).sort(function (a, b) { return (items[a].addedAt || 0) - (items[b].addedAt || 0); }).forEach(function (oid) {
+      var it = items[oid];
+      ul.appendChild(el('li', {}, [
+        el('span', { class: 'tl-name', text: nameOf(oid) + ' ×' + it.qty }),
+        P.itemScore(it) !== null ? el('span', { class: 'tl-score', 'aria-label': 'rated ' + P.formatRating(P.itemScore(it)) + ' out of 10', text: ' ' + P.formatRating(P.itemScore(it)) + '/10' }) : null,
+        it.twoWords ? el('span', { class: 'tl-words', text: ' “' + it.twoWords + '”' }) : null,
+        it.note ? el('div', { class: 'tl-note', text: it.note }) : null
       ]));
     });
-    view.appendChild(el('div', { class: 'btn-row' }, [el('a', { class: 'btn ghost block', href: '#past', text: 'Log a past visit' })]));
+    return el('a', { class: 'visit-card' + (id === justSaved ? ' just-saved' : ''), href: '#visit/' + id,
+      'aria-label': fmtDate(v.date) + ', ' + plural(P.visitTotal(v), 'oyster') + (chk ? ', from your check. Rate or hide.' : '. Edit or delete.') }, [
+      el('div', { class: 'vc-head' }, [el('span', { class: 'date', text: fmtDate(v.date) + (chk ? ' · from your check' : v.closedAt ? '' : ' · open') }),
+        el('span', { class: 'sub', text: plural(P.visitTotal(v), 'oyster') })]), ul
+    ]);
   }
 
   // Map: loaded the first time it's opened (data/map-na.js, about 20 KB).
@@ -1017,7 +1078,7 @@
   // Labels that sit better a little off their region's centre (map units).
   var LABEL_NUDGE = { ri: [9, 6], ct: [-2, 2], nj: [5, 2], md: [-6, -6], de: [5, 4], nh: [0, 4], ma: [-4, -2], pei: [0, -7], ns: [4, 4] };
   function regionStats() {
-    var visits = s.state.visits || {}, agg = P.aggregateRatings(visits), by = {};
+    var visits = s.visits(), agg = P.aggregateRatings(visits), by = {};
     Object.keys(visits).forEach(function (vid) {
       var items = visits[vid].items || {};
       Object.keys(items).forEach(function (oid) {
@@ -1129,7 +1190,7 @@
   }
 
   function favorites() {
-    var visits = s.state.visits || {};
+    var visits = s.visits();
     var m = P.measures(visits, s.oysters, s.regions), agg = P.aggregateRatings(visits);
     if (!m.eaten) { view.appendChild(el('p', { class: 'body', text: 'Your favorites show up here once you’ve logged a few oysters.' })); return; }
     var qty = {};
@@ -1401,16 +1462,20 @@
     s.flush();
     var st = s.state, day = s.today();
     var data = { exported: new Date(s.now()).toISOString(), profile: st.profile || {}, cards: st.cards || {},
-      visits: st.visits || {}, stamps: st.stamps || {}, hereOn: st.hereOn || {} };
+      visits: st.visits || {}, stamps: st.stamps || {}, hereOn: st.hereOn || {},
+      checks: s.toastOrders || {}, checkNotes: st.checkNotes || {} };
     download('half-shell-passport-' + day + '.json', 'application/json', JSON.stringify(data, null, 2));
-    var rows = [['date', 'oyster id', 'oyster', 'qty', 'rating (out of 10)', 'two words', 'note']];
-    var visits = st.visits || {};
+    var rows = [['date', 'from', 'oyster id', 'oyster', 'qty', 'rating (out of 10)', 'two words', 'note']];
+    var visits = {}, own = st.visits || {}, checks = s.checks();
+    Object.keys(own).forEach(function (k) { visits[k] = own[k]; });
+    Object.keys(checks).forEach(function (k) { visits[k] = checks[k]; });
     Object.keys(visits).sort(function (a, b) { return visits[a].date.localeCompare(visits[b].date); }).forEach(function (vid) {
-      var items = visits[vid].items || {};
+      var v = visits[vid], items = v.items || {};
+      var from = P.isCheckVisit(v) ? (v.hidden ? 'check (hidden)' : 'check') : 'you';
       Object.keys(items).forEach(function (oid) {
         var it = items[oid];
         var sc = P.itemScore(it);
-        rows.push([visits[vid].date, oid, nameOf(oid), it.qty, sc === null ? '' : sc, it.twoWords || '', it.note || '']);
+        rows.push([v.date, from, oid, nameOf(oid), it.qty, sc === null ? '' : sc, it.twoWords || '', it.note || '']);
       });
     });
     setTimeout(function () {
